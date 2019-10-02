@@ -9,14 +9,15 @@ define install_sidecar
 	cd _tmp/$(3) ;\
 	git checkout $(2)
 	printf 'FROM docker-go-base\nCOPY ./$(3) /$(3)  \nWORKDIR /$(3)' > _tmp/Dockerfile.$(3)
-	docker build -t external-attacher-installer -f ./_tmp/Dockerfile.$(3) ./_tmp
-	docker run -it -v /var/run/docker.sock:/var/run/docker.sock external-attacher-installer make container
+	docker build -t $(3)-installer -f ./_tmp/Dockerfile.$(3) ./_tmp
+	docker run -it -v /var/run/docker.sock:/var/run/docker.sock $(3)-installer make container
+	docker tag $(4) $(3):$(2)
 	rm _tmp/Dockerfile.$(3)
 	rm -rf _tmp/$(3)
 endef
 
 sidecar-containers: base
-	$(call install_sidecar,https://github.com/kubernetes-csi/external-provisioner.git,$(EXTERNAL_PROVISIONER_TAG),external-provisioner)
-	$(call install_sidecar,https://github.com/kubernetes-csi/node-driver-registrar.git,$(NODE_DRIVER_REGISTRAR_TAG),node-driver-registrar)
+	$(call install_sidecar,https://github.com/kubernetes-csi/external-provisioner.git,$(EXTERNAL_PROVISIONER_TAG),external-provisioner,$(ORIGINAL_PROVISIONER_IMAGE))
+	$(call install_sidecar,https://github.com/kubernetes-csi/node-driver-registrar.git,$(NODE_DRIVER_REGISTRAR_TAG),node-driver-registrar,$(ORIGINAL_NODE_DRIVER_REGISTRAR_IMAGE))
 
 build: sidecar-containers
