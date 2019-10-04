@@ -10,9 +10,9 @@ ARG DOCKER_ARCH
 ENV ARCH=$ARCH
 ENV DOCKER_ARCH=$DOCKER_ARCH
 
-RUN wget -q https://dl.google.com/go/go1.12.7.linux-$ARCH.tar.gz && \
-  tar -xf go1.12.7.linux-$ARCH.tar.gz && \
-  rm go1.12.7.linux-$ARCH.tar.gz && \
+RUN wget -q https://dl.google.com/go/go1.12.10.linux-$ARCH.tar.gz && \
+  tar -xf go1.12.10.linux-$ARCH.tar.gz && \
+  rm go1.12.10.linux-$ARCH.tar.gz && \
   mv go /usr/local
 
 ENV GOROOT /usr/local/go
