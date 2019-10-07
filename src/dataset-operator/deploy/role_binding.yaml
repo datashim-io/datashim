@@ -1,0 +1,12 @@
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: dataset-operator
+subjects:
+- kind: ServiceAccount
+  name: dataset-operator
+  namespace: ${DATASET_OPERATOR_NAMESPACE} #this is the namespace in which the operator is running
+roleRef:
+  kind: ClusterRole
+  name: dataset-operator
+  apiGroup: rbac.authorization.k8s.io

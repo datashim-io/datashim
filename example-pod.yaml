@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  labels:
+    #all of them would be listed in /etc/datasets.json and /etc/datasets.yaml
+    dataset.0.id: "example-dataset"
+    dataset.0.useas: "mount"
+
+spec:
+  containers:
+    - name: nginx
+      image: nginx
+      volumeMounts:
+        - mountPath: "/mount/dataset1" #optional, if not specified it would be mounted in /mnt/datasets/remote-dataset-1
+          name: "example-dataset"

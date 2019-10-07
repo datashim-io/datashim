@@ -1,0 +1,20 @@
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: mutating-webhook
+webhooks:
+  - name: foo.bar.svc
+    clientConfig:
+      service:
+        name: webhook-server
+        namespace: ${DATASET_OPERATOR_NAMESPACE}
+        path: "/mutate"
+      caBundle: ${CA_PEM_B64}
+    rules:
+      - operations: [ "CREATE", "UPDATE" ]
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+    namespaceSelector:
+      matchLabels:
+        monitor-pods-datasets: enabled

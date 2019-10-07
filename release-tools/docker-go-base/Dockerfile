@@ -19,8 +19,6 @@ ENV GOROOT /usr/local/go
 ENV GOPATH /go
 ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 
-ENV GO111MODULE=on
-
 RUN apt-get update && \
     apt-get -y install apt-transport-https \
     ca-certificates \
@@ -35,11 +33,9 @@ RUN apt-get update && \
     apt-get update && \
     apt-get -y install docker-ce
 
-#RUN go get -d github.com/operator-framework/operator-sdk
-#RUN cd $GOPATH/src/github.com/operator-framework/operator-sdk && \
-#    git checkout master && \
-#    make tidy && \
-#    make install
-#
-#COPY . /external-attacher
-#WORKDIR /external-attacher
+RUN go get -d github.com/operator-framework/operator-sdk; exit 0
+RUN cd $GOPATH/src/github.com/operator-framework/operator-sdk && \
+    git checkout v0.10.0 && \
+    make tidy && \
+    make install
+ENV GO111MODULE=on

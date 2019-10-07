@@ -81,7 +81,7 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: ${CSI_S3_IMAGE}
+          image: ${CSI_S3_IMAGE}:${CSI_S3_IMAGE_TAG}-full
           args:
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--nodeid=$(NODE_ID)"

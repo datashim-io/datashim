@@ -84,7 +84,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/kubelet/plugins/ch.ctrox.csi.s3-driver
         - name: csi-s3
-          image: ${CSI_S3_IMAGE}
+          image: ${CSI_S3_IMAGE}:${CSI_S3_IMAGE_TAG}-full
           args:
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--nodeid=$(NODE_ID)"
