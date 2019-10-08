@@ -10,16 +10,14 @@ ARG DOCKER_ARCH
 ENV ARCH=$ARCH
 ENV DOCKER_ARCH=$DOCKER_ARCH
 
-RUN wget -q https://dl.google.com/go/go1.12.7.linux-$ARCH.tar.gz && \
-  tar -xf go1.12.7.linux-$ARCH.tar.gz && \
-  rm go1.12.7.linux-$ARCH.tar.gz && \
+RUN wget -q https://dl.google.com/go/go1.12.10.linux-$ARCH.tar.gz && \
+  tar -xf go1.12.10.linux-$ARCH.tar.gz && \
+  rm go1.12.10.linux-$ARCH.tar.gz && \
   mv go /usr/local
 
 ENV GOROOT /usr/local/go
 ENV GOPATH /go
 ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
-
-ENV GO111MODULE=on
 
 RUN apt-get update && \
     apt-get -y install apt-transport-https \
@@ -35,11 +33,9 @@ RUN apt-get update && \
     apt-get update && \
     apt-get -y install docker-ce
 
-#RUN go get -d github.com/operator-framework/operator-sdk
-#RUN cd $GOPATH/src/github.com/operator-framework/operator-sdk && \
-#    git checkout master && \
-#    make tidy && \
-#    make install
-#
-#COPY . /external-attacher
-#WORKDIR /external-attacher
+RUN go get -d github.com/operator-framework/operator-sdk; exit 0
+RUN cd $GOPATH/src/github.com/operator-framework/operator-sdk && \
+    git checkout v0.10.0 && \
+    make tidy && \
+    make install
+ENV GO111MODULE=on
