@@ -79,7 +79,7 @@ keys:
 	kubectl -n $(DATASET_OPERATOR_NAMESPACE) create secret tls webhook-server-tls \
             --cert "$${keydir}/webhook-server-tls.crt" \
             --key "$${keydir}/webhook-server-tls.key" --dry-run -o yaml | kubectl apply -f - ;\
-    $(SHELL_EXPORT) envsubst < "./src/dataset-operator/deploy/webhook.yaml" | kubectl apply -f -;\
+    $(SHELL_EXPORT) envsubst < "./src/dataset-operator/deploy/webhook.yaml.template" | kubectl apply -f -;\
 	rm -rf "$$keydir"
 
 deploy:
