@@ -1,0 +1,12 @@
+apiVersion: com.ie.ibm.hpsys/v1alpha1
+kind: Dataset
+metadata:
+  name: example-dataset
+spec:
+  local:
+    type: "COS"
+    accessKeyID: "minio"
+    secretAccessKey: "minio123"
+    endpoint: "${MINIO_SERVICE_URL}"
+    bucket: "my-bucket"
+    region: "" #it can be empty

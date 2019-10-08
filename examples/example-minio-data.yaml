@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: example-minio-data
+spec:
+  template:
+    spec:
+      containers:
+        - name: minio-client
+          image: minio/mc
+          command: ["/bin/sh","-c","sleep 100
+          && mc config host add minio-service http://minio-service:9000 minio minio123
+          && mc mb minio-service/my-bucket
+          && echo 'hello' > file1.txt
+          && echo 'world' > file2.txt
+          && mc cp *.txt minio-service/my-bucket
+          "]
+      restartPolicy: Never
+  backoffLimit: 4

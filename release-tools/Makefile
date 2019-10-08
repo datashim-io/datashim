@@ -73,7 +73,19 @@ minikube-load-containers: build-containers
 	$(call load_containers_minikube,$(CSI_S3_IMAGE),$(CSI_S3_IMAGE_TAG)-full)
 	$(call load_containers_minikube,$(DATASET_OPERATOR_IMAGE),$(DATASET_OPERATOR_TAG))
 
-keys:
+minio-install:
+	@kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes/minio-standalone-pvc.yaml?raw=true ;\
+    kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes/minio-standalone-deployment.yaml?raw=true ;\
+    kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes/minio-standalone-service.yaml?raw=true ;\
+    kubectl create -f ./examples/example-minio-data.yaml
+
+minio-uninstall:
+	@kubectl delete -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes/minio-standalone-service.yaml?raw=true ;\
+	kubectl delete -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes/minio-standalone-deployment.yaml?raw=true ;\
+	kubectl delete -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes/minio-standalone-pvc.yaml?raw=true ;\
+	kubectl delete -f ./examples/example-minio-data.yaml
+
+keys-installation:
 	@keydir="$$(mktemp -d)"; ./release-tools/generate-keys.sh $$keydir; echo $$keydir ;\
 	export CA_PEM_B64="$$(openssl base64 -A <"$${keydir}/ca.crt")" ;\
 	kubectl -n $(DATASET_OPERATOR_NAMESPACE) create secret tls webhook-server-tls \
@@ -82,7 +94,7 @@ keys:
     $(SHELL_EXPORT) envsubst < "./src/dataset-operator/deploy/webhook.yaml.template" | kubectl apply -f -;\
 	rm -rf "$$keydir"
 
-deploy:
+deployment:
 	@for file in $(K8S_FILES); do \
 		$(SHELL_EXPORT) envsubst < $$file | kubectl apply -f - ;\
 	done
@@ -90,4 +102,4 @@ deploy:
 		kubectl label namespace $$namespace monitor-pods-datasets=enabled ;\
 	done
 
-minikube: base minikube-load-containers keys deploy
+minikube: base minio-install minikube-load-containers keys-installation deployment

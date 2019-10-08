@@ -3,10 +3,8 @@ kind: Pod
 metadata:
   name: nginx
   labels:
-    #all of them would be listed in /etc/datasets.json and /etc/datasets.yaml
     dataset.0.id: "example-dataset"
     dataset.0.useas: "mount"
-
 spec:
   containers:
     - name: nginx
