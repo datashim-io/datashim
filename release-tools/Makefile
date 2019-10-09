@@ -84,6 +84,14 @@ minio-uninstall:
 	kubectl delete -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes/minio-standalone-deployment.yaml?raw=true ;\
 	kubectl delete -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes/minio-standalone-pvc.yaml?raw=true ;\
 	kubectl delete -f ./examples/example-minio-data.yaml
+	@for file in $(K8S_FILES); do \
+        	kubectl delete -n $(DATASET_OPERATOR_NAMESPACE) -f $$file ;\
+	done
+	@for namespace in $(NAMESPACES_TO_MONITOR); do \
+		kubectl label namespace $$namespace monitor-pods-datasets- ;\
+	done
+	kubectl delete -n $(DATASET_OPERATOR_NAMESPACE) secret webhook-server-tls
+	kubectl delete -n $(DATASET_OPERATOR_NAMESPACE) -f ./src/dataset-operator/deploy/webhook.yaml.template
 
 keys-installation:
 	@keydir="$$(mktemp -d)"; ./release-tools/generate-keys.sh $$keydir; echo $$keydir ;\
@@ -91,15 +99,17 @@ keys-installation:
 	kubectl -n $(DATASET_OPERATOR_NAMESPACE) create secret tls webhook-server-tls \
             --cert "$${keydir}/webhook-server-tls.crt" \
             --key "$${keydir}/webhook-server-tls.key" --dry-run -o yaml | kubectl apply -f - ;\
-    $(SHELL_EXPORT) envsubst < "./src/dataset-operator/deploy/webhook.yaml.template" | kubectl apply -f -;\
+    $(SHELL_EXPORT) envsubst < "./src/dataset-operator/deploy/webhook.yaml.template" | kubectl apply -n $(DATASET_OPERATOR_NAMESPACE) -f -;\
 	rm -rf "$$keydir"
 
 deployment:
 	@for file in $(K8S_FILES); do \
-		$(SHELL_EXPORT) envsubst < $$file | kubectl apply -f - ;\
+		$(SHELL_EXPORT) envsubst < $$file | kubectl apply -n $(DATASET_OPERATOR_NAMESPACE) -f - ;\
 	done
 	@for namespace in $(NAMESPACES_TO_MONITOR); do \
 		kubectl label namespace $$namespace monitor-pods-datasets=enabled ;\
 	done
 
 minikube: base minio-install minikube-load-containers keys-installation deployment
+
+kubernetes: base
