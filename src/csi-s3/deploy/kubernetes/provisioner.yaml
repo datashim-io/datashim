@@ -71,7 +71,7 @@ spec:
       serviceAccount: csi-provisioner-sa
       containers:
         - name: csi-provisioner
-          image: ${EXTERNAL_PROVISIONER_IMAGE}:${EXTERNAL_PROVISIONER_TAG}
+          image: ${EXTERNAL_PROVISIONER_IMAGE}
           args:
             - "--provisioner=ch.ctrox.csi.s3-driver"
             - "--csi-address=$(ADDRESS)"
@@ -84,7 +84,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/kubelet/plugins/ch.ctrox.csi.s3-driver
         - name: csi-s3
-          image: ${CSI_S3_IMAGE}:${CSI_S3_IMAGE_TAG}-full
+          image: ${CSI_S3_IMAGE}
           args:
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--nodeid=$(NODE_ID)"

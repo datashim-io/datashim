@@ -72,7 +72,7 @@ spec:
       serviceAccount: csi-attacher-sa
       containers:
         - name: csi-attacher
-          image: ${EXTERNAL_ATTACHER_IMAGE}:${EXTERNAL_ATTACHER_TAG}
+          image: ${EXTERNAL_ATTACHER_IMAGE}
           args:
             - "--v=4"
             - "--csi-address=$(ADDRESS)"

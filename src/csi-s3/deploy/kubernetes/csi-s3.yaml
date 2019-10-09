@@ -56,7 +56,7 @@ spec:
       hostNetwork: true
       containers:
         - name: driver-registrar
-          image: ${NODE_DRIVER_REGISTRAR_IMAGE}:${NODE_DRIVER_REGISTRAR_TAG}
+          image: ${NODE_DRIVER_REGISTRAR_IMAGE}
           args:
             - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
             - "--v=4"
@@ -81,7 +81,7 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: ${CSI_S3_IMAGE}:${CSI_S3_IMAGE_TAG}-full
+          image: ${CSI_S3_IMAGE}
           args:
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--nodeid=$(NODE_ID)"
