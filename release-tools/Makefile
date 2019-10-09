@@ -130,7 +130,17 @@ keys-installation:
     $(SHELL_EXPORT) envsubst < "./src/dataset-operator/deploy/webhook.yaml.template" | kubectl apply -n $(DATASET_OPERATOR_NAMESPACE) -f -;\
 	rm -rf "$$keydir"
 
-minikube-uninstall: minio-uninstall
+minikube-uninstall: minio-uninstall undeployment
+	@for file in $(K8S_FILES); do \
+		$(SHELL_EXPORT) envsubst < $$file | kubectl delete -n $(DATASET_OPERATOR_NAMESPACE) -f - ;\
+    done
+	@for namespace in $(NAMESPACES_TO_MONITOR); do \
+    	kubectl label namespace $$namespace monitor-pods-datasets- ;\
+    done
+	@kubectl delete -n $(DATASET_OPERATOR_NAMESPACE) secret webhook-server-tls ;\
+	$(SHELL_EXPORT) envsubst < ./src/dataset-operator/deploy/webhook.yaml.template | kubectl delete -n $(DATASET_OPERATOR_NAMESPACE) -f -
+
+undeployment:
 	@for file in $(K8S_FILES); do \
 		$(SHELL_EXPORT) envsubst < $$file | kubectl delete -n $(DATASET_OPERATOR_NAMESPACE) -f - ;\
     done
