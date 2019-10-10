@@ -100,6 +100,8 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/kubelet/plugins/ch.ctrox.csi.s3-driver
+      imagePullSecrets:
+        - name: ${DOCKER_REGISTRY_SECRET}
       volumes:
         - name: socket-dir
           emptyDir: {}

@@ -102,6 +102,8 @@ spec:
               mountPropagation: "Bidirectional"
             - name: fuse-device
               mountPath: /dev/fuse
+      imagePullSecrets:
+        - name: ${DOCKER_REGISTRY_SECRET}
       volumes:
         - name: registration-dir
           hostPath:

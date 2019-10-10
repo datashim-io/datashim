@@ -36,6 +36,8 @@ spec:
             - name: webhook-tls-certs
               mountPath: /run/secrets/tls
               readOnly: true
+      imagePullSecrets:
+        - name: ${DOCKER_REGISTRY_SECRET}
       volumes:
         - name: webhook-tls-certs
           secret:
