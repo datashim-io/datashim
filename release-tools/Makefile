@@ -1,6 +1,6 @@
 SHELL=/bin/bash
 
-DATASET_OPERATOR_IMAGE := nginx
+DATASET_OPERATOR_IMAGE := dataset-operator
 DATASET_OPERATOR_TAG := latest
 DATASET_OPERATOR_IMAGE := $(DOCKER_REGISTRY_COMPONENTS)/$(DATASET_OPERATOR_IMAGE)
 DATASET_OPERATOR_IMAGE := $(DATASET_OPERATOR_IMAGE):$(DATASET_OPERATOR_TAG)
@@ -10,16 +10,16 @@ CSI_S3_IMAGE_TAG := dev-full
 CSI_S3_IMAGE := $(DOCKER_REGISTRY_COMPONENTS)/$(CSI_S3_IMAGE)
 CSI_S3_IMAGE := $(CSI_S3_IMAGE):$(CSI_S3_IMAGE_TAG)
 
-EXTERNAL_PROVISIONER_IMAGE := csi-provisioner
-EXTERNAL_PROVISIONER_IMAGE := $(DOCKER_REGISTRY_SIDECARS)/$(EXTERNAL_PROVISIONER_IMAGE)
+BASE_EXTERNAL_PROVISIONER_IMAGE := csi-provisioner
+EXTERNAL_PROVISIONER_IMAGE := $(DOCKER_REGISTRY_SIDECARS)/$(BASE_EXTERNAL_PROVISIONER_IMAGE)
 EXTERNAL_PROVISIONER_IMAGE := $(EXTERNAL_PROVISIONER_IMAGE):$(EXTERNAL_PROVISIONER_TAG)
 
-EXTERNAL_ATTACHER_IMAGE := csi-attacher
-EXTERNAL_ATTACHER_IMAGE := $(DOCKER_REGISTRY_SIDECARS)/$(EXTERNAL_ATTACHER_IMAGE)
+BASE_EXTERNAL_ATTACHER_IMAGE := csi-attacher
+EXTERNAL_ATTACHER_IMAGE := $(DOCKER_REGISTRY_SIDECARS)/$(BASE_EXTERNAL_ATTACHER_IMAGE)
 EXTERNAL_ATTACHER_IMAGE := $(EXTERNAL_ATTACHER_IMAGE):$(EXTERNAL_ATTACHER_TAG)
 
-NODE_DRIVER_REGISTRAR_IMAGE := csi-node-driver-registrar
-NODE_DRIVER_REGISTRAR_IMAGE := $(DOCKER_REGISTRY_SIDECARS)/$(NODE_DRIVER_REGISTRAR_IMAGE)
+BASE_NODE_DRIVER_REGISTRAR_IMAGE := csi-node-driver-registrar
+NODE_DRIVER_REGISTRAR_IMAGE := $(DOCKER_REGISTRY_SIDECARS)/$(BASE_NODE_DRIVER_REGISTRAR_IMAGE)
 NODE_DRIVER_REGISTRAR_IMAGE := $(NODE_DRIVER_REGISTRAR_IMAGE):$(NODE_DRIVER_REGISTRAR_TAG)
 
 KEY_DIR := $(shell mktemp -d)
@@ -40,6 +40,7 @@ K8S_FILES += $(shell find ./src/dataset-operator/deploy -maxdepth 1 -name '*.yam
 K8S_FILES += $(shell find ./src/dataset-operator/deploy/crds -maxdepth 1 -name '*crd.yaml')
 
 base:
+	mkdir -p _tmp
 	docker build -t docker-go-base --build-arg ARCH=$(shell if [ "$$(arch)" == "x86_64" ]; then echo amd64; elif [ "$$(arch)" == "i386" ]; then echo amd64; else echo "$$(arch)"; fi) --build-arg DOCKER_ARCH=$(shell if [ "$$(arch)" == "ppc64le" ]; then echo ppc64el;elif [ "$$(arch)" == "x86_64" ]; then echo amd64; elif [ "$$(arch)" == "i386" ]; then echo amd64; fi) -f ./release-tools/docker-go-base/Dockerfile .
 
 #1: git repo url
@@ -56,6 +57,7 @@ define install_sidecar
 	printf 'FROM docker-go-base\nCOPY ./$(3) /$(3)  \nWORKDIR /$(3)' > _tmp/Dockerfile.$(3)
 	docker build -t $(3)-installer -f ./_tmp/Dockerfile.$(3) ./_tmp
 	docker run -it -v /var/run/docker.sock:/var/run/docker.sock $(3)-installer make container -e IMAGE_TAG=$(4) GOFLAGS=-mod=vendor
+	docker tag $(5):latest $(4)
 	rm _tmp/Dockerfile.$(3)
 endef
 
@@ -83,9 +85,9 @@ ifeq ($(PULL_SIDECARS), true)
 	docker pull $(EXTERNAL_ATTACHER_IMAGE) ;\
 	docker pull $(NODE_DRIVER_REGISTRAR_IMAGE)
 else
-	$(call install_sidecar,https://github.com/kubernetes-csi/external-attacher.git,$(EXTERNAL_ATTACHER_TAG),external-attacher,$(EXTERNAL_ATTACHER_IMAGE))
-	$(call install_sidecar,https://github.com/kubernetes-csi/external-provisioner.git,$(EXTERNAL_PROVISIONER_TAG),external-provisioner,$(EXTERNAL_PROVISIONER_IMAGE))
-	$(call install_sidecar,https://github.com/kubernetes-csi/node-driver-registrar.git,$(NODE_DRIVER_REGISTRAR_TAG),node-driver-registrar,$(NODE_DRIVER_REGISTRAR_IMAGE))
+	$(call install_sidecar,https://github.com/kubernetes-csi/external-attacher.git,$(EXTERNAL_ATTACHER_TAG),external-attacher,$(EXTERNAL_ATTACHER_IMAGE),$(BASE_EXTERNAL_ATTACHER_IMAGE))
+	$(call install_sidecar,https://github.com/kubernetes-csi/external-provisioner.git,$(EXTERNAL_PROVISIONER_TAG),external-provisioner,$(EXTERNAL_PROVISIONER_IMAGE),$(BASE_EXTERNAL_PROVISIONER_IMAGE))
+	$(call install_sidecar,https://github.com/kubernetes-csi/node-driver-registrar.git,$(NODE_DRIVER_REGISTRAR_TAG),node-driver-registrar,$(NODE_DRIVER_REGISTRAR_IMAGE),$(BASE_NODE_DRIVER_REGISTRAR_IMAGE))
 endif
 ifeq ($(PULL_COMPONENTS), true)
 	@docker pull $(CSI_S3_IMAGE) ;\
@@ -154,6 +156,6 @@ deployment: keys-installation
 		kubectl label namespace $$namespace monitor-pods-datasets=enabled ;\
 	done
 
-minikube-install: base minio-install build-containers push-containers keys-installation deployment
+minikube-install: base minio-install minikube-load-containers keys-installation deployment
 
 kubernetes-install: base build-containers push-containers keys-installation deployment
