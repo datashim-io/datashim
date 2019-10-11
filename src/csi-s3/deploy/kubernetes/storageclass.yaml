@@ -1,0 +1,22 @@
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: csi-s3
+provisioner: ch.ctrox.csi.s3-driver
+parameters:
+  # specify which mounter to use
+  # can be set to rclone, s3fs, goofys or s3backer
+  mounter: s3fs
+
+  csi.storage.k8s.io/provisioner-secret-name: ${pvc.name}
+  csi.storage.k8s.io/provisioner-secret-namespace: ${pvc.namespace}
+
+  csi.storage.k8s.io/controller-publish-secret-name: ${pvc.name}
+  csi.storage.k8s.io/controller-publish-secret-namespace: ${pvc.namespace}
+
+  csi.storage.k8s.io/node-stage-secret-name: ${pvc.name}
+  csi.storage.k8s.io/node-stage-secret-namespace: ${pvc.namespace}
+
+  csi.storage.k8s.io/node-publish-secret-name: ${pvc.name}
+  csi.storage.k8s.io/node-publish-secret-namespace: ${pvc.namespace}
