@@ -10,5 +10,5 @@ spec:
     - name: nginx
       image: nginx
       volumeMounts:
-        - mountPath: "/mount/dataset1" #optional, if not specified it would be mounted in /mnt/datasets/remote-dataset-1
+        - mountPath: "/mount/dataset1" #optional, if not specified it would be mounted in /mnt/datasets/example-dataset
           name: "example-dataset"
