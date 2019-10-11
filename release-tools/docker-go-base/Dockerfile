@@ -18,6 +18,7 @@ RUN wget -q https://dl.google.com/go/go1.12.10.linux-$ARCH.tar.gz && \
 ENV GOROOT /usr/local/go
 ENV GOPATH /go
 ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+ENV GOARCH $ARCH
 
 RUN apt-get update && \
     apt-get -y install apt-transport-https \

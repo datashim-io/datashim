@@ -20,8 +20,17 @@ VERSION ?= dev
 IMAGE_TAG=$(IMAGE_NAME):$(VERSION)
 FULL_IMAGE_TAG=$(IMAGE_TAG)
 TEST_IMAGE_TAG=$(REGISTRY_NAME)/$(IMAGE_NAME):test
+ARCH ?= $(shell arch)
 
+# because of this: https://github.com/jacobsa/fuse/issues/44
+# thanks October 2018 Yiannis!
 build:
+ifeq ($(ARCH), ppc64le)
+	go mod download
+	sed -i 's/4096/65536/g' $$GOPATH/pkg/mod/github.com/jacobsa/fuse*/internal/buffer/in_message.go
+	sed -i 's/17/21/g' $$GOPATH/pkg/mod/github.com/jacobsa/fuse*/internal/buffer/in_message_linux.go
+	sed -i 's/17/21/g' $$GOPATH/pkg/mod/github.com/jacobsa/fuse*/internal/buffer/out_message_linux.go
+endif
 	CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o _output/s3driver ./cmd/s3driver
 test:
 	docker build -t $(TEST_IMAGE_TAG) -f test/Dockerfile .

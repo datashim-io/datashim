@@ -135,27 +135,3 @@ keys-installation:
             --key "$(KEY_DIR)/webhook-server-tls.key" --dry-run -o yaml | kubectl apply -f - ;\
     $(SHELL_EXPORT) envsubst < "./src/dataset-operator/deploy/webhook.yaml.template" | kubectl apply -n $(DATASET_OPERATOR_NAMESPACE) -f -;\
 	rm -rf $(KEY_DIR)
-
-minikube-uninstall: minio-uninstall undeployment
-
-undeployment:
-	@for file in $(K8S_FILES); do \
-		$(SHELL_EXPORT) envsubst < $$file | kubectl delete -n $(DATASET_OPERATOR_NAMESPACE) -f - ;\
-    done
-	@for namespace in $(NAMESPACES_TO_MONITOR); do \
-    	kubectl label namespace $$namespace monitor-pods-datasets- ;\
-    done
-	@kubectl delete -n $(DATASET_OPERATOR_NAMESPACE) secret webhook-server-tls ;\
-	$(SHELL_EXPORT) envsubst < ./src/dataset-operator/deploy/webhook.yaml.template | kubectl delete -n $(DATASET_OPERATOR_NAMESPACE) -f -
-
-deployment: keys-installation
-	@for file in $(K8S_FILES); do \
-		$(SHELL_EXPORT) envsubst < $$file | kubectl apply -n $(DATASET_OPERATOR_NAMESPACE) -f - ;\
-	done
-	@for namespace in $(NAMESPACES_TO_MONITOR); do \
-		kubectl label namespace $$namespace monitor-pods-datasets=enabled ;\
-	done
-
-minikube-install: base minio-install minikube-load-containers keys-installation deployment
-
-kubernetes-install: base build-containers push-containers keys-installation deployment
