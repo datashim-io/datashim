@@ -154,3 +154,11 @@ Moreover we will add support for NFS datasets and other storage systems.
 
 Stay tuned for updates!
 
+
+## Acknowledgements
+
+This framework is supported by the European funded research project [H2020
+evolve](https://www.evolve-h2020.eu/).
+
+<img src="./doc/pictures/evolve-logo.png" alt="H2020 evolve logo" width="150" height="24.07">
+
