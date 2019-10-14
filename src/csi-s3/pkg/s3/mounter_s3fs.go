@@ -38,6 +38,10 @@ func (s3fs *s3fsMounter) Mount(source string, target string) error {
 	if err := writes3fsPass(s3fs.pwFileContent); err != nil {
 		return err
 	}
+	region := s3fs.region
+	if(len(region)==0) {
+		region = "dummy"
+	}
 	args := []string{
 		fmt.Sprintf("%s", s3fs.bucket.Name),
 		fmt.Sprintf("%s", target),
