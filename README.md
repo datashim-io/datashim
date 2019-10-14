@@ -1,21 +1,27 @@
 # Dataset Lifecycle Framework
 
-*__Dataset Lifecycle Framework__* gives you hassle-free access to remote datasets inside your Kubernetes applications.
-Its components run as Kubernetes pods and can be installed in any flavor of Kubernetes(v1.15+).
+The *__Dataset Lifecycle Framework__* enables users or administrators of Kubernetes
+clusters to easily link applications with data sources. Thanks to the new
+__Dataset CRD__ (*Custom Resource Definition*) all you need to do is to create a dataset, and include the
+dataset ID as a label in your pods specification. Annotated pods will have
+access to tha data with no need for providing any futher information on tha data
+sources.
+Our framework takes care of all the dirty details of __mounting or
+giving your pods access to the data__. Once a dataset exists in a Kubernetes cluster,
+users will just need to reference it using the unique ID defined at creation time.
 
-In order to leverage its capabilities we provide you a **Dataset CRD**(*Custom Resource Definition*) and you just need to
-**annotate your pods** accordingly to make the Dataset available inside your application.
-
-It's built on [Operator SDK](https://github.com/operator-framework/operator-sdk) and it's extensible to support any
+This framework targets any *Kubernetes 1.15+* installation; it is built on the
+[Operator SDK](https://github.com/operator-framework/operator-sdk) and is extensible to support any
 [CSI](https://kubernetes-csi.github.io/docs/) enabled storage system.
 
 ## Quickstart
 
-If you prefer to watch a quick demo of its functionality, have a look in the recording:
+If you prefer to watch a quick demo of its functionality, have a look at the recording:
 [Demo](https://asciinema.org/a/273767)
 
-The following steps demonstrate how to quickly get started with our framework using minikube. Check the 
-[Minikube documentation](https://kubernetes.io/docs/setup/learning-environment/minikube/)
+The following steps demonstrate how to quickly getting started with our
+framework using *minikube*. Check the 
+[minikube documentation](https://kubernetes.io/docs/setup/learning-environment/minikube/)
 for instructions about how to install it. In case you want to deploy our framework on a proper kubernetes
 cluster inspect the [Makefile](Makefile) to tailor your Dataset Lifecycle Framework installation.
 
@@ -42,20 +48,37 @@ csi-s3-qwv7t                        2/2     Running     0          53m
 dataset-operator-54b74d5885-bg7sw   1/1     Running     0          53m
 ```
 
-As part of the minikube installation we deployed minio and added sample data for demo purposes.
-As a user now you can use any Dataset stored on minio inside your pods. Execute the following:
+As part of the minikube installation we deployed [minio](https://min.io) and added sample data for demo purposes.
+As a user now you can use any Dataset stored on minio inside your pods. Execute
+the following command to have a look at the minio installation:
+
+```bash
+$ minikube service minio-service
+```
+
+A browser session will open up. Login with `minio`/`minio123` credentials and
+you'll see the data available.
+
+
+![Minio my-bucket screenshot](./doc/pictures/minio-my-bucket.png)
+
+Now execute the following:
+
 ```
 $ export MINIO_SERVICE_URL=$(minikube service minio-service --url)
 $ envsubst < ./examples/example-dataset.yaml | kubectl create -f -
 $ kubectl create -f ./examples/example-pod.yaml
 ```
 
-What happened with the above commands? First we retrieved the URL of minio inside minikube `minikube service minio-service --url`
-If instead you are working with another Cloud Object Store, feel free to use it!
-
-In the next command we replaced in the [example-dataset](./examples/example-dataset.yaml) the address of minio and created
-the new Dataset object. 
-Also we have filled out the demo credentials so you need to modify accordingly if using a Cloud Object Store.
+The above commands retrieve the URL of minio inside minikube `minikube service
+minio-service --url` and patch the example dataset specification to include it.
+The last command finally submits the dataset creation.
+The snippet below shows the content of the [example dataset](./examples/example-dataset.yaml)
+used with the above commands.
+If instead of the provided minio installation you want to test with another S3
+based Cloud Object Storage bucket, feel free to do it. Just make sure the
+*endpoint*, *accessKeyID*, *bucket* and *secretAccessKey* fields are properly
+filled to connect to your bucket.
 
 <pre>
 apiVersion: com.ie.ibm.hpsys/v1alpha1
@@ -91,6 +114,17 @@ spec:
           name: <b>"example-dataset"</b>
 </pre>
 
+With the following command you can inspect the running `nginx` pod to verify the dataset is mounted at the provided
+path
+
+```bash
+$ kubectl exec -it nginx ls /mount/dataset1
+file1.txt  file2.txt
+
+```
+Feel free to test adding new content to the minio bucket and verify it is immediately
+available to the pod by re executing the above command.
+
 Notice the way we annotate the pod to make it aware of the datasets. For instance if we wanted to use multiple datasets,
 in the labels section we would have something like this:
 
@@ -105,15 +139,18 @@ dataset.2.id: dataset-2
 dataset.2.useas: mount
 ```
 
-The part below `volumeMounts` is optional and can be used if the user wants to mount each dataset in a specific location.
-If the user doesn't specify the mount point, as a convention we will mount the dataset on `/mnt/datasets/example-dataset`.
+The `mountPath` and `name` in `volumeMounts` is optional and should be used if
+the user wants to mount a dataset in a specific location.
+If the user doesn't specify the mount point, as a convention we will mount the
+dataset on `/mnt/datasets/<dataset-name>`.
 
 ## Next Steps
 
-The current release only provides support for datasets stored as S3 buckets and
+The current release provides support only for datasets stored as S3 buckets and
 requires users/administrators to input the access information for the dataset. We
 are working on enabling the capability of fetching the dataset information from
-a central catalog to facilitate access to organization-wide data lakes. Stay
-tuned for updates.
+a central catalog to facilitate access to organization-wide data lakes.
+Moreover we will add support for NFS datasets and other storage systems.
 
-Moreover we will add support for NFS datasets and other storage systems. 
+Stay tuned for updates!
+
