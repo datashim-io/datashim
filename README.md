@@ -17,7 +17,7 @@ This framework targets any *Kubernetes 1.15+* installation; it is built on the
 ## Quickstart
 
 If you prefer to watch a quick demo of its functionality, have a look at the recording:
-[Demo](https://asciinema.org/a/273767)
+[Demo](https://asciinema.org/a/276331)
 
 The following steps demonstrate how to quickly getting started with our
 framework using *minikube*. Check the 
