@@ -26,6 +26,17 @@ var log = logf.Log.WithName("controller_dataset")
 * business logic.  Delete these comments after modifying this file.*
  */
 
+/**
+ * Functions table for hadnling creation of local datasets.
+ * Each function in the table should respect the following signature:
+ *		processLocalDatasetXYZ func(*comv1alpha1.Dataset, *ReconcileDataset) (reconcile.Result, error)
+ */
+var datasetLocalProcessTable = map[string]func(*comv1alpha1.Dataset, 
+	*ReconcileDataset) (reconcile.Result, error) {
+		"COS": processLocalDatasetCOS,
+		"NFS": processLocalDatasetNFS,
+}
+
 // Add creates a new Dataset Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
@@ -102,32 +113,38 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 	reqLogger.Info("All good, proceed")
 
-	if (instance.Spec.Local != nil) {
-		result, err := processLocalDataset(instance,r)
-		if(err!=nil) {
-			return result,err
+	if instance.Spec.Local != nil {
+		datasetType := instance.Spec.Local["type"]
+		if f, ok := datasetLocalProcessTable[datasetType]; ok {
+			result, err := f(instance, r)
+			if err != nil {
+				return result, err
+			}
+		} else {
+			reqLogger.Info("Dataset type %s not supported", datasetType)
+			err := errors.NewBadRequest("Dataset type not supported")
+			return reconcile.Result{}, err
 		}
 	}
-
 
 	return reconcile.Result{}, nil
 }
 
-func processLocalDataset(cr *comv1alpha1.Dataset,rc *ReconcileDataset) (reconcile.Result, error) {
-	processLocalDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method","processLocalDataset")
+func processLocalDatasetCOS(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconcile.Result, error) {
+	processLocalDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processLocalDataset")
 
-    accessKeyID := cr.Spec.Local["accessKeyID"]
+	accessKeyID := cr.Spec.Local["accessKeyID"]
 	secretAccessKey := cr.Spec.Local["secretAccessKey"]
 	endpoint := cr.Spec.Local["endpoint"]
 	bucket := cr.Spec.Local["bucket"]
 	region := cr.Spec.Local["region"]
 
 	stringData := map[string]string{
-		"accessKeyID": accessKeyID,
+		"accessKeyID":     accessKeyID,
 		"secretAccessKey": secretAccessKey,
-		"endpoint": endpoint,
-		"bucket": bucket,
-		"region": region,
+		"endpoint":        endpoint,
+		"bucket":          bucket,
+		"region":          region,
 	}
 
 	labels := map[string]string{
@@ -135,15 +152,15 @@ func processLocalDataset(cr *comv1alpha1.Dataset,rc *ReconcileDataset) (reconcil
 	}
 	secretObj := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: cr.Name,
+			Name:      cr.Name,
 			Namespace: cr.Namespace,
-			Labels: labels,
+			Labels:    labels,
 		},
 		StringData: stringData,
 	}
 
 	if err := controllerutil.SetControllerReference(cr, secretObj, rc.scheme); err != nil {
-			return reconcile.Result{}, err
+		return reconcile.Result{}, err
 	}
 
 	found := &corev1.Secret{}
@@ -163,9 +180,9 @@ func processLocalDataset(cr *comv1alpha1.Dataset,rc *ReconcileDataset) (reconcil
 
 	newPVC := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: cr.Name,
+			Name:      cr.Name,
 			Namespace: cr.Namespace,
-			Labels: labels,
+			Labels:    labels,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -191,6 +208,102 @@ func processLocalDataset(cr *comv1alpha1.Dataset,rc *ReconcileDataset) (reconcil
 			return reconcile.Result{}, err
 		}
 		// Secrets created successfully - don't requeue
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	return reconcile.Result{}, nil
+}
+
+func processLocalDatasetNFS(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconcile.Result, error) {
+	processLocalDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processLocalDatasetNFS")
+	processLocalDatasetLogger.Info("Dataset type NFS")
+
+	server := cr.Spec.Local["server"]
+	share := cr.Spec.Local["share"]
+
+	labels := map[string]string{
+		"dataset": cr.Name,
+	}
+
+	storageClassName := "csi-nfs"
+	csiDriverName := "csi-nfsplugin"
+	csiVolumeHandle := "data-id"
+	csiVolumeAttributes := map[string]string{
+		"server": server,
+		"share": share,
+	}
+	pvSource := &corev1.CSIPersistentVolumeSource{
+		Driver: 		  csiDriverName,
+		VolumeHandle: 	  csiVolumeHandle,
+		VolumeAttributes: csiVolumeAttributes,
+	}
+
+	newPV := &corev1.PersistentVolume {
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name,
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.PersistentVolumeSpec {
+			StorageClassName: storageClassName,
+			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany},
+			Capacity: corev1.ResourceList{
+				corev1.ResourceStorage: resource.MustParse("5Gi"), //TODO: use proper size
+			},
+			PersistentVolumeSource: corev1.PersistentVolumeSource {
+				CSI: pvSource,
+			},
+		},
+	}
+
+	if err := controllerutil.SetControllerReference(cr, newPV, rc.scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// the csi-nfs plugin does not support dynamic provisioning so PV and PVC must be created manually
+	foundPV := &corev1.PersistentVolume{}
+	err := rc.client.Get(context.TODO(), types.NamespacedName{Name: newPV.Name, Namespace: newPV.Namespace}, foundPV)
+	if err != nil && errors.IsNotFound(err) {
+		processLocalDatasetLogger.Info("Creating new PV", "PV.Namespace", newPV.Namespace, "PV.Name", newPV.Name)
+		err = rc.client.Create(context.TODO(), newPV)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	newPVC := &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name,
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany},
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceStorage: resource.MustParse("5Gi"), //TODO: use proper size
+				},
+			},
+			StorageClassName: &storageClassName,
+			VolumeName: cr.Name,
+		},
+	}
+
+	if err := controllerutil.SetControllerReference(cr, newPVC, rc.scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	foundPVC := &corev1.PersistentVolumeClaim{}
+	err = rc.client.Get(context.TODO(), types.NamespacedName{Name: newPVC.Name, Namespace: newPVC.Namespace}, foundPVC)
+	if err != nil && errors.IsNotFound(err) {
+		processLocalDatasetLogger.Info("Creating new pvc", "PVC.Namespace", newPVC.Namespace, "PVC.Name", newPVC.Name)
+		err = rc.client.Create(context.TODO(), newPVC)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
