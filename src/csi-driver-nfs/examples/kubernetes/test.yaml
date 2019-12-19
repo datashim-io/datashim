@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: myapp-nfs
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce # Access modes for volumes is defined under Persistent Volumes
+  resources:
+    requests:
+      storage: 5Gi # volume size requested
+  selector:
+    matchExpressions:
+    - key: name
+      operator: In
+      values: ["my-nfs-share"]
