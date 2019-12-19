@@ -10,6 +10,11 @@ CSI_S3_IMAGE_TAG := dev-full
 CSI_S3_IMAGE := $(DOCKER_REGISTRY_COMPONENTS)/$(CSI_S3_IMAGE)
 CSI_S3_IMAGE := $(CSI_S3_IMAGE):$(CSI_S3_IMAGE_TAG)
 
+CSI_NFS_IMAGE := csi-nfs
+CSI_NFS_IMAGE_TAG := dev-full
+CSI_S3_IMAGE := $(DOCKER_REGISTRY_COMPONENTS)/$(CSI_NFS_IMAGE)
+CSI_NFS_IMAGE := $(CSI_NFS_IMAGE):$(CSI_NFS_IMAGE_TAG)
+
 BASE_EXTERNAL_PROVISIONER_IMAGE := csi-provisioner
 EXTERNAL_PROVISIONER_IMAGE := $(DOCKER_REGISTRY_SIDECARS)/$(BASE_EXTERNAL_PROVISIONER_IMAGE)
 EXTERNAL_PROVISIONER_IMAGE := $(EXTERNAL_PROVISIONER_IMAGE):$(EXTERNAL_PROVISIONER_TAG)
@@ -28,6 +33,7 @@ MAKE_ENV += EXTERNAL_PROVISIONER_IMAGE
 MAKE_ENV += EXTERNAL_ATTACHER_IMAGE
 MAKE_ENV += NODE_DRIVER_REGISTRAR_IMAGE
 MAKE_ENV += CSI_S3_IMAGE
+MAKE_ENV += CSI_NFS_IMAGE
 MAKE_ENV += DATASET_OPERATOR_IMAGE
 MAKE_ENV += DATASET_OPERATOR_NAMESPACE
 MAKE_ENV += DOCKER_REGISTRY_SECRET
@@ -36,6 +42,7 @@ MAKE_ENV += KEY_DIR
 SHELL_EXPORT := $(foreach v,$(MAKE_ENV),$(v)='$($(v))' )
 
 K8S_FILES += $(shell find ./src/csi-s3/deploy/kubernetes -maxdepth 1 -name '*.yaml')
+K8S_FILES += $(shell find ./src/csi-driver-nfs/deploy/kubernetes -maxdepth 1 -name '*.yaml')
 K8S_FILES += $(shell find ./src/dataset-operator/deploy -maxdepth 1 -name '*.yaml')
 K8S_FILES += $(shell find ./src/dataset-operator/deploy/crds -maxdepth 1 -name '*crd.yaml')
 
@@ -91,9 +98,11 @@ else
 endif
 ifeq ($(PULL_COMPONENTS), true)
 	@docker pull $(CSI_S3_IMAGE) ;\
+	docker pull $(CSI_NFS_IMAGE) ;\
 	docker pull $(DATASET_OPERATOR_IMAGE)
 else
 	$(call install_local,csi-s3,$(CSI_S3_IMAGE))
+	$(call install_local,csi-driver-nfs,$(CSI_NFS_IMAGE))
 	$(call install_local,dataset-operator,$(DATASET_OPERATOR_IMAGE))
 endif
 
@@ -113,6 +122,7 @@ minikube-load-containers: build-containers
 	$(call load_containers_minikube,external-provisioner,$(EXTERNAL_PROVISIONER_IMAGE))
 	$(call load_containers_minikube,node-driver-registrar,$(NODE_DRIVER_REGISTRAR_IMAGE))
 	$(call load_containers_minikube,csi-s3,$(CSI_S3_IMAGE))
+	$(call load_containers_minikube,csi-driver-nfs,$(CSI_NFS_IMAGE))
 	$(call load_containers_minikube,dataset-operator,$(DATASET_OPERATOR_IMAGE))
 
 minio-install:
