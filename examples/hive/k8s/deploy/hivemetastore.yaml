@@ -1,0 +1,40 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hivemetastore
+spec:
+  type: "NodePort"
+  selector:
+    app: hivemetastore
+  ports:
+    - port: 9083
+      targetPort: 9083
+      name: metastore
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hivemetastore
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hivemetastore
+  template:
+    metadata:
+      labels:
+        app: hivemetastore
+    spec:
+      containers:
+        - name: hivemetastore-container
+          image: ${HIVEMETASTORE_IMAGE}
+          imagePullPolicy: "IfNotPresent"
+          envFrom:
+            - secretRef:
+                name: s3-secret
+          ports:
+            - containerPort: 9083
+              name: metastore
+      imagePullSecrets:
+        - name: ${DOCKER_REGISTRY_SECRET}

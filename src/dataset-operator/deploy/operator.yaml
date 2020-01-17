@@ -18,7 +18,7 @@ spec:
           # Replace this with the built image name
           image: ${DATASET_OPERATOR_IMAGE}
           command:
-          - dataset-operator
+            - dataset-operator
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8443

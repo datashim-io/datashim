@@ -1,14 +1,15 @@
 module dataset-operator
 
 require (
-	github.com/NYTimes/gziphandler v1.0.1 // indirect
+	github.com/akolb1/gometastore v0.0.0-20181012003105-a6ffbeed8c1a
 	github.com/go-openapi/spec v0.19.0
-	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/operator-framework/operator-sdk v0.0.0-20190802125515-bc5cbd4b9481
 	github.com/spf13/pflag v1.0.3
+	github.com/srikumar003/gometastore v0.0.0-20200114133707-fed410b64f57 // indirect
 	k8s.io/api v0.0.0-20190612125737-db0771252981
 	k8s.io/apimachinery v0.0.0-20190612125636-6a5db36e93ad
 	k8s.io/client-go v11.0.0+incompatible
+	k8s.io/klog v0.3.1
 	k8s.io/kube-openapi v0.0.0-20190603182131-db7b694dc208
 	sigs.k8s.io/controller-runtime v0.1.12
 	sigs.k8s.io/controller-tools v0.1.10
@@ -31,4 +32,4 @@ replace (
 
 replace github.com/operator-framework/operator-sdk => github.com/operator-framework/operator-sdk v0.10.0
 
-replace git.apache.org/thrift.git => github.com/apache/thrift v0.12.0
+go 1.13

@@ -1,0 +1,51 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metastoredb
+  namespace: drlmcdlf
+spec:
+  type: "LoadBalancer"
+  ports:
+    - port: 5432
+  selector:
+    app: database
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: database
+  namespace: drlmcdlf
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database
+  serviceName: "metastoredb"
+  template:
+    metadata:
+      labels:
+        app: database
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:10
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: postgres-config
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgresdb
+  volumeClaimTemplates:
+  - metadata:
+      name: postgresdb
+    spec:
+      storageClassName: "managed-nfs-storage"
+      accessModes: 
+      - ReadWriteOnce 
+      resources:
+        requests:
+          storage: 10Gi
