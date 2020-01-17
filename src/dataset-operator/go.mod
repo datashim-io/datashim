@@ -1,7 +1,7 @@
 module dataset-operator
 
 require (
-	github.com/NYTimes/gziphandler v1.0.1 // indirect
+	github.com/akolb1/gometastore v0.0.0-20181012003105-a6ffbeed8c1a // indirect
 	github.com/go-openapi/spec v0.19.0
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/operator-framework/operator-sdk v0.0.0-20190802125515-bc5cbd4b9481
@@ -32,3 +32,5 @@ replace (
 replace github.com/operator-framework/operator-sdk => github.com/operator-framework/operator-sdk v0.10.0
 
 replace git.apache.org/thrift.git => github.com/apache/thrift v0.12.0
+
+go 1.13

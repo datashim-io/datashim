@@ -14,7 +14,7 @@ type DatasetSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 	// Conf map[string]string `json:"conf,omitempty"`
-	Local map[string]string `json:"local,omitempty"`
+	Local  map[string]string `json:"local,omitempty"`
 	Remote map[string]string `json:"remote,omitempty"`
 }
 

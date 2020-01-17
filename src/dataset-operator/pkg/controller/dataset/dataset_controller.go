@@ -2,6 +2,8 @@ package dataset
 
 import (
 	"context"
+	"strconv"
+
 	comv1alpha1 "dataset-operator/pkg/apis/com/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -102,48 +104,55 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 	reqLogger.Info("All good, proceed")
 
-	if (instance.Spec.Local != nil) {
-		result, err := processLocalDataset(instance,r)
-		if(err!=nil) {
-			return result,err
+	if instance.Spec.Local != nil {
+		result, err := processLocalDataset(instance, r)
+		if err != nil {
+			return result, err
 		}
 	}
 
+	if instance.Spec.Remote != nil {
+		result, err := processRemoteDataset(instance, r)
+		if err != nil {
+			return result, err
+		}
+	}
 
 	return reconcile.Result{}, nil
 }
 
-func processLocalDataset(cr *comv1alpha1.Dataset,rc *ReconcileDataset) (reconcile.Result, error) {
-	processLocalDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method","processLocalDataset")
+func processLocalDataset(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconcile.Result, error) {
+	processLocalDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processLocalDataset")
 
-    accessKeyID := cr.Spec.Local["accessKeyID"]
+	accessKeyID := cr.Spec.Local["accessKeyID"]
 	secretAccessKey := cr.Spec.Local["secretAccessKey"]
 	endpoint := cr.Spec.Local["endpoint"]
 	bucket := cr.Spec.Local["bucket"]
 	region := cr.Spec.Local["region"]
 
 	stringData := map[string]string{
-		"accessKeyID": accessKeyID,
+		"accessKeyID":     accessKeyID,
 		"secretAccessKey": secretAccessKey,
-		"endpoint": endpoint,
-		"bucket": bucket,
-		"region": region,
+		"endpoint":        endpoint,
+		"bucket":          bucket,
+		"region":          region,
 	}
 
 	labels := map[string]string{
 		"dataset": cr.Name,
 	}
+
 	secretObj := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: cr.Name,
+			Name:      cr.Name,
 			Namespace: cr.Namespace,
-			Labels: labels,
+			Labels:    labels,
 		},
 		StringData: stringData,
 	}
 
 	if err := controllerutil.SetControllerReference(cr, secretObj, rc.scheme); err != nil {
-			return reconcile.Result{}, err
+		return reconcile.Result{}, err
 	}
 
 	found := &corev1.Secret{}
@@ -163,9 +172,9 @@ func processLocalDataset(cr *comv1alpha1.Dataset,rc *ReconcileDataset) (reconcil
 
 	newPVC := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: cr.Name,
+			Name:      cr.Name,
 			Namespace: cr.Namespace,
-			Labels: labels,
+			Labels:    labels,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -196,4 +205,112 @@ func processLocalDataset(cr *comv1alpha1.Dataset,rc *ReconcileDataset) (reconcil
 	}
 
 	return reconcile.Result{}, nil
+}
+
+func processRemoteDataset(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconcile.Result, error) {
+
+	processRemoteDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processRemoteDataset")
+
+	entryType = cr.Spec.Remote["type"]
+
+	accessKeyID := cr.Spec.Remote["accessKeyID"]
+	secretAccessKey := cr.Spec.Remote["secretAccessKey"]
+	endpoint := cr.Spec.Remote["endpoint"]
+	region := cr.Spec.Remote["region"]
+
+	//for the time being we'll assume that everything is the same, except for the buckets.
+	stringData := map[string]string{
+		"accessKeyID":     accessKeyID,
+		"secretAccessKey": secretAccessKey,
+		"endpoint":        endpoint,
+		"region":          region,
+	}
+
+	labels := map[string]string{
+		"dataset": cr.Name,
+	}
+
+	secretObj := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name,
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		StringData: stringData,
+	}
+
+	if err := controllerutil.SetControllerReference(cr, secretObj, rc.scheme); err != nil {
+		processRemoteDatasetLogger.Error("Could not set secret object for dataset","name",cr.Name)
+		return reconcile.Result{}, err
+	}
+
+	found := &corev1.Secret{}
+	err := rc.client.Get(context.TODO(), types.NamespacedName{Name: secretObj.Name, Namespace: secretObj.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		processLocalDatasetLogger.Info("Creating new secrets", "Secret.Namespace", secretObj.Namespace, "Secret.Name", secretObj.Name)
+		err = rc.client.Create(context.TODO(), secretObj)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		// Secrets created successfully - don't requeue
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	switch entryType {
+	case "CatalogEntry":
+		catalogUri := cr.Spec.Remote["catalogURI"]
+		table := cr.Spec.Remote["table"]
+		bukits, err := processCatalogEntry(catalogUri, table)
+
+		if err != nil {
+			processRemoteDatasetLogger.Error("Error in querying metastore","catalogURI",catalogUri, "table", table)
+			return reconcile.Result{}, err			
+		} if len(bukits) == 0 {
+			processRemoteDatasetLogger.Error("0 records obtained from the catalog ", "catalogURI",catalogUri, "table", table)
+			return reconcile.Result{}, errors.New("No records obtained from the catalog")
+		}
+
+		bucketData := make(map[string]string)
+		bucketData["catalogURI"] = catalogUri
+		bucketData["table"] = table
+		bucketData["numBuckets"] = strconv.Itoa(len(bukits))
+		for i, bkt := range bukits{
+			bucketData["bucket."+strconv.Itoa(i)] = bkt
+		}
+		
+		configMapObject := &coreV1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      cr.Name,
+				Namespace: cr.Namespace,
+				Labels:    labels,
+			},
+			Data: bucketData,
+		}
+
+		if err := controllerutil.SetControllerReference(cr, configMapObject, rc.scheme); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		foundConfigMap := &coreV1.ConfigMap{}
+		err = rc.client.Get(context.TODO(), types.NamespacedName{Name: configMapObject.Name, Namespace: configMapObject.Namespace}, foundConfigMap)
+		
+		if err != nil && errors.IsNotFound(err) {
+			processRemoteDatasetLogger.Info("Creating new configMap", "configMap.namespace", 
+											configMapObject.Namespace, "PVC.Name", configMapObject.Name)
+			err = rc.client.Create(context.TODO(), configMapObject)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			// configMap created successfully - don't requeue
+		} else if err != nil {
+			return reconcile.Result{}, err
+		}
+
+	default:
+		err := errors.New("Unsupported dataset entry type")
+		return reconcile.Result{}, err
+	}
+
+	return reconcile.Result{}, err
 }

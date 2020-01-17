@@ -1,5 +1,5 @@
-DOCKER_REGISTRY_COMPONENTS := the_registry_to_use_for_components
-DOCKER_REGISTRY_SECRET := your_already_installed_secrets
+DOCKER_REGISTRY_COMPONENTS := hermes-cluster.icp:8500/datasets
+DOCKER_REGISTRY_SECRET := regcred
 # you need something like this:
 # kubectl create secret generic regcred -n NAMESPACE_OF_OPERATOR --from-file=.dockerconfigjson=$(echo $HOME)/.docker/config.json --type=kubernetes.io/dockerconfigjson
 PULL_COMPONENTS := false
@@ -8,8 +8,8 @@ DOCKER_REGISTRY_SIDECARS := quay.io/k8scsi
 # if you pull from public use quay.io/k8scsi
 PULL_SIDECARS := true
 
-DATASET_OPERATOR_NAMESPACE := default
-NAMESPACES_TO_MONITOR := default
+DATASET_OPERATOR_NAMESPACE := datasets
+NAMESPACES_TO_MONITOR := datasets
 
 # if you are building use master, if you are pulling use latest
 EXTERNAL_ATTACHER_TAG := v1.2.1

@@ -1,2 +1,4 @@
 _tmp
 .idea
+*.sw[po]
+
