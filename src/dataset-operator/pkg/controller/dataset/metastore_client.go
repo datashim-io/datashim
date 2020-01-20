@@ -99,6 +99,7 @@ func processCatalogEntry(catalogUri string, table string) ([]string, error) {
 		}
 		for _, part := range tablePartitions {
 			loc := part.GetSd().GetLocation()
+			catalogLogger.Info("Got a location: ", "location", loc)
 			if strings.HasPrefix(loc, "s3a:") {
 				locations = append(locations, loc)
 			}
