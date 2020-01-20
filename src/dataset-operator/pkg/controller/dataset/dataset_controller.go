@@ -211,8 +211,7 @@ func processRemoteDataset(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconc
 
 	processRemoteDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processRemoteDataset")
 
-	entryType = cr.Spec.Remote["type"]
-
+	entryType := cr.Spec.Remote["type"]
 	accessKeyID := cr.Spec.Remote["accessKeyID"]
 	secretAccessKey := cr.Spec.Remote["secretAccessKey"]
 	endpoint := cr.Spec.Remote["endpoint"]
@@ -240,14 +239,14 @@ func processRemoteDataset(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconc
 	}
 
 	if err := controllerutil.SetControllerReference(cr, secretObj, rc.scheme); err != nil {
-		processRemoteDatasetLogger.Error("Could not set secret object for dataset","name",cr.Name)
+		processRemoteDatasetLogger.Error(err, "Could not set secret object for dataset", "name", cr.Name)
 		return reconcile.Result{}, err
 	}
 
 	found := &corev1.Secret{}
 	err := rc.client.Get(context.TODO(), types.NamespacedName{Name: secretObj.Name, Namespace: secretObj.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		processLocalDatasetLogger.Info("Creating new secrets", "Secret.Namespace", secretObj.Namespace, "Secret.Name", secretObj.Name)
+		processRemoteDatasetLogger.Info("Creating new secrets", "Secret.Namespace", secretObj.Namespace, "Secret.Name", secretObj.Name)
 		err = rc.client.Create(context.TODO(), secretObj)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -264,22 +263,22 @@ func processRemoteDataset(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconc
 		bukits, err := processCatalogEntry(catalogUri, table)
 
 		if err != nil {
-			processRemoteDatasetLogger.Error("Error in querying metastore","catalogURI",catalogUri, "table", table)
-			return reconcile.Result{}, err			
-		} if len(bukits) == 0 {
-			processRemoteDatasetLogger.Error("0 records obtained from the catalog ", "catalogURI",catalogUri, "table", table)
-			return reconcile.Result{}, errors.New("No records obtained from the catalog")
+			processRemoteDatasetLogger.Error(err, "Error in querying metastore", "catalogURI", catalogUri, "table", table)
+			return reconcile.Result{}, err
+		} else if len(bukits) == 0 {
+			processRemoteDatasetLogger.Error(nil, "0 records obtained from the catalog ", "catalogURI", catalogUri, "table", table)
+			return reconcile.Result{}, errors.NewBadRequest("No records obtained from the catalog")
 		}
 
 		bucketData := make(map[string]string)
 		bucketData["catalogURI"] = catalogUri
 		bucketData["table"] = table
 		bucketData["numBuckets"] = strconv.Itoa(len(bukits))
-		for i, bkt := range bukits{
+		for i, bkt := range bukits {
 			bucketData["bucket."+strconv.Itoa(i)] = bkt
 		}
-		
-		configMapObject := &coreV1.ConfigMap{
+
+		configMapObject := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cr.Name,
 				Namespace: cr.Namespace,
@@ -292,12 +291,12 @@ func processRemoteDataset(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconc
 			return reconcile.Result{}, err
 		}
 
-		foundConfigMap := &coreV1.ConfigMap{}
+		foundConfigMap := &corev1.ConfigMap{}
 		err = rc.client.Get(context.TODO(), types.NamespacedName{Name: configMapObject.Name, Namespace: configMapObject.Namespace}, foundConfigMap)
-		
+
 		if err != nil && errors.IsNotFound(err) {
-			processRemoteDatasetLogger.Info("Creating new configMap", "configMap.namespace", 
-											configMapObject.Namespace, "PVC.Name", configMapObject.Name)
+			processRemoteDatasetLogger.Info("Creating new configMap", "configMap.namespace",
+				configMapObject.Namespace, "PVC.Name", configMapObject.Name)
 			err = rc.client.Create(context.TODO(), configMapObject)
 			if err != nil {
 				return reconcile.Result{}, err
@@ -308,7 +307,7 @@ func processRemoteDataset(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconc
 		}
 
 	default:
-		err := errors.New("Unsupported dataset entry type")
+		err := errors.NewBadRequest("Unsupported dataset entry type")
 		return reconcile.Result{}, err
 	}
 
