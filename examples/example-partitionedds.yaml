@@ -2,12 +2,12 @@
 apiVersion: com.ie.ibm.hpsys/v1alpha1
 kind: Dataset
 metadata:
-  name: hiveexample2
+  name: partitionedds
 spec:
   remote:
     type: "CatalogEntry"
     catalogURI: "192.168.64.6:32070"
-    table: "default/hddata"
+    table: "default/bbdata"
     accessKeyID: "e7f3903c10bc4e86b36ed2d10516d3a2"
     secretAccessKey: "0478778757566c107905109e5e3de8dab3129e94632a6ab6"
     endpoint: "s3.eu-de.cloud-object-storage.appdomain.cloud"

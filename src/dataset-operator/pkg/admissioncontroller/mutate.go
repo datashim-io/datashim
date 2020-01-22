@@ -47,11 +47,11 @@ func Mutate(body []byte) ([]byte, error) {
 
 		for k, v := range pod.Labels {
 			fmt.Printf("key[%s] value[%s]\n", k, v)
-			if(strings.HasPrefix(k, prefixLabels)){
+			if strings.HasPrefix(k, prefixLabels) {
 				datasetNameArray := strings.Split(k, ".")
-				datasetId := strings.Join([]string{datasetNameArray[0],datasetNameArray[1]},".")
-				if _, ok := datasetInfo[datasetId]; ok==false {
-					datasetInfo[datasetId]=map[string]string{datasetNameArray[2]:v}
+				datasetId := strings.Join([]string{datasetNameArray[0], datasetNameArray[1]}, ".")
+				if _, ok := datasetInfo[datasetId]; ok == false {
+					datasetInfo[datasetId] = map[string]string{datasetNameArray[2]: v}
 				} else {
 					datasetInfo[datasetId][datasetNameArray[2]] = v
 				}
@@ -75,39 +75,44 @@ func Mutate(body []byte) ([]byte, error) {
 
 		for k, v := range datasetInfo {
 			fmt.Printf("key[%s] value[%s]\n", k, v)
-			if(v["useas"]=="mount"){
+			if v["useas"] == "mount" {
 				patch := map[string]interface{}{
-					"op":    "add",
-					"path":  "/spec/volumes/"+fmt.Sprint(existing_volumes_id),
+					"op":   "add",
+					"path": "/spec/volumes/" + fmt.Sprint(existing_volumes_id),
 					"value": map[string]interface{}{
-						"name": v["id"],
+						"name":                  v["id"],
 						"persistentVolumeClaim": map[string]string{"claimName": v["id"]},
 					},
 				}
 				datasets_tomount = append(datasets_tomount, v["id"])
 				p = append(p, patch)
-				existing_volumes_id+=1
-			}
+				existing_volumes_id += 1
+			} /*else (if v["useas"]=="configmap"){
+				path := map[string]interface{}{
+					"op": "add",
+					"path": "/spec/containers/"++"envFrom/",
+				}
+			}*/
 		}
 
 		containers := pod.Spec.Containers
-		for container_idx,container := range containers{
+		for container_idx, container := range containers {
 			mounts := container.VolumeMounts
 			mount_names := []string{}
-			for _, mount := range mounts{
+			for _, mount := range mounts {
 				mount_name := mount.Name
-				mount_names = append(mount_names,mount_name)
+				mount_names = append(mount_names, mount_name)
 			}
 			mount_idx := len(mounts)
-			for _, dataset_tomount := range datasets_tomount{
-				exists, _ := in_array(dataset_tomount,mount_names)
-				if(exists == false){
+			for _, dataset_tomount := range datasets_tomount {
+				exists, _ := in_array(dataset_tomount, mount_names)
+				if exists == false {
 					patch := map[string]interface{}{
-						"op":    "add",
-						"path":  "/spec/containers/"+fmt.Sprint(container_idx)+"/volumeMounts/"+fmt.Sprint(mount_idx),
+						"op":   "add",
+						"path": "/spec/containers/" + fmt.Sprint(container_idx) + "/volumeMounts/" + fmt.Sprint(mount_idx),
 						"value": map[string]interface{}{
-							"name": dataset_tomount,
-							"mountPath": "/mnt/datasets/"+dataset_tomount,
+							"name":      dataset_tomount,
+							"mountPath": "/mnt/datasets/" + dataset_tomount,
 						},
 					}
 					p = append(p, patch)

@@ -2,6 +2,7 @@ package dataset
 
 import (
 	"errors"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -85,10 +86,21 @@ func processCatalogEntry(catalogUri string, table string) ([]string, error) {
 		//Get the location from the table properties, if present.
 
 		table, _ := hiveclient.GetTable(dbName, tableName)
-		loc := table.GetSd().GetLocation()
-		catalogLogger.Info("Location for this table is " + loc)
-		if strings.HasPrefix(loc, "s3a:") {
-			locations = append(locations, loc)
+		loc, err := url.Parse(table.GetSd().GetLocation())
+
+		catalogLogger.Info("Got a location: ", "location", loc)
+
+		var proto, bucket string
+		if err != nil {
+			proto = ""
+			bucket = table.GetSd().GetLocation()
+		} else {
+			proto = loc.Scheme
+			bucket = loc.Host
+		}
+		if strings.HasPrefix(proto, "s3") {
+
+			locations = append(locations, bucket)
 		}
 	} else {
 		tablePartitions, err := hiveclient.GetPartitionsByNames(dbName, tableName, tblPartNames)
@@ -98,11 +110,23 @@ func processCatalogEntry(catalogUri string, table string) ([]string, error) {
 			return nil, k8serrors.NewBadRequest("Could not look up Partition info")
 		}
 		for _, part := range tablePartitions {
-			loc := part.GetSd().GetLocation()
+
+			loc, err := url.Parse(part.GetSd().GetLocation())
 			catalogLogger.Info("Got a location: ", "location", loc)
-			if strings.HasPrefix(loc, "s3a:") {
-				locations = append(locations, loc)
+
+			var proto, bucket string
+			if err != nil {
+				proto = ""
+				bucket = part.GetSd().GetLocation()
+			} else {
+				proto = loc.Scheme
+				bucket = loc.Host
 			}
+			if strings.HasPrefix(proto, "s3") {
+
+				locations = append(locations, bucket)
+			}
+
 		}
 
 	}

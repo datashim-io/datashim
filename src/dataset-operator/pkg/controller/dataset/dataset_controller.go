@@ -212,54 +212,32 @@ func processRemoteDataset(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconc
 	processRemoteDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processRemoteDataset")
 
 	entryType := cr.Spec.Remote["type"]
-	accessKeyID := cr.Spec.Remote["accessKeyID"]
-	secretAccessKey := cr.Spec.Remote["secretAccessKey"]
-	endpoint := cr.Spec.Remote["endpoint"]
-	region := cr.Spec.Remote["region"]
-
-	//for the time being we'll assume that everything is the same, except for the buckets.
-	stringData := map[string]string{
-		"accessKeyID":     accessKeyID,
-		"secretAccessKey": secretAccessKey,
-		"endpoint":        endpoint,
-		"region":          region,
-	}
-
-	labels := map[string]string{
-		"dataset": cr.Name,
-	}
-
-	secretObj := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name,
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		StringData: stringData,
-	}
-
-	if err := controllerutil.SetControllerReference(cr, secretObj, rc.scheme); err != nil {
-		processRemoteDatasetLogger.Error(err, "Could not set secret object for dataset", "name", cr.Name)
-		return reconcile.Result{}, err
-	}
-
-	found := &corev1.Secret{}
-	err := rc.client.Get(context.TODO(), types.NamespacedName{Name: secretObj.Name, Namespace: secretObj.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
-		processRemoteDatasetLogger.Info("Creating new secrets", "Secret.Namespace", secretObj.Namespace, "Secret.Name", secretObj.Name)
-		err = rc.client.Create(context.TODO(), secretObj)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-		// Secrets created successfully - don't requeue
-	} else if err != nil {
-		return reconcile.Result{}, err
-	}
-
 	switch entryType {
 	case "CatalogEntry":
-		catalogUri := cr.Spec.Remote["catalogURI"]
-		table := cr.Spec.Remote["table"]
+		catalogUri, ok := cr.Spec.Remote["catalogURI"]
+		if !ok {
+			processRemoteDatasetLogger.Error(nil, "no catalogURI provided")
+			return reconcile.Result{}, errors.NewBadRequest("no catalogURI provided")
+		}
+		table, ok := cr.Spec.Remote["table"]
+		if !ok {
+			processRemoteDatasetLogger.Error(nil, "no table provided for lookup")
+			return reconcile.Result{}, errors.NewBadRequest("no table provided for lookup")
+		}
+
+		var mountAllowed bool
+		var err error
+		mountAllowedValue, ok := cr.Spec.Remote["mountAllowed"]
+		if !ok {
+			processRemoteDatasetLogger.Info("No mount allowed")
+			mountAllowed = false
+		} else {
+			mountAllowed, err = strconv.ParseBool(mountAllowedValue)
+			if err != nil {
+				mountAllowed = false
+			}
+		}
+
 		bukits, err := processCatalogEntry(catalogUri, table)
 
 		if err != nil {
@@ -276,6 +254,10 @@ func processRemoteDataset(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconc
 		bucketData["numBuckets"] = strconv.Itoa(len(bukits))
 		for i, bkt := range bukits {
 			bucketData["bucket."+strconv.Itoa(i)] = bkt
+		}
+
+		labels := map[string]string{
+			"dataset": cr.Name,
 		}
 
 		configMapObject := &corev1.ConfigMap{
@@ -306,10 +288,109 @@ func processRemoteDataset(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconc
 			return reconcile.Result{}, err
 		}
 
+		//Supporting only a single location for the time being
+		if mountAllowed {
+			processRemoteDatasetLogger.Info("Creating a PVC for a single bucket", "bucketName", bucketData["bucket.0"])
+
+			storageClassName := "csi-s3"
+
+			processRemoteDatasetLogger.Info("Creating a Secret for a single bucket", "bucketName", bucketData["bucket.0"])
+
+			if _, err := createSecretForBucket(bucketData["bucket.0"], cr, rc); err != nil {
+				processRemoteDatasetLogger.Error(err, "Creating Secret failed", "bucketName", bucketData["bucket.0"])
+				return reconcile.Result{}, errors.NewServiceUnavailable("Unable to initialise dataset")
+			}
+
+			newPVC := &corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      cr.Name,
+					Namespace: cr.Namespace,
+					Labels:    labels,
+				},
+				Spec: corev1.PersistentVolumeClaimSpec{
+					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceStorage: resource.MustParse("5Gi"),
+						},
+					},
+					StorageClassName: &storageClassName,
+				},
+			}
+
+			if err := controllerutil.SetControllerReference(cr, newPVC, rc.scheme); err != nil {
+				return reconcile.Result{}, err
+			}
+
+			foundPVC := &corev1.PersistentVolumeClaim{}
+			err = rc.client.Get(context.TODO(), types.NamespacedName{Name: newPVC.Name, Namespace: newPVC.Namespace}, foundPVC)
+			if err != nil && errors.IsNotFound(err) {
+				processRemoteDatasetLogger.Info("Creating new pvc", "PVC.Namespace", newPVC.Namespace, "PVC.Name", newPVC.Name)
+				err = rc.client.Create(context.TODO(), newPVC)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+				// Secrets created successfully - don't requeue
+			} else if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+
 	default:
 		err := errors.NewBadRequest("Unsupported dataset entry type")
 		return reconcile.Result{}, err
 	}
 
-	return reconcile.Result{}, err
+	return reconcile.Result{}, nil
+}
+
+func createSecretForBucket(bucket string, cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconcile.Result, error) {
+
+	createSecretForBucketLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "createSecretForBucket")
+
+	accessKeyID := cr.Spec.Remote["accessKeyID"]
+	secretAccessKey := cr.Spec.Remote["secretAccessKey"]
+	endpoint := cr.Spec.Remote["endpoint"]
+	region := cr.Spec.Remote["region"]
+
+	stringData := map[string]string{
+		"accessKeyID":     accessKeyID,
+		"secretAccessKey": secretAccessKey,
+		"endpoint":        endpoint,
+		"bucket":          bucket,
+		"region":          region,
+	}
+
+	labels := map[string]string{
+		"dataset": cr.Name,
+	}
+
+	secretObj := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name,
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		StringData: stringData,
+	}
+
+	if err := controllerutil.SetControllerReference(cr, secretObj, rc.scheme); err != nil {
+		createSecretForBucketLogger.Error(err, "Could not set secret object for dataset", "name", cr.Name)
+		return reconcile.Result{}, err
+	}
+
+	found := &corev1.Secret{}
+	err := rc.client.Get(context.TODO(), types.NamespacedName{Name: secretObj.Name, Namespace: secretObj.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		createSecretForBucketLogger.Info("Creating new secrets", "Secret.Namespace", secretObj.Namespace, "Secret.Name", secretObj.Name)
+		err = rc.client.Create(context.TODO(), secretObj)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		// Secrets created successfully - don't requeue
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	return reconcile.Result{}, nil
 }

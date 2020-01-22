@@ -19,7 +19,7 @@ EXTERNAL_PROVISIONER_TAG := v1.4.0-rc1
 NODE_DRIVER_REGISTRAR_TAG := v1.1.0
 #working in ppc64le v1.1.0
 
-minikube-uninstall: minio-uninstall undeployment
+minikube-uninstall:  undeployment
 
 undeployment:
 	@for file in $(K8S_FILES); do \
@@ -39,7 +39,7 @@ deployment: keys-installation
 		kubectl label namespace $$namespace monitor-pods-datasets=enabled ;\
 	done
 
-minikube-install: base minio-install minikube-load-containers keys-installation deployment
+minikube-install: base minikube-load-containers keys-installation deployment
 
 kubernetes-install: base build-containers push-containers keys-installation deployment
 
