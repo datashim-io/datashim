@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: nginx
+  name: singledspod
   namespace: drlmcdlf
   labels:
     dataset.0.id: "singleds"

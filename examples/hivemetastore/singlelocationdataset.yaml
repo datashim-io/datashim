@@ -7,7 +7,7 @@ metadata:
 spec:
   remote:
     type: "CatalogEntry"
-    catalogURI: "192.168.64.6:32070"
+    catalogURI: "192.168.64.7:30821"
     table: "default/hddata"
     accessKeyID: "e7f3903c10bc4e86b36ed2d10516d3a2"
     secretAccessKey: "0478778757566c107905109e5e3de8dab3129e94632a6ab6"

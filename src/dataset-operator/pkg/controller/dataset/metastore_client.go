@@ -136,5 +136,9 @@ func processCatalogEntry(catalogUri string, table string) ([]string, error) {
 
 func getBucketFromS3Uri(loc *url.URL) string {
 
-	return strings.Join([]string{loc.Host, loc.Path}, "")
+	bucket := strings.Join([]string{loc.Host, loc.Path}, "")
+	if strings.HasSuffix(bucket, "/") {
+		bucket = strings.TrimRight(bucket, "/")
+	}
+	return bucket
 }
