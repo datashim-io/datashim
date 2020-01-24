@@ -96,10 +96,10 @@ func processCatalogEntry(catalogUri string, table string) ([]string, error) {
 			bucket = table.GetSd().GetLocation()
 		} else {
 			proto = loc.Scheme
-			bucket = loc.Host
 		}
 		if strings.HasPrefix(proto, "s3") {
 
+			bucket = getBucketFromS3Uri(loc)
 			locations = append(locations, bucket)
 		}
 	} else {
@@ -120,7 +120,7 @@ func processCatalogEntry(catalogUri string, table string) ([]string, error) {
 				bucket = part.GetSd().GetLocation()
 			} else {
 				proto = loc.Scheme
-				bucket = loc.Host
+				bucket = getBucketFromS3Uri(loc)
 			}
 			if strings.HasPrefix(proto, "s3") {
 
@@ -132,4 +132,9 @@ func processCatalogEntry(catalogUri string, table string) ([]string, error) {
 	}
 
 	return locations, nil
+}
+
+func getBucketFromS3Uri(loc *url.URL) string {
+
+	return strings.Join([]string{loc.Host, loc.Path}, "")
 }

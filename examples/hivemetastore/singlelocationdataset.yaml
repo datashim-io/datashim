@@ -2,7 +2,7 @@
 apiVersion: com.ie.ibm.hpsys/v1alpha1
 kind: Dataset
 metadata:
-  name: singlelocds
+  name: singleds
   namespace: drlmcdlf
 spec:
   remote:

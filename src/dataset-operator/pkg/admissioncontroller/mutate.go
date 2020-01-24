@@ -46,7 +46,7 @@ func Mutate(body []byte) ([]byte, error) {
 		datasetInfo := map[string]map[string]string{}
 
 		for k, v := range pod.Labels {
-			fmt.Printf("key[%s] value[%s]\n", k, v)
+			log.Printf("key[%s] value[%s]\n", k, v)
 			if strings.HasPrefix(k, prefixLabels) {
 				datasetNameArray := strings.Split(k, ".")
 				datasetId := strings.Join([]string{datasetNameArray[0], datasetNameArray[1]}, ".")
@@ -74,25 +74,34 @@ func Mutate(body []byte) ([]byte, error) {
 		p := []map[string]interface{}{}
 
 		for k, v := range datasetInfo {
-			fmt.Printf("key[%s] value[%s]\n", k, v)
-			if v["useas"] == "mount" {
-				patch := map[string]interface{}{
-					"op":   "add",
-					"path": "/spec/volumes/" + fmt.Sprint(existing_volumes_id),
-					"value": map[string]interface{}{
-						"name":                  v["id"],
-						"persistentVolumeClaim": map[string]string{"claimName": v["id"]},
+			log.Printf("key[%s] value[%s]\n", k, v)
+			patch := map[string]interface{}{
+				"op":   "add",
+				"path": "/spec/volumes/" + fmt.Sprint(existing_volumes_id),
+			}
+
+			switch v["useas"] {
+			case "mount":
+				patch["value"] = map[string]interface{}{
+					"name":                  v["id"],
+					"persistentVolumeClaim": map[string]string{"claimName": v["id"]},
+				}
+			case "configmap":
+				//by default, we will mount a config map inside the containers.
+				fallthrough
+			default:
+				//We will mount the configmap as a volume as well
+				patch["value"] = map[string]interface{}{
+					"name": v["id"],
+					"configMap": map[string]string{
+						"name": v["id"],
 					},
 				}
-				datasets_tomount = append(datasets_tomount, v["id"])
-				p = append(p, patch)
-				existing_volumes_id += 1
-			} /*else (if v["useas"]=="configmap"){
-				path := map[string]interface{}{
-					"op": "add",
-					"path": "/spec/containers/"++"envFrom/",
-				}
-			}*/
+			}
+
+			datasets_tomount = append(datasets_tomount, v["id"])
+			p = append(p, patch)
+			existing_volumes_id += 1
 		}
 
 		containers := pod.Spec.Containers
@@ -104,6 +113,7 @@ func Mutate(body []byte) ([]byte, error) {
 				mount_names = append(mount_names, mount_name)
 			}
 			mount_idx := len(mounts)
+
 			for _, dataset_tomount := range datasets_tomount {
 				exists, _ := in_array(dataset_tomount, mount_names)
 				if exists == false {

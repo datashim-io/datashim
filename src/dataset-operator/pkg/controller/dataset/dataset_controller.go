@@ -217,6 +217,9 @@ func processRemoteDataset(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconc
 		catalogUri, ok := cr.Spec.Remote["catalogURI"]
 		if !ok {
 			processRemoteDatasetLogger.Error(nil, "no catalogURI provided")
+			// TODO We need to look up hivemetastore service endpoint in the cluster
+			//foundEndpoints = []corev1.Endpoints{}
+			//foundEndpoints = rc.Client.Get(context.TODO(), types.
 			return reconcile.Result{}, errors.NewBadRequest("no catalogURI provided")
 		}
 		table, ok := cr.Spec.Remote["table"]
