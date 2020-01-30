@@ -70,38 +70,34 @@ func Mutate(body []byte) ([]byte, error) {
 
 		existing_volumes_id := len(pod.Spec.Volumes)
 		datasets_tomount := []string{}
+		configs_toinject := []string{}
 
 		p := []map[string]interface{}{}
 
 		for k, v := range datasetInfo {
 			log.Printf("key[%s] value[%s]\n", k, v)
-			patch := map[string]interface{}{
-				"op":   "add",
-				"path": "/spec/volumes/" + fmt.Sprint(existing_volumes_id),
-			}
 
 			switch v["useas"] {
 			case "mount":
+				patch := map[string]interface{}{
+					"op":   "add",
+					"path": "/spec/volumes/" + fmt.Sprint(existing_volumes_id),
+				}
 				patch["value"] = map[string]interface{}{
 					"name":                  v["id"],
 					"persistentVolumeClaim": map[string]string{"claimName": v["id"]},
 				}
+				datasets_tomount = append(datasets_tomount, v["id"])
+				p = append(p, patch)
+				existing_volumes_id += 1
+
 			case "configmap":
 				//by default, we will mount a config map inside the containers.
 				fallthrough
 			default:
-				//We will mount the configmap as a volume as well
-				patch["value"] = map[string]interface{}{
-					"name": v["id"],
-					"configMap": map[string]string{
-						"name": v["id"],
-					},
-				}
+				configs_toinject = append(configs_toinject, v["id"])
 			}
 
-			datasets_tomount = append(datasets_tomount, v["id"])
-			p = append(p, patch)
-			existing_volumes_id += 1
 		}
 
 		containers := pod.Spec.Containers
@@ -129,6 +125,47 @@ func Mutate(body []byte) ([]byte, error) {
 					mount_idx += 1
 				}
 			}
+
+			var values []interface{}
+			// if there are no configs to inject, then do no harm.
+			if len(configs_toinject) != 0 {
+				for _, config_toinject := range configs_toinject {
+					//TODO: Check if the configmap reference exists in the API server
+
+					configmap_ref := map[string]interface{}{
+						"prefix": config_toinject,
+						"configMapRef": map[string]interface{}{
+							"name": config_toinject,
+						},
+					}
+					values = append(values, configmap_ref)
+				}
+
+				//If there are no config maps already referred in spec, then initialise a slice variable
+				if container.EnvFrom == nil || len(container.EnvFrom) == 0 {
+					// In this case, the envFrom path does not exist in the PodSpec. We are creating
+					// (initialising) this path with an array of configMapRef (RFC 6902)
+					log.Printf("there ")
+					patch := map[string]interface{}{
+						"op":    "add",
+						"path":  "/spec/containers/" + fmt.Sprint(container_idx) + "/envFrom",
+						"value": values,
+					}
+					p = append(p, patch)
+				} else {
+					// In this case, the envFrom path does exist in the PodSpec. So, we just append to
+					// the existing array (Notice the path value)
+					for _, val := range values {
+						patch := map[string]interface{}{
+							"op":    "add",
+							"path":  "/spec/containers/" + fmt.Sprint(container_idx) + "/envFrom/-",
+							"value": val,
+						}
+						p = append(p, patch)
+					}
+				}
+			}
+
 		}
 
 		resp.Patch, err = json.Marshal(p)
