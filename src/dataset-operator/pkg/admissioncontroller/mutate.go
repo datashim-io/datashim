@@ -141,7 +141,6 @@ func Mutate(body []byte) ([]byte, error) {
 					values = append(values, configmap_ref)
 				}
 
-				//If there are no config maps already referred in spec, then initialise a slice variable
 				if container.EnvFrom == nil || len(container.EnvFrom) == 0 {
 					// In this case, the envFrom path does not exist in the PodSpec. We are creating
 					// (initialising) this path with an array of configMapRef (RFC 6902)

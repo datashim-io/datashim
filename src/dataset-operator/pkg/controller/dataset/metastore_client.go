@@ -14,11 +14,7 @@ import (
 
 var catalogLogger = logf.Log.WithName("metastore_client")
 
-func processCatalogEntry(catalogUri string, table string) ([]string, error) {
-
-	catalogLogger := log.WithValues("catalogUri", catalogUri)
-	catalogLogger.Info("Querying Catalog " + catalogUri)
-
+func parseCatalogUri(catalogUri string) (string, int, error) {
 	catHostPort := strings.Split(catalogUri, ":")
 
 	//if no port is given, assume standard Hive Metastore Port of 9083
@@ -32,9 +28,23 @@ func processCatalogEntry(catalogUri string, table string) ([]string, error) {
 		catPort, _ = strconv.Atoi(catHostPort[1])
 	} else {
 		catalogLogger.Error(nil, "CatalogURI cannot be parsed.. quitting")
-		return nil, k8serrors.NewBadRequest("CatalogURI is in incorrect format")
+		return "", 0, k8serrors.NewInternalError(errors.New("CatalogURI cannot be parsed.. quitting"))
 	}
 
+	return catHost, catPort, nil
+
+}
+
+func processCatalogEntry(catalogUri string, table string) ([]string, error) {
+
+	catalogLogger := log.WithValues("catalogUri", catalogUri)
+	catalogLogger.Info("Querying Catalog " + catalogUri)
+
+	catHost, catPort, err := parseCatalogUri(catalogUri)
+	if err != nil {
+		catalogLogger.Error(err, "could not parse catalog URI")
+		return nil, k8serrors.NewInternalError(errors.New("Could not parse URI: " + catalogUri))
+	}
 	catalogLogger.Info("Catalog Host : %s, Catalog Port: %d", catHost, catPort)
 
 	hiveclient, err := hmsclient.Open(catHost, catPort)

@@ -222,10 +222,17 @@ func processRemoteDataset(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconc
 			//foundEndpoints = rc.Client.Get(context.TODO(), types.
 			return reconcile.Result{}, errors.NewBadRequest("no catalogURI provided")
 		}
+		//We expect this to change
 		table, ok := cr.Spec.Remote["table"]
 		if !ok {
 			processRemoteDatasetLogger.Error(nil, "no table provided for lookup")
 			return reconcile.Result{}, errors.NewBadRequest("no table provided for lookup")
+		}
+		//We expect that we'll get the endpoints differently
+		endpoint, ok := cr.Spec.Remote["endpoint"]
+		if !ok {
+			processRemoteDatasetLogger.Error(nil, "no endpoints provided for s3 buckets")
+			return reconcile.Result{}, errors.NewBadRequest("no endpoints provided for s3 buckets")
 		}
 
 		var mountAllowed bool
@@ -241,6 +248,12 @@ func processRemoteDataset(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconc
 			}
 		}
 
+		catalogHost, catalogPort, err := parseCatalogUri(catalogUri)
+		if err != nil {
+			processRemoteDatasetLogger.Error(err, "Could not parse CatalogUri", "catalogURI", catalogUri)
+			return reconcile.Result{}, err
+		}
+
 		bukits, err := processCatalogEntry(catalogUri, table)
 
 		if err != nil {
@@ -252,7 +265,9 @@ func processRemoteDataset(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconc
 		}
 
 		bucketData := make(map[string]string)
-		bucketData["catalogURI"] = catalogUri
+		bucketData["catalogHost"] = catalogHost
+		bucketData["catalogPort"] = strconv.Itoa(catalogPort)
+		bucketData["endpoint"] = endpoint
 		bucketData["table"] = table
 		bucketData["numBuckets"] = strconv.Itoa(len(bukits))
 		for i, bkt := range bukits {
