@@ -3,7 +3,6 @@ module dataset-operator
 require (
 	github.com/akolb1/gometastore v0.0.0-20181012003105-a6ffbeed8c1a
 	github.com/go-openapi/spec v0.19.0
-	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/operator-framework/operator-sdk v0.0.0-20190802125515-bc5cbd4b9481
 	github.com/spf13/pflag v1.0.3
 	k8s.io/api v0.0.0-20190612125737-db0771252981

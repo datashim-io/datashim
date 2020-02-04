@@ -214,13 +214,56 @@ func processRemoteDataset(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconc
 	entryType := cr.Spec.Remote["type"]
 	switch entryType {
 	case "CatalogEntry":
+		var catalogHost string
+		var catalogPort int
+
 		catalogUri, ok := cr.Spec.Remote["catalogURI"]
 		if !ok {
-			processRemoteDatasetLogger.Error(nil, "no catalogURI provided")
-			// TODO We need to look up hivemetastore service endpoint in the cluster
-			//foundEndpoints = []corev1.Endpoints{}
-			//foundEndpoints = rc.Client.Get(context.TODO(), types.
-			return reconcile.Result{}, errors.NewBadRequest("no catalogURI provided")
+			processRemoteDatasetLogger.Info("no catalogURI provided in dataset spec.. now looking up cluster services", "Dataset.Name", cr.Name)
+			// Looking hivemetastore service endpoint in the cluster
+			//svcList := &corev1.ServiceList{}
+
+			// Note: Below logic searches for a particular service implementation which requires a Fieldindexer to be
+			// initialised along with the controller. To make it easier, we are going to directly get the service
+			// endpoind using types.NamespacedName
+			//processRemoteDatasetLogger.Info("CatalogURI not provided, looking up catalog endpoint in the cluster")
+			//svcListOpts := client.MatchingField("metadata.name", "hivemetastore")
+			//svcListOpts = svcListOpts.InNamespace(cr.Namespace)
+			//err := rc.client.List(context.TODO(), svcListOpts, svcList)
+
+			//We are only looking for the hivemetastore endpoint in the same namespace as the dataset being created
+			//TODO: Change this to be across all namespaces
+			catalogSvcName := "hivemetastore"
+			catalogSvcNamespace := cr.Namespace
+			svc := &corev1.Service{}
+			err := rc.client.Get(context.TODO(), types.NamespacedName{Name: catalogSvcName, Namespace: catalogSvcNamespace}, svc)
+
+			if err != nil {
+				processRemoteDatasetLogger.Error(err, "Could not obtain any catalogs in the current cluster")
+				return reconcile.Result{}, errors.NewBadRequest("no catalogURI provided")
+			} else {
+				processRemoteDatasetLogger.Info("Endpoint", "name", svc)
+				catalogHost = svc.Spec.ClusterIP
+				for _, port := range svc.Spec.Ports {
+					processRemoteDatasetLogger.Info("Port", "name", svc)
+					if port.Name == "metastore" ||
+						port.Name == "" {
+						catalogPort = int(port.Port)
+					}
+				}
+
+				if catalogHost == "" {
+					processRemoteDatasetLogger.Error(nil, "no catalogURI provided.. cannot instantiate dataset")
+					return reconcile.Result{}, errors.NewBadRequest("no catalogURI provided")
+				}
+			}
+		} else {
+			var err error
+			catalogHost, catalogPort, err = parseCatalogUri(catalogUri)
+			if err != nil {
+				processRemoteDatasetLogger.Error(err, "Could not parse CatalogUri", "catalogURI", catalogUri)
+				return reconcile.Result{}, err
+			}
 		}
 		//We expect this to change
 		table, ok := cr.Spec.Remote["table"]
@@ -248,13 +291,7 @@ func processRemoteDataset(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconc
 			}
 		}
 
-		catalogHost, catalogPort, err := parseCatalogUri(catalogUri)
-		if err != nil {
-			processRemoteDatasetLogger.Error(err, "Could not parse CatalogUri", "catalogURI", catalogUri)
-			return reconcile.Result{}, err
-		}
-
-		bukits, err := processCatalogEntry(catalogUri, table)
+		bukits, err := processCatalogEntry(catalogHost, int(catalogPort), table)
 
 		if err != nil {
 			processRemoteDatasetLogger.Error(err, "Error in querying metastore", "catalogURI", catalogUri, "table", table)
@@ -266,7 +303,7 @@ func processRemoteDataset(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconc
 
 		bucketData := make(map[string]string)
 		bucketData["catalogHost"] = catalogHost
-		bucketData["catalogPort"] = strconv.Itoa(catalogPort)
+		bucketData["catalogPort"] = strconv.FormatInt(int64(catalogPort), 10)
 		bucketData["endpoint"] = endpoint
 		bucketData["table"] = table
 		bucketData["numBuckets"] = strconv.Itoa(len(bukits))
