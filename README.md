@@ -14,6 +14,15 @@ This framework targets any *Kubernetes 1.15+* installation; it is built on the
 [Operator SDK](https://github.com/operator-framework/operator-sdk) and is extensible to support any
 [CSI](https://kubernetes-csi.github.io/docs/) enabled storage system.
 
+
+## Roadmap
+
+- Support for NFS directories as Datasets [pull/3](https://github.com/IBM/dataset-lifecycle-framework/pull/3)
+- Support lookup for Dataset information in Hive metastore [pull/4](https://github.com/IBM/dataset-lifecycle-framework/pull/4)
+- Integration with Multi-Cloud Object Gateway (Noobaa)
+- Pluggable caching mechanism
+- Optimizations for data-aware scheduling
+
 ## Quickstart
 
 If you prefer to watch a quick demo of its functionality, have a look at the recording:
@@ -24,6 +33,8 @@ framework using *minikube*. Check the
 [minikube documentation](https://kubernetes.io/docs/setup/learning-environment/minikube/)
 for instructions about how to install it. In case you want to deploy our framework on a proper kubernetes
 cluster inspect the [Makefile](Makefile) to tailor your Dataset Lifecycle Framework installation.
+
+
 
 ### Requirements
 - Docker
@@ -143,16 +154,6 @@ The `mountPath` and `name` in `volumeMounts` is optional and should be used if
 the user wants to mount a dataset in a specific location.
 If the user doesn't specify the mount point, as a convention we will mount the
 dataset on `/mnt/datasets/<dataset-name>`.
-
-## Next Steps
-
-The current release provides support only for datasets stored as S3 buckets and
-requires users/administrators to input the access information for the dataset. We
-are working on enabling the capability of fetching the dataset information from
-a central catalog to facilitate access to organization-wide data lakes.
-Moreover we will add support for NFS datasets and other storage systems.
-
-Stay tuned for updates!
 
 
 ## Acknowledgements
