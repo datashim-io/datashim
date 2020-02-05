@@ -1,0 +1,4 @@
+FROM docker-go-base
+COPY ./ /csi-nfs
+WORKDIR /csi-nfs
+
