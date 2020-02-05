@@ -157,9 +157,9 @@ dataset on `/mnt/datasets/<dataset-name>`.
 
 
 ## Acknowledgements
+This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement No 825061.
 
-This framework is supported by the European funded research project [H2020
-evolve](https://www.evolve-h2020.eu/).
+[H2020 evolve](https://www.evolve-h2020.eu/).
 
 <img src="./doc/pictures/evolve-logo.png" alt="H2020 evolve logo" width="150" height="24.07">
 
