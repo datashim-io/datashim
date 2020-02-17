@@ -32,7 +32,7 @@ spec:
       labels:
         app: csi-attacher-nfsplugin
     spec:
-      serviceAccount: csi-attacher
+      serviceAccount: csi-attacher-nfs
       containers:
         - name: csi-attacher
           image: ${EXTERNAL_ATTACHER_IMAGE}
@@ -63,6 +63,8 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /plugin
+      imagePullSecrets:
+        - name: ${DOCKER_REGISTRY_SECRET}
       volumes:
         - name: socket-dir
           emptyDir:
