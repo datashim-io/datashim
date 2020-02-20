@@ -139,7 +139,7 @@ minio-uninstall:
 	kubectl delete -f ./examples/example-minio-data.yaml
 
 keys-installation:
-	@ ./release-tools/generate-keys.sh $(KEY_DIR) ;\
+	@ ./release-tools/generate-keys.sh $(KEY_DIR) $(DATASET_OPERATOR_NAMESPACE);\
 	export CA_PEM_B64="$$(openssl base64 -A < "$(KEY_DIR)/ca.crt")" ;\
 	$(SHELL_EXPORT) kubectl -n $(DATASET_OPERATOR_NAMESPACE) create secret tls webhook-server-tls \
             --cert "$(KEY_DIR)/webhook-server-tls.crt" \
