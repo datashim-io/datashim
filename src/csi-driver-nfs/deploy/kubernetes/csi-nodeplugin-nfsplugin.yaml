@@ -60,6 +60,8 @@ spec:
             - name: pods-mount-dir
               mountPath: /var/lib/kubelet/pods
               mountPropagation: "Bidirectional"
+      imagePullSecrets:
+        - name: ${DOCKER_REGISTRY_SECRET}
       volumes:
         - name: plugin-dir
           hostPath:
