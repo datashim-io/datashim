@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: example-noobaa-data
+spec:
+  template:
+    spec:
+      containers:
+        - name: example-noobaa-data
+          image: awscli-alpine
+          imagePullPolicy: Never
+          command: ["/bin/sh","-c","sleep 10
+          && export AWS_ACCESS_KEY_ID={KEY_ID}
+          && export AWS_SECRET_ACCESS_KEY={ACCESS_KEY}
+          && echo 'hello' > file1.txt
+          && echo 'world' > file2.txt
+          && aws --no-verify-ssl --endpoint https://s3.default.svc:443 s3 cp file1.txt s3://{BUCKET}
+          && aws --no-verify-ssl --endpoint https://s3.default.svc:443 s3 cp file2.txt s3://{BUCKET}
+          "]
+      restartPolicy: Never
+  backoffLimit: 4

@@ -1,0 +1,12 @@
+apiVersion: com.ie.ibm.hpsys/v1alpha1
+kind: Dataset
+metadata:
+  name: example-dataset
+spec:
+  local:
+    type: "COS"
+    accessKeyID: "{AWS_ACCESS_KEY_ID}"
+    secretAccessKey: "{AWS_SECRET_ACCESS_KEY}"
+    endpoint: "{S3_SERVICE_URL}"
+    bucket: "{BUCKET_NAME}"
+    region: "" #it can be empty

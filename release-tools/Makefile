@@ -118,6 +118,12 @@ ifeq ($(PULL_COMPONENTS), false)
 	docker push $(DATASET_OPERATOR_IMAGE)
 endif
 
+noobaa-install:
+	./examples/noobaa/noobaa_install.sh
+
+noobaa-uninstall:
+	./examples/noobaa/noobaa_uninstall.sh
+
 minikube-load-containers: build-containers
 	$(call load_containers_minikube,external-attacher,$(EXTERNAL_ATTACHER_IMAGE))
 	$(call load_containers_minikube,external-provisioner,$(EXTERNAL_PROVISIONER_IMAGE))
