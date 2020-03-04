@@ -1,0 +1,8 @@
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: my-bucket-claim
+  namespace: default
+spec:
+  generateBucketName: my-bucket
+  storageClassName: default.noobaa.io
