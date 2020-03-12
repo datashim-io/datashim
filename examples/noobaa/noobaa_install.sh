@@ -8,8 +8,13 @@ function kube_wait(){
 
 function install_noobaa() {
 	echo -n "Downloading NooBaa CLI..."
-	wget -P ${DIR} https://github.com/noobaa/noobaa-operator/releases/download/v2.0.10/noobaa-linux-v2.0.10 > /dev/null 2>&1
-	mv ${DIR}/noobaa-linux-* ${DIR}/noobaa
+    uKernel="$(uname -s)"
+    case "${uKernel}" in
+        Darwin*) os=mac;;
+        Linux*) os=linux;;
+    esac
+	wget -P ${DIR} https://github.com/noobaa/noobaa-operator/releases/download/v2.0.10/noobaa-${os}-v2.0.10 > /dev/null 2>&1
+	mv ${DIR}/noobaa-${os}-* ${DIR}/noobaa
 	chmod +x ${DIR}/noobaa
 	echo "done"
 	
