@@ -1,4 +1,4 @@
-FROM centos:7.4.1708
+FROM centos:7
 
 # Copy nfsplugin from build _output directory
 COPY bin/nfsplugin /nfsplugin

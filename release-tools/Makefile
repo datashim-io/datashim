@@ -46,44 +46,48 @@ K8S_FILES += $(shell find ./src/csi-driver-nfs/deploy/kubernetes -maxdepth 1 -na
 K8S_FILES += $(shell find ./src/dataset-operator/deploy -maxdepth 1 -name '*.yaml')
 K8S_FILES += $(shell find ./src/dataset-operator/deploy/crds -maxdepth 1 -name '*crd.yaml')
 
-base:
-	mkdir -p _tmp
-	docker build -t docker-go-base --build-arg ARCH=$(shell if [ "$$(arch)" == "x86_64" ]; then echo amd64; elif [ "$$(arch)" == "i386" ]; then echo amd64; else echo "$$(arch)"; fi) --build-arg DOCKER_ARCH=$(shell if [ "$$(arch)" == "ppc64le" ]; then echo ppc64el;elif [ "$$(arch)" == "x86_64" ]; then echo amd64; elif [ "$$(arch)" == "i386" ]; then echo amd64; fi) -f ./release-tools/docker-go-base/Dockerfile .
-
+# returns arch as amd64,ppc64le, mostly needed for golang
+define get_arch
+$(shell if [ "$$(arch)" == "x86_64" ]; then echo amd64; elif [ "$$(arch)" == "i386" ]; then echo amd64; else echo "$$(arch)"; fi)
+endef
 #1: git repo url
 #2: git tag
 #3: directory created from pull
 #4: image to be created
 define install_sidecar
-	@if [ ! -d _tmp/$(3) ] ;\
+	@if [ ! -d ./release-tools/_tmp/$(3) ] ;\
     then \
-    	  git clone $(1) _tmp/$(3); \
+    	  git clone $(1) ./release-tools/_tmp/$(3); \
     fi
-	cd _tmp/$(3) ;\
+	cd ./release-tools/_tmp/$(3) ;\
 	git checkout $(2)
-	printf 'FROM docker-go-base\nCOPY ./$(3) /$(3)  \nWORKDIR /$(3)' > _tmp/Dockerfile.$(3)
-	docker build -t $(3)-installer -f ./_tmp/Dockerfile.$(3) ./_tmp
-	docker run -it -v /var/run/docker.sock:/var/run/docker.sock $(3)-installer make container -e IMAGE_TAG=$(4) GOFLAGS=-mod=vendor
-	docker tag $(5):latest $(4)
-	rm _tmp/Dockerfile.$(3)
+	sed -e "\$$a\
+	  RUN mkdir /tmp-code\
+	\nCOPY go.mod /tmp-code/go.mod\
+	\nCOPY go.sum /tmp-code/go.sum\
+	\nRUN cd /tmp-code && go mod download\
+	\nCOPY . /$(3)\
+	\nRUN cd /$(3) && make build"\
+	./release-tools/Dockerfile > ./release-tools/_tmp/$(3)/Dockerfile-$(3).installer
+	docker build --build-arg=ARCH=$(call get_arch) -t $(3)-installer -f ./release-tools/_tmp/$(3)/Dockerfile-$(3).installer ./release-tools/_tmp/$(3)
+	mkdir -p ./release-tools/_tmp/$(3)/bin
+	docker run --rm -v $$(pwd)/release-tools/_tmp/$(3)/bin:/tmp-bin $(3)-installer sh -c "cp -r /$(3)/bin/* /tmp-bin"
+	cd ./release-tools/_tmp/$(3) &&	docker build -t $(4) .
 endef
 
 #1: local directory name
 #2: image to be created
 define install_local
-	printf 'FROM docker-go-base\nCOPY ./$(1) /$(1)  \nWORKDIR /$(1)' > ./src/Dockerfile.$(1)
-	docker build -t $(1)-installer -f ./src/Dockerfile.$(1) ./src
-	docker run -it -v /var/run/docker.sock:/var/run/docker.sock $(1)-installer make container -e IMAGE_TAG=$(2)
-	rm ./src/Dockerfile.$(1)
+	cd src/$(1) && make container -e IMAGE_TAG=$(2) -e ARCH=$(call get_arch)
 endef
 
 #1: user friendly name
 #2: image to load
 define load_containers_minikube
-    @docker save $(2) | gzip > _tmp/$(1).tar.gz;\
+    @docker save $(2) | gzip > ./release-tools/_tmp/$(1).tar.gz;\
     eval $$(minikube docker-env) ;\
-    docker load < _tmp/$(1).tar.gz ;\
-    rm -rf _tmp/$(1).tar.gz
+    docker load < ./release-tools/_tmp/$(1).tar.gz ;\
+    rm -rf ./release-tools/_tmp/$(1).tar.gz
 endef
 
 build-containers:
