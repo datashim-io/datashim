@@ -140,13 +140,13 @@ minio-install:
 	@kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes/minio-standalone-pvc.yaml?raw=true ;\
     kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes/minio-standalone-deployment.yaml?raw=true ;\
     kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes/minio-standalone-service.yaml?raw=true ;\
-    kubectl create -f ./examples/example-minio-data.yaml
+    kubectl create -f ./examples/templates/example-minio-data.yaml
 
 minio-uninstall:
 	@kubectl delete -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes/minio-standalone-service.yaml?raw=true ;\
 	kubectl delete -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes/minio-standalone-deployment.yaml?raw=true ;\
 	kubectl delete -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes/minio-standalone-pvc.yaml?raw=true ;\
-	kubectl delete -f ./examples/example-minio-data.yaml
+	kubectl delete -f ./examples/templates/example-minio-data.yaml
 
 keys-installation:
 	@ ./release-tools/generate-keys.sh $(KEY_DIR) $(DATASET_OPERATOR_NAMESPACE);\
