@@ -61,17 +61,16 @@ define install_sidecar
     fi
 	cd ./release-tools/_tmp/$(3) ;\
 	git checkout $(2)
-	sed -e "\$$a\
-	  RUN mkdir /tmp-code\
+	cp ./release-tools/Dockerfile ./release-tools/_tmp/$(3)/Dockerfile-$(3).installer
+	echo -e "\nRUN mkdir /tmp-code\
 	\nCOPY go.mod /tmp-code/go.mod\
 	\nCOPY go.sum /tmp-code/go.sum\
 	\nRUN cd /tmp-code && go mod download\
 	\nCOPY . /$(3)\
-	\nRUN cd /$(3) && make build"\
-	./release-tools/Dockerfile > ./release-tools/_tmp/$(3)/Dockerfile-$(3).installer
-	docker build --build-arg=ARCH=$(call get_arch) -t $(3)-installer -f ./release-tools/_tmp/$(3)/Dockerfile-$(3).installer ./release-tools/_tmp/$(3)
-	mkdir -p ./release-tools/_tmp/$(3)/bin
-	docker run --rm -v $$(pwd)/release-tools/_tmp/$(3)/bin:/tmp-bin $(3)-installer sh -c "cp -r /$(3)/bin/* /tmp-bin"
+	\nRUN cd /$(3) && make build" | tee -a ./release-tools/_tmp/$(3)/Dockerfile-$(3).installer ;\
+	docker build --build-arg=ARCH=$(call get_arch) -t $(3)-installer -f ./release-tools/_tmp/$(3)/Dockerfile-$(3).installer ./release-tools/_tmp/$(3) ;\
+	mkdir -p ./release-tools/_tmp/$(3)/bin ;\
+	docker run --rm -v $$(pwd)/release-tools/_tmp/$(3)/bin:/tmp-bin $(3)-installer sh -c "cp -r /$(3)/bin/* /tmp-bin" ;\
 	cd ./release-tools/_tmp/$(3) &&	docker build -t $(4) .
 endef
 
