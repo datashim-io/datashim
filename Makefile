@@ -6,18 +6,18 @@ PULL_COMPONENTS := false
 
 DOCKER_REGISTRY_SIDECARS := quay.io/k8scsi
 # if you pull from public use quay.io/k8scsi
-PULL_SIDECARS := true
+PULL_SIDECARS := false
 
 DATASET_OPERATOR_NAMESPACE := default
 NAMESPACES_TO_MONITOR := default
 
-# if you are building use master, if you are pulling use latest
-EXTERNAL_ATTACHER_TAG := v1.2.1
-#working in ppc64le v1.2.1
-EXTERNAL_PROVISIONER_TAG := v1.4.0-rc1
-#working in ppc64le v1.4.0-rc1
-NODE_DRIVER_REGISTRAR_TAG := v1.1.0
-#working in ppc64le v1.1.0
+# if you are building use master, if you are pulling use canary
+EXTERNAL_ATTACHER_TAG := v2.1.1
+#working in ppc64le v2.1.1
+EXTERNAL_PROVISIONER_TAG := v1.5.0
+#working in ppc64le v1.5.0
+NODE_DRIVER_REGISTRAR_TAG := master
+#working in ppc64le master
 
 minikube-uninstall: noobaa-uninstall undeployment
 
@@ -39,8 +39,8 @@ deployment: keys-installation
 		kubectl label namespace $$namespace monitor-pods-datasets=enabled ;\
 	done
 
-minikube-install: base noobaa-install minikube-load-containers keys-installation deployment
+minikube-install: noobaa-install minikube-load-containers keys-installation deployment
 
-kubernetes-install: base build-containers push-containers keys-installation deployment
+kubernetes-install: build-containers push-containers keys-installation deployment
 
 include release-tools/Makefile
