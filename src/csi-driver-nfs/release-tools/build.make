@@ -60,12 +60,13 @@ endif
 # Specific packages can be excluded from each of the tests below by setting the *_FILTER_CMD variables
 # to something like "| grep -v 'github.com/kubernetes-csi/project/pkg/foobar'". See usage below.
 
+# these instructions are now executed inside the base container
 build-%:
 	mkdir -p bin
 	CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-X main.version=$(REV) -extldflags "-static"' -o ./bin/$* ./cmd/$*
 
-container-%: build-%
-	docker build -t $(IMAGE_TAG) -f $(shell if [ -e ./cmd/$*/Dockerfile ]; then echo ./cmd/$*/Dockerfile; else echo Dockerfile; fi) --label revision=$(REV) .
+container-%:
+	docker build -t $(IMAGE_TAG) --build-arg ARCH=$(ARCH) -f $(shell if [ -e ./cmd/$*/Dockerfile ]; then echo ./cmd/$*/Dockerfile; else echo Dockerfile; fi) --label revision=$(REV) .
 
 push-%: container-%
 	set -ex; \

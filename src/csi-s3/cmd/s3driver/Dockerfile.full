@@ -34,7 +34,7 @@ RUN if [ "$ARCH" = "ppc64le" ] ; then \
 
 COPY . /csi-s3
 WORKDIR /csi-s3
-RUN mkdir /_output
+RUN mkdir -p /_output
 RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o /_output/s3driver /csi-s3/cmd/s3driver
 
 FROM debian:stretch as s3backer
