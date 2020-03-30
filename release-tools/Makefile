@@ -85,9 +85,9 @@ endef
 define load_containers_minikube
     @if [[ $$driver_check == *"virtualbox"* ]]; then docker save $(2) | gzip > ./release-tools/_tmp/$(1).tar.gz;\
     eval $$(minikube docker-env -u);\
-    docker load < ./release-tools/_tmp/$(1).tar.gz ;\
+    docker load < ./release-tools/_tmp/$(1).tar.gz;\
     rm -rf ./release-tools/_tmp/$(1).tar.gz;\
-    fi;\
+    fi;
 endef
 
 build-containers:
