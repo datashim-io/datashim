@@ -83,10 +83,11 @@ endef
 #1: user friendly name
 #2: image to load
 define load_containers_minikube
-    @docker save $(2) | gzip > ./release-tools/_tmp/$(1).tar.gz;\
-    if [[ $$driver_check == *"virtualbox"* ]]; then eval $$(minikube docker-env -u); fi;\
+    @if [[ $$driver_check == *"virtualbox"* ]]; then docker save $(2) | gzip > ./release-tools/_tmp/$(1).tar.gz;\
+    eval $$(minikube docker-env -u);\
     docker load < ./release-tools/_tmp/$(1).tar.gz ;\
-    rm -rf ./release-tools/_tmp/$(1).tar.gz
+    rm -rf ./release-tools/_tmp/$(1).tar.gz;\
+    fi;\
 endef
 
 build-containers:
