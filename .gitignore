@@ -1,2 +1,7 @@
+.DS_Store
 _tmp
 .idea
+*.sw[po]
+*Dockerfile.csi-driver-nfs
+*Dockerfile.csi-s3
+*s3-secret.yaml

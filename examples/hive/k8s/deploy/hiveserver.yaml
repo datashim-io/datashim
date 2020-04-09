@@ -1,0 +1,45 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hiveserver
+spec:
+  type: "LoadBalancer"
+  selector:
+    app: hiveserver
+  ports:
+    - port: 80
+      targetPort: 10002
+      name: web-ui
+    - port: 10001
+      targetPort: 10001
+      name: cliservice
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hiveserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hiveserver
+  template:
+    metadata:
+      labels:
+        app: hiveserver
+    spec:
+      containers:
+        - name: hiveserver-container
+          image: ${HIVESERVER_IMAGE}
+          imagePullPolicy: "IfNotPresent"
+          envFrom:
+            - secretRef:
+                name: s3-secret
+          ports:
+            - containerPort: 10001
+              name: cliservice
+            - containerPort: 10002
+              name: web-ui
+      imagePullSecrets:
+        - name: ${DOCKER_REGISTRY_SECRET}

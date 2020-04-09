@@ -46,12 +46,12 @@ func Mutate(body []byte) ([]byte, error) {
 		datasetInfo := map[string]map[string]string{}
 
 		for k, v := range pod.Labels {
-			fmt.Printf("key[%s] value[%s]\n", k, v)
-			if(strings.HasPrefix(k, prefixLabels)){
+			log.Printf("key[%s] value[%s]\n", k, v)
+			if strings.HasPrefix(k, prefixLabels) {
 				datasetNameArray := strings.Split(k, ".")
-				datasetId := strings.Join([]string{datasetNameArray[0],datasetNameArray[1]},".")
-				if _, ok := datasetInfo[datasetId]; ok==false {
-					datasetInfo[datasetId]=map[string]string{datasetNameArray[2]:v}
+				datasetId := strings.Join([]string{datasetNameArray[0], datasetNameArray[1]}, ".")
+				if _, ok := datasetInfo[datasetId]; ok == false {
+					datasetInfo[datasetId] = map[string]string{datasetNameArray[2]: v}
 				} else {
 					datasetInfo[datasetId][datasetNameArray[2]] = v
 				}
@@ -70,50 +70,113 @@ func Mutate(body []byte) ([]byte, error) {
 
 		existing_volumes_id := len(pod.Spec.Volumes)
 		datasets_tomount := []string{}
+		configs_toinject := []string{}
 
 		p := []map[string]interface{}{}
 
 		for k, v := range datasetInfo {
-			fmt.Printf("key[%s] value[%s]\n", k, v)
-			if(v["useas"]=="mount"){
+			log.Printf("key[%s] value[%s]\n", k, v)
+
+			//TODO: currently, the useas and dataset types are not cross-checked
+			//e.g. useas configmap is not applicable to NFS shares.
+			//There may be future dataset backends (e.g. SQL queries) that may
+			//not be able to be mounted. This logic needs to be revisited
+			switch v["useas"] {
+			case "mount":
 				patch := map[string]interface{}{
-					"op":    "add",
-					"path":  "/spec/volumes/"+fmt.Sprint(existing_volumes_id),
-					"value": map[string]interface{}{
-						"name": v["id"],
-						"persistentVolumeClaim": map[string]string{"claimName": v["id"]},
-					},
+					"op":   "add",
+					"path": "/spec/volumes/" + fmt.Sprint(existing_volumes_id),
+				}
+				patch["value"] = map[string]interface{}{
+					"name":                  v["id"],
+					"persistentVolumeClaim": map[string]string{"claimName": v["id"]},
 				}
 				datasets_tomount = append(datasets_tomount, v["id"])
 				p = append(p, patch)
-				existing_volumes_id+=1
+				existing_volumes_id += 1
+			case "configmap":
+				//by default, we will mount a config map inside the containers.
+				configs_toinject = append(configs_toinject, v["id"])
+			default:
+				//this is an error
+				log.Printf("Error: The useas for this dataset is not recognized")
 			}
+
 		}
 
 		containers := pod.Spec.Containers
-		for container_idx,container := range containers{
+		for container_idx, container := range containers {
 			mounts := container.VolumeMounts
 			mount_names := []string{}
-			for _, mount := range mounts{
+			for _, mount := range mounts {
 				mount_name := mount.Name
-				mount_names = append(mount_names,mount_name)
+				mount_names = append(mount_names, mount_name)
 			}
 			mount_idx := len(mounts)
-			for _, dataset_tomount := range datasets_tomount{
-				exists, _ := in_array(dataset_tomount,mount_names)
-				if(exists == false){
+
+			for _, dataset_tomount := range datasets_tomount {
+				//TODO: Check if the dataset reference exists in the API server
+				exists, _ := in_array(dataset_tomount, mount_names)
+				if exists == false {
 					patch := map[string]interface{}{
-						"op":    "add",
-						"path":  "/spec/containers/"+fmt.Sprint(container_idx)+"/volumeMounts/"+fmt.Sprint(mount_idx),
+						"op":   "add",
+						"path": "/spec/containers/" + fmt.Sprint(container_idx) + "/volumeMounts/" + fmt.Sprint(mount_idx),
 						"value": map[string]interface{}{
-							"name": dataset_tomount,
-							"mountPath": "/mnt/datasets/"+dataset_tomount,
+							"name":      dataset_tomount,
+							"mountPath": "/mnt/datasets/" + dataset_tomount,
 						},
 					}
 					p = append(p, patch)
 					mount_idx += 1
 				}
 			}
+
+			var values []interface{}
+			for _, config_toinject := range configs_toinject {
+				//TODO: Check if the configmap reference exists in the API server
+
+				configmap_ref := map[string]interface{}{
+					"prefix": config_toinject + "_",
+					"configMapRef": map[string]interface{}{
+						"name": config_toinject,
+					},
+				}
+				// We also have to inject the companion secret. We are using the convention followed
+				// in the controller where the names of the configmap and the secret are the same.
+				secret_ref := map[string]interface{}{
+					"prefix": config_toinject + "_",
+					"secretRef": map[string]interface{}{
+						"name": config_toinject,
+					},
+				}
+
+				values = append(values, configmap_ref)
+				values = append(values, secret_ref)
+			}
+
+			if container.EnvFrom == nil || len(container.EnvFrom) == 0 {
+				// In this case, the envFrom path does not exist in the PodSpec. We are creating
+				// (initialising) this path with an array of configMapRef (RFC 6902)
+				log.Printf("there ")
+				patch := map[string]interface{}{
+					"op":    "add",
+					"path":  "/spec/containers/" + fmt.Sprint(container_idx) + "/envFrom",
+					"value": values,
+				}
+				p = append(p, patch)
+			} else {
+				// In this case, the envFrom path does exist in the PodSpec. So, we just append to
+				// the existing array (Notice the path value)
+				for _, val := range values {
+					patch := map[string]interface{}{
+						"op":    "add",
+						"path":  "/spec/containers/" + fmt.Sprint(container_idx) + "/envFrom/-",
+						"value": val,
+					}
+					p = append(p, patch)
+				}
+			}
+
 		}
 
 		resp.Patch, err = json.Marshal(p)

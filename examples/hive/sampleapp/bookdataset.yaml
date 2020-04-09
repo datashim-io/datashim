@@ -1,0 +1,15 @@
+---
+apiVersion: com.ie.ibm.hpsys/v1alpha1
+kind: Dataset
+metadata:
+  name: bookds
+  namespace: default
+spec:
+  remote:
+    type: "CatalogEntry"
+    table: "default/books"
+    endpoint: "${S3_ENDPOINT}"
+    accessKeyID: "${AWS_ACCESS_KEY_ID}"
+    secretAccessKey: "${AWS_SECRET_ACCESS_KEY}"
+    region: "eu-de"
+    mountAllowed: "true"
