@@ -1,9 +1,9 @@
 SHELL=/bin/bash
 
-DATASET_OPERATOR_NAMESPACE := default
+DATASET_OPERATOR_NAMESPACE ?= default
 
-DOCKER_REGISTRY_COMPONENTS := the_registry_to_use_for_components
-DOCKER_REGISTRY_SECRET := your_already_installed_secrets
+DOCKER_REGISTRY_COMPONENTS ?= the_registry_to_use_for_components
+DOCKER_REGISTRY_SECRET ?= your_already_installed_secrets
 
 HIVE_FILE_PATH := $(shell pwd)
 
