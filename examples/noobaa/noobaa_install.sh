@@ -31,9 +31,14 @@ function install_noobaa() {
 
 function build_data_loader() {
 	echo -n "Building NooBaa data loader..."
-	eval $(minikube docker-env)
+	driver_check=$(cat $HOME/.minikube/machines/minikube/config.json  | grep DriverName)
+    if [[ $driver_check != *"none"* ]]; then
+      eval $(minikube docker-env)
+    fi
 	docker build -f ${DIR}/Dockerfile-awscli-alpine -t awscli-alpine . > /dev/null 2>&1
-	eval $(minikube docker-env -u)
+	if [[ $driver_check != *"none"* ]]; then
+      eval $(minikube docker-env -u)
+    fi
 	echo "done"
 }
 
@@ -59,4 +64,3 @@ install_noobaa
 build_data_loader
 kube_wait
 run_data_loader
-
