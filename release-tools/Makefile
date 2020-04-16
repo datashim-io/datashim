@@ -83,10 +83,13 @@ endef
 #1: user friendly name
 #2: image to load
 define load_containers_minikube
-    @docker save $(2) | gzip > ./release-tools/_tmp/$(1).tar.gz;\
-    eval $$(minikube docker-env) ;\
-    docker load < ./release-tools/_tmp/$(1).tar.gz ;\
-    rm -rf ./release-tools/_tmp/$(1).tar.gz
+    @driver_check=$$(cat $$HOME/.minikube/machines/minikube/config.json  | grep DriverName);\
+    if [[ $$driver_check != *"none"* ]]; then docker save $(2) | gzip > ./release-tools/_tmp/$(1).tar.gz;\
+    eval $$(minikube docker-env);\
+    docker load < ./release-tools/_tmp/$(1).tar.gz;\
+    eval $$(minikube docker-env -u);\
+    rm -rf ./release-tools/_tmp/$(1).tar.gz;\
+    fi;
 endef
 
 build-containers:
