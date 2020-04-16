@@ -36,7 +36,6 @@ define load_containers_minikube
 	$(info Loading container $(2) on minikube)
     @mkdir -p _tmp;\
     driver_check=$$(cat $$HOME/.minikube/machines/minikube/config.json  | grep DriverName);\
-    eval $$(minikube docker-env);\
     if [[ $$driver_check != *"none"* ]]; then docker save $(2) | gzip > _tmp/$(1).tar.gz;\
     docker load < _tmp/$(1).tar.gz;\
     eval $$(minikube docker-env);\

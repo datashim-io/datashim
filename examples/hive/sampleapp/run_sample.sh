@@ -1,8 +1,8 @@
 #!/bin/bash
 
 
-DATASET_OPERATOR_NAMESPACE=default
-DOCKER_REGISTRY_COMPONENTS=the_registry_to_use_for_components
+DATASET_OPERATOR_NAMESPACE="${DATASET_OPERATOR_NAMESPACE:-default}"
+DOCKER_REGISTRY_COMPONENTS="${DOCKER_REGISTRY_COMPONENTS:-the_registry_to_use_for_components}"
 HIVESERVER_IMAGE="hive-server:latest"
 
 function check_env(){
