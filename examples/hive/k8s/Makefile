@@ -36,10 +36,11 @@ define load_containers_minikube
 	$(info Loading container $(2) on minikube)
     @mkdir -p _tmp;\
     driver_check=$$(cat $$HOME/.minikube/machines/minikube/config.json  | grep DriverName);\
-    if [[ $$driver_check != *"none"* ]]; then docker save $(2) | gzip > _tmp/$(1).tar.gz;\
-    docker load < _tmp/$(1).tar.gz;\
+    if [[ $$driver_check != *"none"* ]]; then docker save $(1) | gzip > _tmp/$(2).tar.gz;\
     eval $$(minikube docker-env);\
-    rm -rf _tmp/$(1).tar.gz;\
+    docker load < _tmp/$(2).tar.gz;\
+    eval $$(minikube docker-env -u);\
+    rm -rf _tmp/$(2).tar.gz;\
     fi;
 endef
 
