@@ -38,11 +38,8 @@ define load_containers_minikube
     driver_check=$$(cat $$HOME/.minikube/machines/minikube/config.json  | grep DriverName);\
     eval $$(minikube docker-env);\
     if [[ $$driver_check != *"none"* ]]; then docker save $(2) | gzip > _tmp/$(1).tar.gz;\
-    docker load < _tmp/$(1).tar.gz ;\
-    eval $$(minikube docker-env);\
-    rm -rf ./release-tools/_tmp/$(1).tar.gz
     docker load < _tmp/$(1).tar.gz;\
-    eval $$(minikube docker-env -u);\
+    eval $$(minikube docker-env);\
     rm -rf _tmp/$(1).tar.gz;\
     fi;
 endef
