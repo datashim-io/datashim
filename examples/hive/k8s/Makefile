@@ -1,9 +1,9 @@
 SHELL=/bin/bash
 
-DATASET_OPERATOR_NAMESPACE := default
+DATASET_OPERATOR_NAMESPACE ?= default
 
-DOCKER_REGISTRY_COMPONENTS := the_registry_to_use_for_components
-DOCKER_REGISTRY_SECRET := your_already_installed_secrets
+DOCKER_REGISTRY_COMPONENTS ?= the_registry_to_use_for_components
+DOCKER_REGISTRY_SECRET ?= your_already_installed_secrets
 
 HIVE_FILE_PATH := $(shell pwd)
 
@@ -33,11 +33,15 @@ SHELL_EXPORT := $(foreach v,$(MAKE_ENV),$(v)='$($(v))' )
 
 #K8S_FILES += $(shell find $(HIVE_FILE_PATH)/deploy -maxdepth 1 -name '*.yaml')
 define load_containers_minikube
-    @mkdir -p _tmp ;\
-    docker save $(1) | gzip > _tmp/$(2).tar.gz ;\
-    eval $$(minikube docker-env) ;\
-    docker load < _tmp/$(2).tar.gz ;\
-    rm -rf _tmp/$(2).tar.gz
+	$(info Loading container $(2) on minikube)
+    @mkdir -p _tmp;\
+    driver_check=$$(cat $$HOME/.minikube/machines/minikube/config.json  | grep DriverName);\
+    if [[ $$driver_check != *"none"* ]]; then docker save $(1) | gzip > _tmp/$(2).tar.gz;\
+    eval $$(minikube docker-env);\
+    docker load < _tmp/$(2).tar.gz;\
+    eval $$(minikube docker-env -u);\
+    rm -rf _tmp/$(2).tar.gz;\
+    fi;
 endef
 
 define build-images

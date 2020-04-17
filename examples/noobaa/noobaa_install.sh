@@ -20,20 +20,32 @@ function install_noobaa() {
 	
 	echo -n "Installing NooBaa..."
 	${DIR}/noobaa install > /dev/null 2>&1
-	kube_wait
+	echo "Installed NooBaa"
+	sleep 15
+	echo "Creating Backing Store"
 	${DIR}/noobaa backingstore create pv-pool my-pv-bs --num-volumes 3 --pv-size-gb 1 --storage-class standard > /dev/null 2>&1
-	kube_wait
+	echo "Created Backing Store"
+	sleep 15
+	echo "Delete Bucket Class"
 	${DIR}/noobaa bucketclass delete noobaa-default-bucket-class > /dev/null 2>&1
-	kube_wait
+	echo "Delete Bucket Class"
+	sleep 15
+	echo "Creating Bucket Class"
 	${DIR}/noobaa bucketclass create  noobaa-default-bucket-class --backingstores=my-pv-bs --placement="" > /dev/null 2>&1
+	echo "Created Bucket Class"
 	echo "done"
 }
 
 function build_data_loader() {
 	echo -n "Building NooBaa data loader..."
-	eval $(minikube docker-env)
+	driver_check=$(cat $HOME/.minikube/machines/minikube/config.json  | grep DriverName)
+    if [[ $driver_check != *"none"* ]]; then
+      eval $(minikube docker-env)
+    fi
 	docker build -f ${DIR}/Dockerfile-awscli-alpine -t awscli-alpine . > /dev/null 2>&1
-	eval $(minikube docker-env -u)
+	if [[ $driver_check != *"none"* ]]; then
+      eval $(minikube docker-env -u)
+    fi
 	echo "done"
 }
 
@@ -59,4 +71,3 @@ install_noobaa
 build_data_loader
 kube_wait
 run_data_loader
-
