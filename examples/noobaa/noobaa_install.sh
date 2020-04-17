@@ -20,19 +20,19 @@ function install_noobaa() {
 	
 	echo -n "Installing NooBaa..."
 	${DIR}/noobaa install > /dev/null 2>&1
-	echo -n "Installed NooBaa"
+	echo "Installed NooBaa"
 	sleep 15
-	echo -n "Creating Backing Store"
+	echo "Creating Backing Store"
 	${DIR}/noobaa backingstore create pv-pool my-pv-bs --num-volumes 3 --pv-size-gb 1 --storage-class standard > /dev/null 2>&1
-	echo -n "Created Backing Store"
+	echo "Created Backing Store"
 	sleep 15
-	echo -n "Delete Bucket Class"
+	echo "Delete Bucket Class"
 	${DIR}/noobaa bucketclass delete noobaa-default-bucket-class > /dev/null 2>&1
-	echo -n "Delete Bucket Class"
+	echo "Delete Bucket Class"
 	sleep 15
-	echo -n "Creating Bucket Class"
+	echo "Creating Bucket Class"
 	${DIR}/noobaa bucketclass create  noobaa-default-bucket-class --backingstores=my-pv-bs --placement="" > /dev/null 2>&1
-	echo -n "Created Bucket Class"
+	echo "Created Bucket Class"
 	echo "done"
 }
 
