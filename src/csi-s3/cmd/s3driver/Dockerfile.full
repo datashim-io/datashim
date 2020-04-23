@@ -27,7 +27,7 @@ COPY go.sum .
 
 RUN go mod download
 RUN if [ "$ARCH" = "ppc64le" ] ; then \
-    sed -i 's/4096/65536/g' $GOPATH/pkg/mod/github.com/jacobsa/fuse*/internal/buffer/in_message.go; \
+    sed -i 's/4096/65536/g' $$GOPATH/pkg/mod/github.com/jacobsa/fuse*/internal/buffer/in_message.go; \
     sed -i 's/17/21/g' $$GOPATH/pkg/mod/github.com/jacobsa/fuse*/internal/buffer/in_message_linux.go \
     sed -i 's/17/21/g' $$GOPATH/pkg/mod/github.com/jacobsa/fuse*/internal/buffer/out_message_linux.go \
     else echo 'true'; fi
