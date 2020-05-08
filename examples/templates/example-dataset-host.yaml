@@ -1,0 +1,10 @@
+apiVersion: com.ie.ibm.hpsys/v1alpha1
+kind: Dataset
+metadata:
+  name: example-dataset
+spec:
+  local:
+    type: "HOST"
+    path: "{DIR_PATH}"
+    hostPathType: "CreateNew" # set to either 'Directory' or 'CreateNew'
+
