@@ -357,6 +357,10 @@ func processLocalDatasetHOST(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (rec
 	/* We support the following permission schemes:
 	 * - ReadOnly
 	 * - ReadWrite
+	 * NOTE: As of today creating a read-only PV and PVC does not make it
+	 * read-only at POD runtime. AccessMode is only used at PVC-PV binding time
+	 * to make sure it is a valid binding but it is not transferred to the POD.
+	 * We'll have to handle this while mutating the PODs.
 	 */
 	if perm, exists := cr.Spec.Local["permissions"]; exists {
 		switch perm {
