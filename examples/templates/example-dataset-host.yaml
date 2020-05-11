@@ -6,5 +6,7 @@ spec:
   local:
     type: "HOST"
     path: "{DIR_PATH}"
-    hostPathType: "{TYPE}" # set to either 'Directory' or 'CreateNew'
+    hostPathType: "{TYPE}" # set to 'Directory' to attach to existing
+                           # directory or 'CreateNew' to create it in case it is
+                           # not there already
 
