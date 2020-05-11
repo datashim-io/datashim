@@ -6,5 +6,5 @@ spec:
   local:
     type: "HOST"
     path: "{DIR_PATH}"
-    hostPathType: "CreateNew" # set to either 'Directory' or 'CreateNew'
+    hostPathType: "{TYPE}" # set to either 'Directory' or 'CreateNew'
 
