@@ -57,5 +57,24 @@ rules:
   - com.ie.ibm.hpsys
   resources:
   - '*'
+  - datasetinternals
+  verbs:
+  - '*'
+- apiGroups:
+  - ceph.rook.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - objectbucket.io
+  resources:
+  - '*'
   verbs:
   - '*'

@@ -32,6 +32,10 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: "dataset-operator"
+            - name: OPERATOR_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
           volumeMounts:
             - name: webhook-tls-certs
               mountPath: /run/secrets/tls
