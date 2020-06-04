@@ -1,4 +1,4 @@
-package dataset
+package datasetinternal
 
 import (
 	"context"
@@ -19,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	cephv1 "github.com/rook/rook/pkg/apis/ceph.rook.io/v1"
 )
 
 var log = logf.Log.WithName("controller_dataset")
@@ -31,10 +32,10 @@ var log = logf.Log.WithName("controller_dataset")
 /**
  * Functions table for hadnling creation of local datasets.
  * Each function in the table should respect the following signature:
- *		processLocalDatasetXYZ func(*comv1alpha1.Dataset, *ReconcileDataset) (reconcile.Result, error)
+ *		processLocalDatasetXYZ func(*comv1alpha1.DatasetInternal, *ReconcileDataset) (reconcile.Result, error)
  */
-var datasetLocalProcessTable = map[string]func(*comv1alpha1.Dataset,
-	*ReconcileDataset) (reconcile.Result, error){
+var datasetLocalProcessTable = map[string]func(*comv1alpha1.DatasetInternal,
+	*ReconcileDatasetInternal) (reconcile.Result, error){
 	"COS":  processLocalDatasetCOS,
 	"NFS":  processLocalDatasetNFS,
 	"HOST": processLocalDatasetHOST,
@@ -48,7 +49,7 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileDataset{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileDatasetInternal{client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -60,7 +61,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource Dataset
-	err = c.Watch(&source.Kind{Type: &comv1alpha1.Dataset{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &comv1alpha1.DatasetInternal{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -69,7 +70,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch for changes to secondary resource Pods and requeue the owner Dataset
 	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &comv1alpha1.Dataset{},
+		OwnerType:    &comv1alpha1.DatasetInternal{},
 	})
 	if err != nil {
 		return err
@@ -79,10 +80,10 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 }
 
 // blank assignment to verify that ReconcileDataset implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcileDataset{}
+var _ reconcile.Reconciler = &ReconcileDatasetInternal{}
 
 // ReconcileDataset reconciles a Dataset object
-type ReconcileDataset struct {
+type ReconcileDatasetInternal struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client client.Client
@@ -96,15 +97,15 @@ type ReconcileDataset struct {
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileDatasetInternal) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling Dataset")
+	reqLogger.Info("Reconciling DatasetInternal")
 
 	result := reconcile.Result{}
 	var err error = nil
 
 	// Fetch the Dataset instance
-	instance := &comv1alpha1.Dataset{}
+	instance := &comv1alpha1.DatasetInternal{}
 	err = r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -113,6 +114,7 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 			// Return and don't requeue
 			reqLogger.Info("Dataset is not found")
 			err = nil
+			return reconcile.Result{},nil
 		}
 		// Error reading the object - requeue the request.
 	}
@@ -141,7 +143,7 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 	return result, err
 }
 
-func processLocalDatasetCOS(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconcile.Result, error) {
+func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatasetInternal) (reconcile.Result, error) {
 	processLocalDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processLocalDataset")
 
 	accessKeyID := cr.Spec.Local["accessKeyID"]
@@ -168,9 +170,20 @@ func processLocalDatasetCOS(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reco
 		"region":   region,
 	}
 
-	if _, err := createConfigMapforDataset(configData, cr, rc); err != nil {
-		processLocalDatasetLogger.Error(err, "Could not create ConfigMap for dataset", "Dataset.Name", cr.Name)
+	foundConfigmap := &corev1.ConfigMap{}
+	err := rc.client.Get(context.TODO(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, foundConfigmap)
+	if err != nil && errors.IsNotFound(err) {
+		if _, err := createConfigMapforDataset(configData, cr, rc); err != nil {
+			processLocalDatasetLogger.Error(err, "Could not create ConfigMap for dataset", "Dataset.Name", cr.Name)
+			return reconcile.Result{}, err
+		}
+	} else if err != nil {
 		return reconcile.Result{}, err
+	} else {
+		if(len(foundConfigmap.OwnerReferences)>0 && foundConfigmap.OwnerReferences[0].UID!=cr.UID){
+			processLocalDatasetLogger.Info("Configmap with different parent,requing")
+			return reconcile.Result{Requeue: true},nil
+		}
 	}
 
 	secretObj := &corev1.Secret{
@@ -187,7 +200,7 @@ func processLocalDatasetCOS(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reco
 	}
 
 	found := &corev1.Secret{}
-	err := rc.client.Get(context.TODO(), types.NamespacedName{Name: secretObj.Name, Namespace: secretObj.Namespace}, found)
+	err = rc.client.Get(context.TODO(), types.NamespacedName{Name: secretObj.Name, Namespace: secretObj.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		processLocalDatasetLogger.Info("Creating new secrets", "Secret.Namespace", secretObj.Namespace, "Secret.Name", secretObj.Name)
 		err = rc.client.Create(context.TODO(), secretObj)
@@ -197,6 +210,11 @@ func processLocalDatasetCOS(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reco
 		// Secrets created successfully - don't requeue
 	} else if err != nil {
 		return reconcile.Result{}, err
+	} else {
+		if(len(found.OwnerReferences)>0 && found.OwnerReferences[0].UID!=cr.UID){
+			processLocalDatasetLogger.Info("Secrets with different parent,requing")
+			return reconcile.Result{Requeue: true},nil
+		}
 	}
 
 	storageClassName := "csi-s3"
@@ -233,12 +251,209 @@ func processLocalDatasetCOS(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reco
 		// Secrets created successfully - don't requeue
 	} else if err != nil {
 		return reconcile.Result{}, err
+	} else {
+		if(len(foundPVC.OwnerReferences)>0 && foundPVC.OwnerReferences[0].UID!=cr.UID){
+			processLocalDatasetLogger.Info("PVC with different parent,requing")
+			return reconcile.Result{Requeue: true},nil
+		}
+	}
+
+	if _, ok := cr.Labels["type"]; !ok {
+		//do something here
+
+		creds := &cephv1.CephObjectStoreUser{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: cr.Name,
+				Namespace: cr.Namespace,
+				Labels: map[string]string{
+					"test":"label",
+				},
+			},
+			Spec:       cephv1.ObjectStoreUserSpec{
+				Store:       cr.Name,
+				DisplayName: "Ceph User",
+			},
+		}
+
+		if err := controllerutil.SetControllerReference(cr, creds, rc.scheme); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		foundCephStoreUser := &cephv1.CephObjectStoreUser{}
+		err = rc.client.Get(context.TODO(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, foundCephStoreUser)
+		if err != nil && errors.IsNotFound(err) {
+			processLocalDatasetLogger.Info("Creating new secrets", "Secret.Namespace", secretObj.Namespace, "Secret.Name", secretObj.Name)
+			err = rc.client.Create(context.TODO(), creds)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			// Secrets created successfully - don't requeue
+		} else if err != nil {
+			return reconcile.Result{}, err
+		} else {
+			if(len(foundCephStoreUser.OwnerReferences)>0 && foundCephStoreUser.OwnerReferences[0].UID!=cr.UID){
+				processLocalDatasetLogger.Info("Ceph object store user with different parent,requing")
+				return reconcile.Result{Requeue: true},nil
+			}
+		}
+
+
+		accessKeyID := cr.Spec.Local["accessKeyID"]
+		secretAccessKey := cr.Spec.Local["secretAccessKey"]
+		endpoint := cr.Spec.Local["endpoint"]
+		bucket := cr.Spec.Local["bucket"]
+
+		configMapForRados := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "rook-ceph-rgw-"+cr.Name+"-custom",
+				Namespace: cr.Namespace,
+			},
+			Data: map[string]string{
+				"config": "\n[global]\nrgw frontends = civetweb port=8000\nadmin socket = /tmp/radosgw.8000.asok\nremote s3 = "+endpoint+"\nremote bucket = "+bucket+"\nremote id = "+accessKeyID+"\nremote secret = "+secretAccessKey+"\n",
+			},
+		}
+
+		if err := controllerutil.SetControllerReference(cr, configMapForRados, rc.scheme); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		foundconfigMapForRados := &corev1.ConfigMap{}
+		err = rc.client.Get(context.TODO(), types.NamespacedName{Name: "rook-ceph-rgw-"+cr.Name+"-custom", Namespace: cr.Namespace}, foundconfigMapForRados)
+		if err != nil && errors.IsNotFound(err) {
+			processLocalDatasetLogger.Info("Creating new secrets", "Secret.Namespace", secretObj.Namespace, "Secret.Name", secretObj.Name)
+			err = rc.client.Create(context.TODO(), configMapForRados)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			// Secrets created successfully - don't requeue
+		} else if err != nil {
+			return reconcile.Result{}, err
+		} else {
+			if(len(foundconfigMapForRados.OwnerReferences)>0 && foundconfigMapForRados.OwnerReferences[0].UID!=cr.UID){
+				processLocalDatasetLogger.Info("Rgw with different parent, requing")
+				return reconcile.Result{Requeue: true},nil
+			}
+		}
+
+
+		newRgw := &cephv1.CephObjectStore{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: cr.Name,
+				Namespace: cr.Namespace,
+				Labels: map[string]string{
+					"test":"label",
+				},
+			},
+			Spec:       cephv1.ObjectStoreSpec{
+				MetadataPool:          cephv1.PoolSpec{
+					Replicated:      cephv1.ReplicatedSpec{
+						Size:                   1,
+					},
+				},
+				DataPool:              cephv1.PoolSpec{
+					Replicated:      cephv1.ReplicatedSpec{
+						Size:                   1,
+					},
+				},
+				PreservePoolsOnDelete: false,
+				Gateway:               cephv1.GatewaySpec{
+					Instances: 1,
+					Port: 80,
+				},
+			},
+		}
+		if err := controllerutil.SetControllerReference(cr, newRgw, rc.scheme); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		foundCephObjectStore := &cephv1.CephObjectStore{}
+		err = rc.client.Get(context.TODO(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, foundCephObjectStore)
+		if err != nil && errors.IsNotFound(err) {
+			processLocalDatasetLogger.Info("Creating new secrets", "Secret.Namespace", secretObj.Namespace, "Secret.Name", secretObj.Name)
+			err = rc.client.Create(context.TODO(), newRgw)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			// Secrets created successfully - don't requeue
+		} else if err != nil {
+			return reconcile.Result{}, err
+		}  else {
+			if(len(foundCephObjectStore.OwnerReferences)>0 && foundCephObjectStore.OwnerReferences[0].UID!=cr.UID){
+				processLocalDatasetLogger.Info("CephObjectStore with different parent, requing")
+				return reconcile.Result{Requeue: true},nil
+			}
+		}
+
+		foundCephUserSecrets := &corev1.Secret{}
+		err = rc.client.Get(context.TODO(), types.NamespacedName{Name: "rook-ceph-object-user-"+cr.Name+"-"+cr.Name, Namespace: cr.Namespace}, foundCephUserSecrets)
+		if err != nil && errors.IsNotFound(err) {
+			processLocalDatasetLogger.Info("Not found secrets,requeing", "Secret.Namespace", secretObj.Namespace, "Secret.Name", secretObj.Name)
+			return reconcile.Result{Requeue: true},nil
+			// Secrets created successfully - don't requeue
+		} else if err != nil {
+			return reconcile.Result{}, err
+		} else {
+			if(len(foundCephUserSecrets.OwnerReferences)>0 && foundCephUserSecrets.OwnerReferences[0].UID!=foundCephStoreUser.UID){
+				processLocalDatasetLogger.Info("CephObjectStore with different parent, requing")
+				return reconcile.Result{Requeue: true},nil
+			}
+		}
+
+		foundRgwService := &corev1.Service{}
+		err = rc.client.Get(context.TODO(), types.NamespacedName{Name: "rook-ceph-rgw-"+cr.Name, Namespace: cr.Namespace}, foundRgwService)
+		if err != nil && errors.IsNotFound(err) {
+			processLocalDatasetLogger.Info("Not found rgw,requeing", "Secret.Namespace", secretObj.Namespace, "Secret.Name", secretObj.Name)
+			return reconcile.Result{Requeue: true},nil
+			// Secrets created successfully - don't requeue
+		} else if err != nil {
+			return reconcile.Result{}, err
+		} else {
+			if(len(foundRgwService.OwnerReferences)>0 && foundRgwService.OwnerReferences[0].UID!=foundCephObjectStore.UID){
+				processLocalDatasetLogger.Info("RgwService with different parent, requing")
+				return reconcile.Result{Requeue: true},nil
+			}
+		}
+
+		AccessKey := foundCephUserSecrets.Data["AccessKey"]
+		SecretKey := foundCephUserSecrets.Data["SecretKey"]
+		InternalEndpoint := foundRgwService.Spec.ClusterIP
+
+		internalDataset := &comv1alpha1.DatasetInternal{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:                       cr.Name+"-cached",
+				Namespace: cr.Namespace,
+				Labels: map[string]string{
+					"type": "cached",
+				},
+			},
+			Spec: comv1alpha1.DatasetInternalSpec{
+				Local: map[string]string{
+					"type": "COS",
+					"accessKeyID":    string(AccessKey),
+					"secretAccessKey": string(SecretKey),
+					"endpoint":        "http://"+InternalEndpoint,
+					"bucket":          bucket,
+				},
+			},
+		}
+		if err := controllerutil.SetControllerReference(cr, internalDataset, rc.scheme); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		err = rc.client.Create(context.TODO(), internalDataset)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+
+		//processLocalDatasetLogger.Info("SECRETS ARE THERE!", "Secret.Namespace", secretObj.Namespace, "Secret.Name", secretObj.Name)
+
 	}
 
 	return reconcile.Result{}, nil
 }
 
-func processLocalDatasetNFS(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconcile.Result, error) {
+func processLocalDatasetNFS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatasetInternal) (reconcile.Result, error) {
 	processLocalDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processLocalDatasetNFS")
 	processLocalDatasetLogger.Info("Dataset type NFS")
 
@@ -336,7 +551,7 @@ func processLocalDatasetNFS(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reco
  * complexity of doing this via the hostpath CSI driver:
  *    https://github.com/kubernetes-csi/csi-driver-host-path
  */
-func processLocalDatasetHOST(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconcile.Result, error) {
+func processLocalDatasetHOST(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatasetInternal) (reconcile.Result, error) {
 	processLocalDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processLocalDatasetHOST")
 	processLocalDatasetLogger.Info("Dataset type HOST")
 
@@ -470,7 +685,7 @@ func processLocalDatasetHOST(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (rec
 
 }
 
-func processRemoteDataset(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconcile.Result, error) {
+func processRemoteDataset(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatasetInternal) (reconcile.Result, error) {
 
 	processRemoteDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processRemoteDataset")
 	result := reconcile.Result{}
@@ -655,7 +870,7 @@ func processRemoteDataset(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconc
 	return result, nil
 }
 
-func createConfigMapforDataset(configMapData map[string]string, cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconcile.Result, error) {
+func createConfigMapforDataset(configMapData map[string]string, cr *comv1alpha1.DatasetInternal, rc *ReconcileDatasetInternal) (reconcile.Result, error) {
 
 	createConfigMapLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "createConfigMapforObjectStorage")
 	result := reconcile.Result{}
@@ -695,7 +910,7 @@ func createConfigMapforDataset(configMapData map[string]string, cr *comv1alpha1.
 	return result, err
 }
 
-func createPVCforObjectStorage(cr *comv1alpha1.Dataset, rc *ReconcileDataset) (reconcile.Result, error) {
+func createPVCforObjectStorage(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatasetInternal) (reconcile.Result, error) {
 
 	createPVCLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "createPVCforObjectStorage")
 	result := reconcile.Result{}
