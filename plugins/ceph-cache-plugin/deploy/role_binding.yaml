@@ -1,0 +1,11 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: ceph-cache-plugin
+subjects:
+- kind: ServiceAccount
+  name: ceph-cache-plugin
+roleRef:
+  kind: Role
+  name: ceph-cache-plugin
+  apiGroup: rbac.authorization.k8s.io

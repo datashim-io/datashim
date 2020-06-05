@@ -108,6 +108,14 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 	// This means that we should create a 1-1 DatasetInteral
 	if(len(pluginDeployments.Items)==0){
 		delegatedToPlugin = false
+	} else {
+		//TODO pick the first plugin for the time being
+		datasetInstance.Annotations = pluginDeployments.Items[0].Annotations
+		err = r.client.Update(context.TODO(),datasetInstance)
+		if(err!=nil){
+			reqLogger.Error(err,"Error while updating dataset according to caching plugin")
+			return reconcile.Result{},err
+		}
 	}
 
 	datasetInternalInstance := &comv1alpha1.DatasetInternal{}
@@ -152,6 +160,7 @@ func getCachingPlugins(c client.Client) (*appsv1.DeploymentList,error){
 		client.MatchingLabels(map[string]string{
 			"dlf-plugin-type":"caching",
 		}),
+		client.HasLabels{"dlf-plugin-name"},
 	}
 	err := c.List(context.TODO(),deploymentList,listOpts...)
 	return deploymentList,err
