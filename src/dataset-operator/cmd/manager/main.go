@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"dataset-operator/pkg/admissioncontroller"
+	"github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/admissioncontroller"
 	"errors"
 	"flag"
 	"fmt"
@@ -16,9 +16,9 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
-	"dataset-operator/pkg/apis"
-	"dataset-operator/pkg/controller"
-	"dataset-operator/version"
+	"github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/apis"
+	"github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/controller"
+	"github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/version"
 
 	objectstorage "github.com/kube-object-storage/lib-bucket-provisioner/pkg/apis/objectbucket.io/v1alpha1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"

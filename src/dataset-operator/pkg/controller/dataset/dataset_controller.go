@@ -110,7 +110,7 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 		delegatedToPlugin = false
 	} else {
 		//TODO pick the first plugin for the time being
-		datasetInstance.Annotations = pluginDeployments.Items[0].Annotations
+		datasetInstance.Annotations = pluginDeployments.Items[0].Labels
 		err = r.client.Update(context.TODO(),datasetInstance)
 		if(err!=nil){
 			reqLogger.Error(err,"Error while updating dataset according to caching plugin")
