@@ -1,12 +1,14 @@
-module dataset-operator
+module github.com/IBM/dataset-lifecycle-framework/src/dataset-operator
 
 require (
 	git.apache.org/thrift.git v0.13.0 // indirect
 	github.com/akolb1/gometastore v0.0.0-20181012003105-a6ffbeed8c1a
 	github.com/go-openapi/spec v0.19.4
+	github.com/kube-object-storage/lib-bucket-provisioner v0.0.0-20200107223247-51020689f1fb
 	github.com/operator-framework/operator-sdk v0.16.0
 	github.com/rook/rook v1.3.3
 	github.com/spf13/pflag v1.0.5
+	gopkg.in/yaml.v2 v2.2.7
 	k8s.io/api v0.17.2
 	k8s.io/apimachinery v0.17.2
 	k8s.io/client-go v12.0.0+incompatible
