@@ -2,7 +2,7 @@ package dataset
 
 import (
 	"context"
-	comv1alpha1 "dataset-operator/pkg/apis/com/v1alpha1"
+	comv1alpha1 "github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/apis/com/v1alpha1"
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"os"

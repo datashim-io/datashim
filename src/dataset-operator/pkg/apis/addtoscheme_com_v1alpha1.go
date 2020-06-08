@@ -1,7 +1,7 @@
 package apis
 
 import (
-	"dataset-operator/pkg/apis/com/v1alpha1"
+	"github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/apis/com/v1alpha1"
 )
 
 func init() {

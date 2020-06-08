@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"dataset-operator/pkg/controller/datasetinternal"
+	"github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/controller/datasetinternal"
 )
 
 func init() {
