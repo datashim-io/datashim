@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rook-ceph-tools
+  namespace: rook-ceph
+  labels:
+    app: rook-ceph-tools
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rook-ceph-tools
+  template:
+    metadata:
+      labels:
+        app: rook-ceph-tools
+    spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+      - name: rook-ceph-tools
+        image: YOUR_REGISTRY/rook:v.1.2-amd64
+        command: ["/tini"]
+        args: ["-g", "--", "/usr/local/bin/toolbox.sh"]
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: ROOK_ADMIN_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: rook-ceph-mon
+                key: admin-secret
+        volumeMounts:
+          - mountPath: /etc/ceph
+            name: ceph-config
+          - name: mon-endpoint-volume
+            mountPath: /etc/rook
+      volumes:
+        - name: mon-endpoint-volume
+          configMap:
+            name: rook-ceph-mon-endpoints
+            items:
+            - key: data
+              path: mon-endpoints
+        - name: ceph-config
+          emptyDir: {}
+      tolerations:
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 5
+

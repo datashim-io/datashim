@@ -57,7 +57,7 @@ rules:
   - com.ie.ibm.hpsys
   resources:
   - '*'
-  - datasetinternals
+  - datasetsinternal
   verbs:
   - '*'
 - apiGroups:

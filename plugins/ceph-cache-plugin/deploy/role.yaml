@@ -1,4 +1,4 @@
-kind: Role
+kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: ceph-cache-plugin
@@ -71,3 +71,9 @@ rules:
   - '*'
   verbs:
   - '*'
+- apiGroups:
+    - ceph.rook.io
+  resources:
+    - '*'
+  verbs:
+    - '*'

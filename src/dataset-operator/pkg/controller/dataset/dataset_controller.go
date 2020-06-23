@@ -4,11 +4,11 @@ import (
 	"context"
 	comv1alpha1 "github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/apis/com/v1alpha1"
 	"gopkg.in/yaml.v2"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -101,21 +101,20 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 
-	pluginDeployments, err := getCachingPlugins(r.client)
+	pluginPods, err := getCachingPlugins(r.client)
 	if(err!=nil){return reconcile.Result{},err}
 
-	delegatedToPlugin := true
 	// This means that we should create a 1-1 DatasetInteral
-	if(len(pluginDeployments.Items)==0){
-		delegatedToPlugin = false
-	} else {
+	if(len(pluginPods.Items)!=0){
 		//TODO pick the first plugin for the time being
-		datasetInstance.Annotations = pluginDeployments.Items[0].Labels
+		datasetInstance.Annotations = pluginPods.Items[0].Labels
 		err = r.client.Update(context.TODO(),datasetInstance)
 		if(err!=nil){
 			reqLogger.Error(err,"Error while updating dataset according to caching plugin")
 			return reconcile.Result{},err
 		}
+		//In this case we are done, the caching plugin takes control of the dataset
+		return reconcile.Result{}, nil
 	}
 
 	datasetInternalInstance := &comv1alpha1.DatasetInternal{}
@@ -124,11 +123,6 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 		//Unknown error occured, shouldn't happen
 		return reconcile.Result{}, err
 	} else if(err!=nil && errors.IsNotFound(err)){
-		if(delegatedToPlugin){
-			//DatasetInternal is not created yet by the plugin, requeue the object
-			reqLogger.Info("DatasetInternal is not ready yet, requing","name",request.NamespacedName)
-			return reconcile.Result{Requeue: true},nil
-		} else {
 			//1-1 Dataset and DatasetInternal because there is no caching plugin
 			reqLogger.Info("1-1 Dataset and DatasetInternal because there is no caching plugin")
 			newDatasetInternalInstance := &comv1alpha1.DatasetInternal{
@@ -143,18 +137,17 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 			}
 			err = r.client.Create(context.TODO(),newDatasetInternalInstance)
 			if err != nil {
-						return reconcile.Result{}, err
+				return reconcile.Result{}, err
 			}
-		}
 	}
 
 	return reconcile.Result{}, nil
 }
 
-func getCachingPlugins(c client.Client) (*appsv1.DeploymentList,error){
+func getCachingPlugins(c client.Client) (*v1.PodList,error){
 
 	namespace := os.Getenv("OPERATOR_NAMESPACE")
-	deploymentList := &appsv1.DeploymentList{}
+	podList := &v1.PodList{}
 	listOpts := []client.ListOption{
 		client.InNamespace(namespace),
 		client.MatchingLabels(map[string]string{
@@ -162,8 +155,8 @@ func getCachingPlugins(c client.Client) (*appsv1.DeploymentList,error){
 		}),
 		client.HasLabels{"dlf-plugin-name"},
 	}
-	err := c.List(context.TODO(),deploymentList,listOpts...)
-	return deploymentList,err
+	err := c.List(context.TODO(),podList,listOpts...)
+	return podList,err
 }
 
 func formatToYaml(in interface{}) (string,error) {

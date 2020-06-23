@@ -1,11 +1,12 @@
-kind: RoleBinding
+kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: ceph-cache-plugin
 subjects:
 - kind: ServiceAccount
   name: ceph-cache-plugin
+  namespace: ${NAMESPACE}
 roleRef:
-  kind: Role
+  kind: ClusterRole
   name: ceph-cache-plugin
   apiGroup: rbac.authorization.k8s.io

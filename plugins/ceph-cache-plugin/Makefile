@@ -4,7 +4,7 @@ K8S_FILES += $(shell find ./deploy -maxdepth 1 -name '*.yaml')
 K8S_FILES += $(shell find ./deploy/crds -maxdepth 1 -name '*crd.yaml')
 
 PULL_IMAGE ?= false
-IMAGE_NAME ?= ceph-cache-plugin
+IMAGE_NAME ?= yiannisgkoufas/ceph-cache-plugin
 NAMESPACE ?= default
 
 MAKE_ENV += IMAGE_NAME
@@ -36,4 +36,10 @@ deployment:
 	@for file in $(K8S_FILES); do \
 		echo creating $$file ;\
 		$(SHELL_EXPORT) envsubst < $$file | kubectl apply -n $(NAMESPACE) -f - ;\
+	done
+
+undeployment:
+	@for file in $(K8S_FILES); do \
+		echo delete $$file ;\
+		kubectl delete -n $(NAMESPACE) -f $$file ;\
 	done
