@@ -19,7 +19,7 @@ This framework targets any *Kubernetes 1.15+* installation; it is built on the
 
 - ~Support for NFS directories as Datasets [pull/3](https://github.com/IBM/dataset-lifecycle-framework/pull/3)~
 - ~Support lookup for Dataset information in Hive metastore [pull/4](https://github.com/IBM/dataset-lifecycle-framework/pull/4)~
-- Pluggable caching mechanism
+- Pluggable caching mechanism, working branch: https://github.com/IBM/dataset-lifecycle-framework/tree/fixed-caching
 - Integration with Multi-Cloud Object Gateway (Noobaa)
 - Optimizations for data-aware scheduling
 
