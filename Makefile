@@ -1,22 +1,22 @@
-DOCKER_REGISTRY_COMPONENTS ?= 172.9.0.240:5000/dlf
-DOCKER_REGISTRY_SECRET ?= regcred
+DOCKER_REGISTRY_COMPONENTS ?= the_registry_to_use_for_components
+DOCKER_REGISTRY_SECRET ?= your_already_installed_secrets
 # you need something like this:
 # kubectl create secret generic regcred -n NAMESPACE_OF_OPERATOR --from-file=.dockerconfigjson=$(echo $HOME)/.docker/config.json --type=kubernetes.io/dockerconfigjson
-PULL_COMPONENTS ?= true
+PULL_COMPONENTS ?= false
 
 DOCKER_REGISTRY_SIDECARS ?= quay.io/k8scsi
 # if you pull from public use quay.io/k8scsi
-PULL_SIDECARS ?= true
+PULL_SIDECARS ?= false
 
-DATASET_OPERATOR_NAMESPACE ?= ibm-dlf
-NAMESPACES_TO_MONITOR ?= ibm-dlf
+DATASET_OPERATOR_NAMESPACE ?= default
+NAMESPACES_TO_MONITOR ?= default
 
 # if you are building use master, if you are pulling use canary
 EXTERNAL_ATTACHER_TAG ?= v2.1.1
 #working in ppc64le v2.1.1
 EXTERNAL_PROVISIONER_TAG ?= v1.5.0
 #working in ppc64le v1.5.0
-NODE_DRIVER_REGISTRAR_TAG ?= canary
+NODE_DRIVER_REGISTRAR_TAG ?= master
 #working in ppc64le master
 
 minikube-uninstall: noobaa-uninstall undeployment
