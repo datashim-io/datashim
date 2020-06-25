@@ -25,7 +25,7 @@ spec:
               name: webhook-api
           env:
             - name: WATCH_NAMESPACE
-              value: ""
+              value: ${NAMESPACES_TO_MONITOR}
             - name: POD_NAME
               valueFrom:
                 fieldRef:

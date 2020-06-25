@@ -10,6 +10,8 @@ PULL_SIDECARS ?= true
 
 DATASET_OPERATOR_NAMESPACE ?= default
 NAMESPACES_TO_MONITOR ?= default
+#In case you want to monitor multiple namespaces use comma delimited
+#NAMESPACES_TO_MONITOR ?= default,one-namespace,another-namespace
 
 # if you are building use master, if you are pulling use canary
 EXTERNAL_ATTACHER_TAG ?= v2.1.1
@@ -26,7 +28,9 @@ undeployment:
         echo deleting $$file ;\
 		$(SHELL_EXPORT) envsubst < $$file | kubectl delete -n $(DATASET_OPERATOR_NAMESPACE) -f - ;\
     done
-	@for namespace in $(NAMESPACES_TO_MONITOR); do \
+	@IFS=',' read -ra namespace_array <<< $(NAMESPACES_TO_MONITOR) &&\
+	for namespace in "$${namespace_array[@]}"; \
+	do\
     	kubectl label namespace $$namespace monitor-pods-datasets- ;\
     done
 	@kubectl delete -n $(DATASET_OPERATOR_NAMESPACE) secret webhook-server-tls ;\
@@ -37,7 +41,9 @@ deployment: keys-installation
   		echo creating $$file ;\
 		$(SHELL_EXPORT) envsubst < $$file | kubectl apply -n $(DATASET_OPERATOR_NAMESPACE) -f - ;\
 	done
-	@for namespace in $(NAMESPACES_TO_MONITOR); do \
+	@IFS=',' read -ra namespace_array <<< $(NAMESPACES_TO_MONITOR) &&\
+	for namespace in "$${namespace_array[@]}"; \
+	do\
 		kubectl label namespace $$namespace monitor-pods-datasets=enabled ;\
 	done
 

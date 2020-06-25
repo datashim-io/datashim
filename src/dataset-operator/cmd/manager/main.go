@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"strings"
 	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -76,11 +78,11 @@ func main() {
 	printVersion()
 
 	// TODO add multi-namespace support
-	//namespace, err := k8sutil.GetWatchNamespace()
-	//if err != nil {
-	//	log.Error(err, "Failed to get watch namespace")
-	//	os.Exit(1)
-	//}
+	namespace, err := k8sutil.GetWatchNamespace()
+	if err != nil {
+		log.Error(err, "Failed to get watch namespace")
+		os.Exit(1)
+	}
 
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
@@ -100,7 +102,7 @@ func main() {
 	// Set default manager options
 	// TODO add multi-namespace support
 	options := manager.Options{
-		Namespace:          "",
+		Namespace:          namespace,
 		MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 	}
 
@@ -109,10 +111,10 @@ func main() {
 	// Also note that you may face performance issues when using this with a high number of namespaces.
 	// More Info: https://godoc.org/github.com/kubernetes-sigs/controller-runtime/pkg/cache#MultiNamespacedCacheBuilder
 	// TODO add multi-namespace support
-	//if strings.Contains(namespace, ",") {
-	//	options.Namespace = ""
-	//	options.NewCache = cache.MultiNamespacedCacheBuilder(strings.Split(namespace, ","))
-	//}
+	if strings.Contains(namespace, ",") {
+		options.Namespace = ""
+		options.NewCache = cache.MultiNamespacedCacheBuilder(strings.Split(namespace, ","))
+	}
 
 	// Create a new manager to provide shared dependencies and start components
 	mgr, err := manager.New(cfg, options)
