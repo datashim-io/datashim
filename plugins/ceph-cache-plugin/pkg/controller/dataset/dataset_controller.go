@@ -219,6 +219,10 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 		if(sameObj==false){
 			return reconcile.Result{}, errors.NewBadRequest("rgw exists, but belongs to different dataset")
 		}
+		if(cephObjectStore.Status==nil){
+			reqLogger.Info("Rgw not ready, requeing")
+			return reconcile.Result{Requeue: true}, nil
+		}
 		if(cephObjectStore.Status!=nil && cephObjectStore.Status.Phase!="Ready"){
 			reqLogger.Info("Rgw not ready, requeing")
 			return reconcile.Result{Requeue: true}, nil
