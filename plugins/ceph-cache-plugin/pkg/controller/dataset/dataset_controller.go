@@ -227,6 +227,20 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 			reqLogger.Info("Rgw not ready, requeing")
 			return reconcile.Result{Requeue: true}, nil
 		}
+		rgwPods := &corev1.PodList{}
+		err = populateListOfObjects(r.client,rgwPods,[]client.ListOption{
+			client.InNamespace(os.Getenv("ROOK_NAMESPACE")),
+			client.MatchingLabels{"app":"rook-ceph-rgw","rgw": request.Name},
+		})
+		if(err!=nil){
+			reqLogger.Info("Error getting list of pods for rgw")
+			return reconcile.Result{}, err
+		} else {
+			if(len(rgwPods.Items)==0){
+				reqLogger.Info("Rgw pod not ready, requeing")
+				return reconcile.Result{Requeue: true}, nil
+			}
+		}
 		reqLogger.Info("Found the correct rgw, all good")
 	}
 
