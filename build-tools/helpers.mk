@@ -30,10 +30,6 @@ GENERAGE_KEYS_IMAGE_TAG := dev-full
 GENERAGE_KEYS_IMAGE := $(DOCKER_REGISTRY)/$(GENERAGE_KEYS_IMAGE)
 GENERAGE_KEYS_IMAGE := $(GENERAGE_KEYS_IMAGE):$(GENERAGE_KEYS_IMAGE_TAG)
 
-define get_arch
-$(shell if [ "$$(arch)" == "x86_64" ]; then echo amd64; elif [ "$$(arch)" == "i386" ]; then echo amd64; else echo "$$(arch)"; fi)
-endef
-
 #1: git repo url
 #2: git tag
 #3: directory created from pull
@@ -53,14 +49,14 @@ define install_sidecar
 	\nRUN cd /tmp-code && go mod download\
 	\nCOPY . /$(3)\
 	\nRUN cd /$(3) && make build" | tee -a ./_tmp/$(3)/Dockerfile-$(3).installer ;\
-	docker build --build-arg=ARCH=$(call get_arch) -t $(3)-installer -f ./_tmp/$(3)/Dockerfile-$(3).installer ./_tmp/$(3) ;\
+	docker build --build-arg=ARCH=$(ARCH) -t $(3)-installer -f ./_tmp/$(3)/Dockerfile-$(3).installer ./_tmp/$(3) ;\
 	mkdir -p ./_tmp/$(3)/bin ;\
 	docker run --rm -v $$(pwd)/_tmp/$(3)/bin:/tmp-bin $(3)-installer sh -c "cp -r /$(3)/bin/* /tmp-bin" ;\
-	cd ./_tmp/$(3) &&	docker build -t $(4)-$(call get_arch) .
+	cd ./_tmp/$(3) &&	docker build -t $(4)-$(ARCH) .
 endef
 
 #1: local directory name
 #2: image to be created
 define install_local
-	cd ../src/$(1) && make container -e IMAGE_TAG=$(2)-$(call get_arch) -e ARCH=$(call get_arch)
+	cd ../src/$(1) && make container -e IMAGE_TAG=$(2)-$(ARCH) -e ARCH=$(ARCH)
 endef
