@@ -23,10 +23,10 @@ build-components:
 
 push-all:
 	@docker login $(DOCKER_REGISTRY) --username $(USERNAME) --password $(PASSWORD) ;\
-    docker push $(EXTERNAL_PROVISIONER_IMAGE) ;\
-	docker push $(EXTERNAL_ATTACHER_IMAGE) ;\
-	docker push $(NODE_DRIVER_REGISTRAR_IMAGE) ;\
-    docker push $(CSI_S3_IMAGE) ;\
-	docker push $(CSI_NFS_IMAGE) ;\
-	docker push $(DATASET_OPERATOR_IMAGE) ;\
-	docker push $(GENERAGE_KEYS_IMAGE)
+	docker push $(EXTERNAL_PROVISIONER_IMAGE)-$(ARCH) ;\
+	docker push $(EXTERNAL_ATTACHER_IMAGE)-$(ARCH) ;\
+	docker push $(NODE_DRIVER_REGISTRAR_IMAGE)-$(ARCH) ;\
+	docker push $(CSI_S3_IMAGE)-$(ARCH) ;\
+	docker push $(CSI_NFS_IMAGE)-$(ARCH) ;\
+	docker push $(DATASET_OPERATOR_IMAGE)-$(ARCH) ;\
+	docker push $(GENERAGE_KEYS_IMAGE)-$(ARCH)
