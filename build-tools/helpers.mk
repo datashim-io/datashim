@@ -43,7 +43,7 @@ define install_sidecar
 	cd ./_tmp/$(3) ;\
 	git checkout $(2)
 	cp ./Dockerfile ./_tmp/$(3)/Dockerfile-$(3).installer
-	echo -e "\nRUN mkdir /tmp-code\
+	printf "\nRUN mkdir /tmp-code\
 	\nCOPY go.mod /tmp-code/go.mod\
 	\nCOPY go.sum /tmp-code/go.sum\
 	\nRUN cd /tmp-code && go mod download\
