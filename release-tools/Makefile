@@ -38,6 +38,8 @@ MAKE_ENV += DATASET_OPERATOR_IMAGE
 MAKE_ENV += DATASET_OPERATOR_NAMESPACE
 MAKE_ENV += DOCKER_REGISTRY_SECRET
 MAKE_ENV += KEY_DIR
+MAKE_ENV += NAMESPACES_TO_MONITOR
+MAKE_ENV += KUBELET_PATH
 
 SHELL_EXPORT := $(foreach v,$(MAKE_ENV),$(v)='$($(v))' )
 
@@ -45,6 +47,8 @@ K8S_FILES += $(shell find ./src/csi-s3/deploy/kubernetes -maxdepth 1 -name '*.ya
 K8S_FILES += $(shell find ./src/csi-driver-nfs/deploy/kubernetes -maxdepth 1 -name '*.yaml')
 K8S_FILES += $(shell find ./src/dataset-operator/deploy -maxdepth 1 -name '*.yaml')
 K8S_FILES += $(shell find ./src/dataset-operator/deploy/crds -maxdepth 1 -name '*crd.yaml')
+
+OPERATOR_ONLY_K8S_FILES += $(shell find ./src/dataset-operator/deploy -maxdepth 1 -name '*.yaml')
 
 # returns arch as amd64,ppc64le, mostly needed for golang
 define get_arch

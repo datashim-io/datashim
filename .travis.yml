@@ -1,0 +1,45 @@
+services:
+  - docker
+
+stages:
+  - name: image
+  - name: multiarch
+
+matrix:
+  include:
+    - stage: image
+      services:
+        - docker
+      os: linux
+      # VV: using the default install statement breaks build
+      install: echo "no install"
+      script: ./build-tools/build.sh
+
+    - stage: image
+      services:
+        - docker
+      os: linux-ppc64le
+      # VV: using the default install statement breaks build
+      install: echo "no install"
+      script: ./build-tools/build.sh
+
+#    - stage: multiarch
+#      services: docker
+#      os: linux
+#      # VV: using the default install statement breaks build
+#      install: echo "no install"
+#      script:
+#        - if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
+#          export BRANCH=$TRAVIS_BRANCH;
+#          else
+#          export BRANCH=$TRAVIS_PULL_REQUEST_BRANCH;
+#          fi
+#        - ./travis_build/build_multiarch.sh workflow-operator $BRANCH $BRANCH
+#
+#    # VV: Update manifest for master branch of workflow-operator
+#    - stage: multiarch-latest
+#      install: echo "no install"
+#      services: docker
+#      os: linux
+#      script:
+#        - ./travis_build/build_multiarch.sh workflow-operator master latest
