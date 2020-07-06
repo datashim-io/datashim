@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-keys
+spec:
+  template:
+    spec:
+      serviceAccountName: dataset-operator
+      containers:
+        - name: generate-keys
+          image: yiannisgkoufas/generate-keys
+          imagePullPolicy: Always
+          env:
+            - name: DATASET_OPERATOR_NAMESPACE
+              value: default
+      restartPolicy: Never
+  backoffLimit: 4

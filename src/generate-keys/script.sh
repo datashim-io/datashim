@@ -22,18 +22,20 @@
 #
 # NOTE: THIS SCRIPT EXISTS FOR DEMO PURPOSES ONLY. DO NOT USE IT FOR YOUR PRODUCTION WORKLOADS.
 
-: ${1?'missing key directory'}
-
-key_dir="$1"
-namespace=$2
-
-chmod 0700 "$key_dir"
-cd "$key_dir"
-
 # Generate the CA cert and private key
 openssl req -nodes -new -x509 -keyout ca.key -out ca.crt -subj "/CN=Admission Controller Webhook CA"
 # Generate the private key for the webhook server
 openssl genrsa -out webhook-server-tls.key 2048
 # Generate a Certificate Signing Request (CSR) for the private key, and sign it with the private key of the CA.
-openssl req -new -key webhook-server-tls.key -subj "/CN=webhook-server.${namespace}.svc" \
+openssl req -new -key webhook-server-tls.key -subj "/CN=webhook-server.$DATASET_OPERATOR_NAMESPACE.svc" \
     | openssl x509 -req -CA ca.crt -CAkey ca.key -CAcreateserial -out webhook-server-tls.crt
+
+export CA_PEM_B64="$(openssl base64 -A < "ca.crt")"
+
+echo $DATASET_OPERATOR_NAMESPACE
+echo $CA_PEM_B64
+
+kubectl -n $DATASET_OPERATOR_NAMESPACE create secret tls webhook-server-tls \
+            --cert "webhook-server-tls.crt" \
+            --key "webhook-server-tls.key" --dry-run -o yaml | kubectl apply -f -
+envsubst < "webhook.yaml.template" | kubectl apply -n $DATASET_OPERATOR_NAMESPACE -f -
