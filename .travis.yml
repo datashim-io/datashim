@@ -13,7 +13,8 @@ matrix:
       os: linux
       # VV: using the default install statement breaks build
       install: echo "no install"
-      script: ./build-tools/build.sh
+      before_script: cd build-tools
+      script: ./build.sh
 
     - stage: image
       services:
@@ -21,7 +22,8 @@ matrix:
       os: linux-ppc64le
       # VV: using the default install statement breaks build
       install: echo "no install"
-      script: ./build-tools/build.sh
+      before_script: cd build-tools
+      script: ./build.sh
 
 #    - stage: multiarch
 #      services: docker
