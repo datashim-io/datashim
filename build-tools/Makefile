@@ -23,11 +23,14 @@ build-components:
 	$(call install_local,dataset-operator,$(DATASET_OPERATOR_IMAGE))
 	$(call install_local,generate-keys,$(GENERAGE_KEYS_IMAGE))
 
-push-all:
+push-sidecars:
 	@docker login $(DOCKER_REGISTRY_URL) --username $(USERNAME) --password $(PASSWORD) ;\
 	docker push $(EXTERNAL_PROVISIONER_IMAGE)-$(ARCH) ;\
 	docker push $(EXTERNAL_ATTACHER_IMAGE)-$(ARCH) ;\
-	docker push $(NODE_DRIVER_REGISTRAR_IMAGE)-$(ARCH) ;\
+	docker push $(NODE_DRIVER_REGISTRAR_IMAGE)-$(ARCH)
+
+push-components:
+	@docker login $(DOCKER_REGISTRY_URL) --username $(USERNAME) --password $(PASSWORD) ;\
 	docker push $(CSI_S3_IMAGE)-$(ARCH) ;\
 	docker push $(CSI_NFS_IMAGE)-$(ARCH) ;\
 	docker push $(DATASET_OPERATOR_IMAGE)-$(ARCH) ;\

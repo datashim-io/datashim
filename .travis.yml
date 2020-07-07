@@ -2,28 +2,47 @@ services:
   - docker
 
 stages:
-  - name: image
-  - name: multiarch
+  - name: sidecars
+  - name: components
+#  - name: multiarch
 
 matrix:
   include:
-    - stage: image
+    - stage: sidecars
       services:
         - docker
       os: linux
       # VV: using the default install statement breaks build
       install: echo "no install"
       before_script: cd build-tools
-      script: ./build.sh
+      script: ./build_sidecars.sh
 
-    - stage: image
+    - stage: sidecars
       services:
         - docker
       os: linux-ppc64le
       # VV: using the default install statement breaks build
       install: echo "no install"
       before_script: cd build-tools
-      script: ./build.sh
+      script: ./build_sidecars.sh
+
+    - stage: components
+      services:
+        - docker
+      os: linux
+      # VV: using the default install statement breaks build
+      install: echo "no install"
+      before_script: cd build-tools
+      script: ./build_components.sh
+
+    - stage: components
+      services:
+        - docker
+      os: linux-ppc64le
+      # VV: using the default install statement breaks build
+      install: echo "no install"
+      before_script: cd build-tools
+      script: ./build_components.sh
 
 #    - stage: multiarch
 #      services: docker
