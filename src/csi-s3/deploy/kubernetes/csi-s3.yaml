@@ -23,7 +23,7 @@ rules:
     verbs: ["get", "list", "watch", "update"]
   - apiGroups: ["storage.k8s.io"]
     resources: ["volumeattachments"]
-    verbs: ["get", "list", "watch", "update"]
+    verbs: ["get", "list", "watch", "update","create"]
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -58,65 +58,102 @@ spec:
         - name: driver-registrar
           image: ${NODE_DRIVER_REGISTRAR_IMAGE}
           args:
-            - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
-            - "--v=4"
-            - "--csi-address=$(ADDRESS)"
+            - --v=5
+            - --csi-address=/csi/csi.sock
+            - --kubelet-registration-path=${KUBELET_PATH}/plugins/csi-s3/csi.sock
+          securityContext:
+            # This is necessary only for systems with SELinux, where
+            # non-privileged sidecar containers cannot access unix domain socket
+            # created by privileged CSI driver container.
+            privileged: true
           env:
-            - name: ADDRESS
-              value: /csi/csi.sock
-            - name: DRIVER_REG_SOCK_PATH
-              value: /var/lib/kubelet/plugins/ch.ctrox.csi.s3-driver/csi.sock
             - name: KUBE_NODE_NAME
               valueFrom:
                 fieldRef:
+                  apiVersion: v1
                   fieldPath: spec.nodeName
           volumeMounts:
-            - name: plugin-dir
-              mountPath: /csi
-            - name: registration-dir
-              mountPath: /registration/
+            - mountPath: /csi
+              name: socket-dir
+            - mountPath: /registration
+              name: registration-dir
+            - mountPath: /csi-data-dir
+              name: csi-data-dir
         - name: csi-s3
-          securityContext:
-            privileged: true
-            capabilities:
-              add: ["SYS_ADMIN"]
-            allowPrivilegeEscalation: true
           image: ${CSI_S3_IMAGE}
           args:
+            - "--v=5"
             - "--endpoint=$(CSI_ENDPOINT)"
-            - "--nodeid=$(NODE_ID)"
-            - "--v=4"
+            - "--nodeid=$(KUBE_NODE_NAME)"
           env:
             - name: CSI_ENDPOINT
               value: unix:///csi/csi.sock
-            - name: NODE_ID
+            - name: KUBE_NODE_NAME
               valueFrom:
                 fieldRef:
+                  apiVersion: v1
                   fieldPath: spec.nodeName
-          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          ports:
+            - containerPort: 9898
+              name: healthz
+              protocol: TCP
+#          TODO make it configurable and build it for ppc64le
+#          livenessProbe:
+#            failureThreshold: 5
+#            httpGet:
+#              path: /healthz
+#              port: healthz
+#            initialDelaySeconds: 10
+#            timeoutSeconds: 3
+#            periodSeconds: 2
           volumeMounts:
-            - name: plugin-dir
-              mountPath: /csi
-            - name: pods-mount-dir
-              mountPath: /var/lib/kubelet/pods
-              mountPropagation: "Bidirectional"
-            - name: fuse-device
-              mountPath: /dev/fuse
-      imagePullSecrets:
-        - name: ${DOCKER_REGISTRY_SECRET}
+            - mountPath: /csi
+              name: socket-dir
+            - mountPath: ${KUBELET_PATH}/pods
+              mountPropagation: Bidirectional
+              name: mountpoint-dir
+            - mountPath: ${KUBELET_PATH}/plugins
+              mountPropagation: Bidirectional
+              name: plugins-dir
+            - mountPath: /csi-data-dir
+              name: csi-data-dir
+            - mountPath: /dev
+              name: dev-dir
+          ##TODO make it configurable and build it for ppc64le
+#        - name: liveness-probe
+#          volumeMounts:
+#            - mountPath: /csi
+#              name: socket-dir
+#          image: quay.io/k8scsi/livenessprobe:v1.1.0
+#          args:
+#            - --csi-address=/csi/csi.sock
+#            - --health-port=9898
       volumes:
-        - name: registration-dir
-          hostPath:
-            path: /var/lib/kubelet/plugins_registry/
+        - hostPath:
+            path: ${KUBELET_PATH}/plugins/csi-s3
             type: DirectoryOrCreate
-        - name: plugin-dir
-          hostPath:
-            path: /var/lib/kubelet/plugins/ch.ctrox.csi.s3-driver
+          name: socket-dir
+        - hostPath:
+            path: ${KUBELET_PATH}/pods
             type: DirectoryOrCreate
-        - name: pods-mount-dir
-          hostPath:
-            path: /var/lib/kubelet/pods
+          name: mountpoint-dir
+        - hostPath:
+            path: ${KUBELET_PATH}/plugins_registry
             type: Directory
-        - name: fuse-device
-          hostPath:
-            path: /dev/fuse
+          name: registration-dir
+        - hostPath:
+            path: ${KUBELET_PATH}/plugins
+            type: Directory
+          name: plugins-dir
+        - hostPath:
+            # 'path' is where PV data is persisted on host.
+            # using /tmp is also possible while the PVs will not available after plugin container recreation or host reboot
+            path: /var/lib/csi-s3/
+            type: DirectoryOrCreate
+          name: csi-data-dir
+        - hostPath:
+            path: /dev
+            type: Directory
+          name: dev-dir

@@ -1,43 +1,3 @@
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: csi-provisioner-sa
-  namespace: ${DATASET_OPERATOR_NAMESPACE}
----
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: external-provisioner-runner
-rules:
-  - apiGroups: [""]
-    resources: ["secrets"]
-    verbs: ["get", "list"]
-  - apiGroups: [""]
-    resources: ["persistentvolumes"]
-    verbs: ["get", "list", "watch", "create", "delete"]
-  - apiGroups: [""]
-    resources: ["persistentvolumeclaims"]
-    verbs: ["get", "list", "watch", "update"]
-  - apiGroups: ["storage.k8s.io"]
-    resources: ["storageclasses"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: [""]
-    resources: ["events"]
-    verbs: ["list", "watch", "create", "update", "patch"]
----
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: csi-provisioner-role
-subjects:
-  - kind: ServiceAccount
-    name: csi-provisioner-sa
-    namespace: ${DATASET_OPERATOR_NAMESPACE}
-roleRef:
-  kind: ClusterRole
-  name: external-provisioner-runner
-  apiGroup: rbac.authorization.k8s.io
----
 kind: Service
 apiVersion: v1
 metadata:
@@ -58,50 +18,34 @@ metadata:
   name: csi-provisioner-s3
   namespace: ${DATASET_OPERATOR_NAMESPACE}
 spec:
+  serviceName: "csi-provisioner-s3"
+  replicas: 1
   selector:
     matchLabels:
       app: csi-provisioner-s3
-  serviceName: "csi-provisioner-s3"
-  replicas: 1
   template:
     metadata:
       labels:
         app: csi-provisioner-s3
     spec:
-      serviceAccount: csi-provisioner-sa
+      serviceAccountName: csi-provisioner
       containers:
         - name: csi-provisioner
           image: ${EXTERNAL_PROVISIONER_IMAGE}
           args:
-            - "--provisioner=ch.ctrox.csi.s3-driver"
-            - "--csi-address=$(ADDRESS)"
-            - "--v=4"
-          env:
-            - name: ADDRESS
-              value: /var/lib/kubelet/plugins/ch.ctrox.csi.s3-driver/csi.sock
-          imagePullPolicy: "IfNotPresent"
+            - -v=5
+            - --csi-address=/csi/csi.sock
+            - --feature-gates=Topology=true
+          securityContext:
+            # This is necessary only for systems with SELinux, where
+            # non-privileged sidecar containers cannot access unix domain socket
+            # created by privileged CSI driver container.
+            privileged: true
           volumeMounts:
-            - name: socket-dir
-              mountPath: /var/lib/kubelet/plugins/ch.ctrox.csi.s3-driver
-        - name: csi-s3
-          image: ${CSI_S3_IMAGE}
-          args:
-            - "--endpoint=$(CSI_ENDPOINT)"
-            - "--nodeid=$(NODE_ID)"
-            - "--v=4"
-          env:
-            - name: CSI_ENDPOINT
-              value: unix:///var/lib/kubelet/plugins/ch.ctrox.csi.s3-driver/csi.sock
-            - name: NODE_ID
-              valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
-          imagePullPolicy: "IfNotPresent"
-          volumeMounts:
-            - name: socket-dir
-              mountPath: /var/lib/kubelet/plugins/ch.ctrox.csi.s3-driver
-      imagePullSecrets:
-        - name: ${DOCKER_REGISTRY_SECRET}
+            - mountPath: /csi
+              name: socket-dir
       volumes:
-        - name: socket-dir
-          emptyDir: {}
+        - hostPath:
+            path: ${KUBELET_PATH}/plugins/csi-s3
+            type: DirectoryOrCreate
+          name: socket-dir
