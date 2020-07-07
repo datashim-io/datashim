@@ -18,10 +18,12 @@ build-sidecars:
 	$(call install_sidecar,https://github.com/kubernetes-csi/node-driver-registrar.git,$(NODE_DRIVER_REGISTRAR_TAG),node-driver-registrar,$(NODE_DRIVER_REGISTRAR_IMAGE),$(BASE_NODE_DRIVER_REGISTRAR_IMAGE))
 
 build-components:
-	$(call install_local,csi-s3,$(CSI_S3_IMAGE))
-	$(call install_local,csi-driver-nfs,$(CSI_NFS_IMAGE))
 	$(call install_local,dataset-operator,$(DATASET_OPERATOR_IMAGE))
 	$(call install_local,generate-keys,$(GENERAGE_KEYS_IMAGE))
+
+build-csi-plugins:
+	$(call install_local,csi-s3,$(CSI_S3_IMAGE))
+	$(call install_local,csi-driver-nfs,$(CSI_NFS_IMAGE))
 
 push-sidecars:
 	@docker login $(DOCKER_REGISTRY_URL) --username $(USERNAME) --password $(PASSWORD) ;\
@@ -31,7 +33,10 @@ push-sidecars:
 
 push-components:
 	@docker login $(DOCKER_REGISTRY_URL) --username $(USERNAME) --password $(PASSWORD) ;\
-	docker push $(CSI_S3_IMAGE)-$(ARCH) ;\
-	docker push $(CSI_NFS_IMAGE)-$(ARCH) ;\
 	docker push $(DATASET_OPERATOR_IMAGE)-$(ARCH) ;\
 	docker push $(GENERAGE_KEYS_IMAGE)-$(ARCH)
+
+push-csi-plugins:
+	@docker login $(DOCKER_REGISTRY_URL) --username $(USERNAME) --password $(PASSWORD) ;\
+	docker push $(CSI_S3_IMAGE)-$(ARCH) ;\
+	docker push $(CSI_NFS_IMAGE)-$(ARCH)
