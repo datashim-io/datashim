@@ -1,4 +1,6 @@
-DOCKER_REGISTRY ?= docker.io/yiannisgkoufas
+DOCKER_REGISTRY ?= yiannisgkoufas
+
+DOCKER_REGISTRY_URL ?=
 USERNAME ?=
 PASSWORD ?=
 
@@ -22,7 +24,7 @@ build-components:
 	$(call install_local,generate-keys,$(GENERAGE_KEYS_IMAGE))
 
 push-all:
-	@docker login $(DOCKER_REGISTRY) --username $(USERNAME) --password $(PASSWORD) ;\
+	@docker login $(DOCKER_REGISTRY_URL) --username $(USERNAME) --password $(PASSWORD) ;\
 	docker push $(EXTERNAL_PROVISIONER_IMAGE)-$(ARCH) ;\
 	docker push $(EXTERNAL_ATTACHER_IMAGE)-$(ARCH) ;\
 	docker push $(NODE_DRIVER_REGISTRAR_IMAGE)-$(ARCH) ;\
