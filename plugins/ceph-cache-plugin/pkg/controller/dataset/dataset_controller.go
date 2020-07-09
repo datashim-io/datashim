@@ -78,6 +78,8 @@ type ReconcileDataset struct {
 	scheme *runtime.Scheme
 }
 
+const datasetsFinalizer = "hpsys.ibm.ie.com"
+
 // Reconcile reads that state of the cluster for a Dataset object and makes changes based on the state read
 // and what is in the Dataset.Spec
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
@@ -97,57 +99,31 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-            //TODO this logic should be on the finalizer
-
-			cephObjectStoreUser := &cephv1.CephObjectStoreUser{}
-			err = getExactlyOneObject(r.client,cephObjectStoreUser,request.Name,os.Getenv("ROOK_NAMESPACE"))
-			if(errors.IsNotFound(err)){
-				reqLogger.Info("cephObjectStoreUser not created yet, we don't have to delete anything")
-			} else if(err!=nil) {
-				reqLogger.Info("Generic error for getting ceph object storeUser, shouldn't happen")
-				return reconcile.Result{}, err
-			} else {
-				errDelete := r.client.Delete(context.TODO(),cephObjectStoreUser)
-				if(errDelete != nil) {
-					reqLogger.Info("Generic error for deleting cephObjectStoreUser, shouldn't happen")
-					return reconcile.Result{}, errDelete
-				}
-			}
-
-			cephObjectStore := &cephv1.CephObjectStore{}
-			errLocal := getExactlyOneObject(r.client,cephObjectStore,request.Name,os.Getenv("ROOK_NAMESPACE"))
-			if(errors.IsNotFound(errLocal)){
-				reqLogger.Info("object store not created yet, we don't have to delete anything")
-			} else if(errLocal!=nil) {
-				reqLogger.Info("Generic error for getting ceph object store, shouldn't happen")
-				return reconcile.Result{}, err
-			} else{
-				errDelete := r.client.Delete(context.TODO(),cephObjectStore)
-				if(errDelete != nil) {
-					reqLogger.Info("Generic error for deleting ceph object store, shouldn't happen")
-					return reconcile.Result{}, errDelete
-				}
-			}
-
-			configMapForRados := &corev1.ConfigMap{}
-			errLocal = getExactlyOneObject(r.client,configMapForRados,"rook-ceph-rgw-"+request.Name+"-custom",os.Getenv("ROOK_NAMESPACE"))
-			if(errors.IsNotFound(errLocal)){
-				reqLogger.Info("configmap for rados not created yet, we don't have to delete anything")
-			} else if(errLocal!=nil) {
-				reqLogger.Info("Generic error for getting configmap for rados, shouldn't happen")
-				return reconcile.Result{}, err
-			} else{
-				errDelete := r.client.Delete(context.TODO(),configMapForRados)
-				if(errDelete != nil) {
-					reqLogger.Info("Generic error for deleting configmap for rados, shouldn't happen")
-					return reconcile.Result{}, errDelete
-				}
-			}
-
-			return reconcile.Result{}, nil
+            return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
+	}
+
+	isDatasetMarkedToBeDeleted := datasetInstance.GetDeletionTimestamp() != nil
+	if isDatasetMarkedToBeDeleted {
+		if contains(datasetInstance.GetFinalizers(), datasetsFinalizer) {
+			// Run finalization logic for memcachedFinalizer. If the
+			// finalization logic fails, don't remove the finalizer so
+			// that we can retry during the next reconciliation.
+			if err := r.finalizeDataset(reqLogger, datasetInstance); err != nil {
+				return reconcile.Result{}, err
+			}
+
+			// Remove memcachedFinalizer. Once all finalizers have been
+			// removed, the object will be deleted.
+			controllerutil.RemoveFinalizer(datasetInstance, datasetsFinalizer)
+			err := r.client.Update(context.TODO(), datasetInstance)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+		return reconcile.Result{}, nil
 	}
 
 	existingDatasetInternal := &comv1alpha1.DatasetInternal{}
@@ -332,6 +308,12 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 	err = r.client.Create(context.TODO(), internalDataset)
 	if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	if !contains(datasetInstance.GetFinalizers(), datasetsFinalizer) {
+		if err := r.addFinalizer(reqLogger, datasetInstance); err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
 	reqLogger.Info("We should stop requeuing!")
