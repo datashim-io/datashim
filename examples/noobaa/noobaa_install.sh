@@ -2,8 +2,42 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-function kube_wait(){
-	kubectl wait --for=condition=ready pods --all > /dev/null 2>&1
+function check_minikube_version() {
+    is_correct_version=$(minikube config get kubernetes-version | grep "v1.17")
+    if [ -z "$is_correct_version" ]; then
+      echo "Minikube uses incompatible k8s version"
+      echo "Execute 'minikube config set kubernetes-version v1.17.8' and restart minikube"
+    fi
+}
+
+function wait_for_backingstore_ready() {
+  for (( ; ; ))
+  do
+    backingstore_ready=$(kubectl get backingstore -o=jsonpath='{.items[0].status.phase}')
+    if [[ $backingstore_ready == "Ready" ]]; then
+      echo "Backingstore ready!"
+      break
+    fi
+    echo "Waiting for backingstore to be ready"
+    sleep 5
+  done
+}
+
+function wait_for_pods_created() {
+    for (( ; ; ))
+    do
+      noobaa_pods=$(kubectl get pods --no-headers -l app=noobaa | wc -l)
+      if [[ $noobaa_pods == "2" ]]; then
+        echo "Noobaa pods ready!"
+        break
+      fi
+      echo "Waiting for the 2 noobaa pods to be ready"
+      sleep 5
+    done
+}
+
+function wait_for_pods_running(){
+	kubectl wait --for=condition=ready pods -l app=noobaa > /dev/null 2>&1
 }
 
 function install_noobaa() {
@@ -18,18 +52,18 @@ function install_noobaa() {
 	chmod +x ${DIR}/noobaa
 	echo "done"
 	
-	echo -n "Installing NooBaa..."
+	echo "Installing NooBaa..."
 	${DIR}/noobaa install > /dev/null 2>&1
+	wait_for_pods_created
+	wait_for_pods_running
 	echo "Installed NooBaa"
-	sleep 15
 	echo "Creating Backing Store"
 	${DIR}/noobaa backingstore create pv-pool my-pv-bs --num-volumes 3 --pv-size-gb 1 --storage-class standard > /dev/null 2>&1
 	echo "Created Backing Store"
-	sleep 15
+  wait_for_backingstore_ready
 	echo "Delete Bucket Class"
 	${DIR}/noobaa bucketclass delete noobaa-default-bucket-class > /dev/null 2>&1
 	echo "Delete Bucket Class"
-	sleep 15
 	echo "Creating Bucket Class"
 	${DIR}/noobaa bucketclass create  noobaa-default-bucket-class --backingstores=my-pv-bs --placement="" > /dev/null 2>&1
 	echo "Created Bucket Class"
@@ -67,7 +101,7 @@ function run_data_loader() {
 	echo "done"
 }
 
+check_minikube_version
 install_noobaa
 build_data_loader
-kube_wait
 run_data_loader
