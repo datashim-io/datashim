@@ -7,6 +7,7 @@ function check_minikube_version() {
     if [ -z "$is_correct_version" ]; then
       echo "Minikube uses incompatible k8s version"
       echo "Execute 'minikube config set kubernetes-version v1.17.8' and restart minikube"
+      exit 0
     fi
 }
 
