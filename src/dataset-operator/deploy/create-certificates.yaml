@@ -8,10 +8,10 @@ spec:
       serviceAccountName: dataset-operator
       containers:
         - name: generate-keys
-          image: yiannisgkoufas/generate-keys
+          image: ${GENERAGE_KEYS_IMAGE}
           imagePullPolicy: Always
           env:
             - name: DATASET_OPERATOR_NAMESPACE
-              value: default
+              value: ${DATASET_OPERATOR_NAMESPACE}
       restartPolicy: Never
   backoffLimit: 4

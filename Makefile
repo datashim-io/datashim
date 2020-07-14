@@ -35,8 +35,7 @@ undeployment:
 	do\
     	kubectl label namespace $$namespace monitor-pods-datasets- ;\
     done
-	@kubectl delete -n $(DATASET_OPERATOR_NAMESPACE) secret webhook-server-tls ;\
-	$(SHELL_EXPORT) envsubst < ./src/dataset-operator/deploy/webhook.yaml.template | kubectl delete -n $(DATASET_OPERATOR_NAMESPACE) -f -
+	@kubectl delete -n $(DATASET_OPERATOR_NAMESPACE) secret webhook-server-tls
 
 undeployment-operator-only:
 	@for file in $(OPERATOR_ONLY_K8S_FILES); do \
