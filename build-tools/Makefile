@@ -1,6 +1,11 @@
 DOCKER_REGISTRY ?= yiannisgkoufas
+DOCKER_REGISTRY_URL ?= docker.io
+#this is only the case with docker.io
+#if you have any other repo:
 
-DOCKER_REGISTRY_URL ?=
+#DOCKER_REGISTRY ?= my-repo.com
+#DOCKER_REGISTRY_URL ?= my-repo.com
+
 USERNAME ?=
 PASSWORD ?=
 

@@ -1,4 +1,4 @@
-FROM alpine
+FROM ppc64le/alpine
 
 ENV BUILD_DEPS="gettext"  \
     RUNTIME_DEPS="libintl"
