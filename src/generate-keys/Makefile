@@ -1,2 +1,2 @@
 container:
-	docker build -t $(IMAGE_TAG) . -f Dockerfile.`arch`
+	docker build -t $(IMAGE_TAG) . --build-arg=ARCH=$(ARCH) -f Dockerfile.$(ARCH)

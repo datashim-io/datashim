@@ -27,7 +27,7 @@ define load_containers_minikube
 endef
 
 build-container:
-	docker build -t ${IMAGE_NAME} --build-arg ARCH=$(call get_arch) .
+	docker build -t ${IMAGE_NAME}-$(call get_arch) --build-arg ARCH=$(call get_arch) .
 
 build-load-container: build-container
 	$(call load_containers_minikube)
