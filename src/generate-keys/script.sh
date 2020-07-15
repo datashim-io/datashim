@@ -21,24 +21,24 @@
 # cluster-internal DNS name for the service.
 #
 # NOTE: THIS SCRIPT EXISTS FOR DEMO PURPOSES ONLY. DO NOT USE IT FOR YOUR PRODUCTION WORKLOADS.
-chmod +x kubectl
+chmod +x /tmp/kubectl
 # Generate the CA cert and private key
-openssl req -nodes -new -x509 -keyout ca.key -out ca.crt -subj "/CN=Admission Controller Webhook CA"
+openssl req -nodes -new -x509 -keyout /tmp/ca.key -out /tmp/ca.crt -subj "/CN=Admission Controller Webhook CA"
 # Generate the private key for the webhook server
-openssl genrsa -out webhook-server-tls.key 2048
+openssl genrsa -out /tmp/webhook-server-tls.key 2048
 # Generate a Certificate Signing Request (CSR) for the private key, and sign it with the private key of the CA.
-openssl req -new -key webhook-server-tls.key -subj "/CN=webhook-server.$DATASET_OPERATOR_NAMESPACE.svc" \
-    | openssl x509 -req -CA ca.crt -CAkey ca.key -CAcreateserial -out webhook-server-tls.crt
+openssl req -new -key /tmp/webhook-server-tls.key -subj "/CN=webhook-server.$DATASET_OPERATOR_NAMESPACE.svc" \
+    | openssl x509 -req -CA /tmp/ca.crt -CAkey /tmp/ca.key -CAcreateserial -out /tmp/webhook-server-tls.crt
 
-export CA_PEM_B64="$(openssl base64 -A < "ca.crt")"
+export CA_PEM_B64="$(openssl base64 -A < "/tmp/ca.crt")"
 
 echo $DATASET_OPERATOR_NAMESPACE
 echo $CA_PEM_B64
 
-./kubectl -n $DATASET_OPERATOR_NAMESPACE create secret tls webhook-server-tls \
-            --cert "webhook-server-tls.crt" \
-            --key "webhook-server-tls.key" --dry-run -o yaml | ./kubectl apply -f -
-envsubst < "webhook.yaml.template" | ./kubectl apply -n $DATASET_OPERATOR_NAMESPACE -f -
+/tmp/kubectl -n $DATASET_OPERATOR_NAMESPACE create secret tls webhook-server-tls \
+            --cert "/tmp/webhook-server-tls.crt" \
+            --key "/tmp/webhook-server-tls.key" --dry-run -o yaml | /tmp/kubectl apply -f -
+envsubst < "/tmp/webhook.yaml.template" | /tmp/kubectl apply -n $DATASET_OPERATOR_NAMESPACE -f -
 
 cd ~
 rm -rf /tmp/*
