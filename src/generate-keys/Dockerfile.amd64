@@ -16,4 +16,4 @@ RUN apk update && \
   chmod +x kubectl && mv kubectl /tmp/kubectl
 COPY "script.sh" /tmp
 COPY "webhook.yaml.template" /tmp
-ENTRYPOINT [ "./script.sh" ]
+ENTRYPOINT [ "/tmp/script.sh" ]
