@@ -21,7 +21,6 @@
 # cluster-internal DNS name for the service.
 #
 # NOTE: THIS SCRIPT EXISTS FOR DEMO PURPOSES ONLY. DO NOT USE IT FOR YOUR PRODUCTION WORKLOADS.
-chmod +x /tmp/kubectl
 # Generate the CA cert and private key
 openssl req -nodes -new -x509 -keyout /tmp/ca.key -out /tmp/ca.crt -subj "/CN=Admission Controller Webhook CA"
 # Generate the private key for the webhook server
@@ -41,4 +40,5 @@ echo $CA_PEM_B64
 envsubst < "/tmp/webhook.yaml.template" | /tmp/kubectl apply -n $DATASET_OPERATOR_NAMESPACE -f -
 
 cd ~
-rm -rf /tmp/*
+rm -rf /tmp/*.crt
+rm -rf /tmp/*.key
