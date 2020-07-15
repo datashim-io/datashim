@@ -1,5 +1,9 @@
 SHELL=/bin/bash
 
+define get_arch
+$(shell if [ "$$(arch)" == "x86_64" ]; then echo amd64; elif [ "$$(arch)" == "i386" ]; then echo amd64; else echo "$$(arch)"; fi)
+endef
+
 K8S_FILES += $(shell find ./deploy -maxdepth 1 -name '*.yaml')
 K8S_FILES += $(shell find ./deploy/crds -maxdepth 1 -name '*crd.yaml')
 
@@ -7,14 +11,13 @@ PULL_IMAGE ?= false
 IMAGE_NAME ?= yiannisgkoufas/ceph-cache-plugin
 NAMESPACE ?= default
 
+IMAGE_NAME := $(IMAGE_NAME)-$(call get_arch)
+
 MAKE_ENV += IMAGE_NAME
 MAKE_ENV += NAMESPACE
 
 SHELL_EXPORT := $(foreach v,$(MAKE_ENV),$(v)='$($(v))' )
 
-define get_arch
-$(shell if [ "$$(arch)" == "x86_64" ]; then echo amd64; elif [ "$$(arch)" == "i386" ]; then echo amd64; else echo "$$(arch)"; fi)
-endef
 
 define load_containers_minikube
     @driver_check=$$(cat $$HOME/.minikube/machines/minikube/config.json  | grep DriverName);\
@@ -27,7 +30,7 @@ define load_containers_minikube
 endef
 
 build-container:
-	docker build -t ${IMAGE_NAME}-$(call get_arch) --build-arg ARCH=$(call get_arch) .
+	docker build -t ${IMAGE_NAME} --build-arg ARCH=$(call get_arch) .
 
 build-load-container: build-container
 	$(call load_containers_minikube)
