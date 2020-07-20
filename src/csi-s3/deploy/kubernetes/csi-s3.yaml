@@ -57,6 +57,7 @@ spec:
       containers:
         - name: driver-registrar
           image: ${NODE_DRIVER_REGISTRAR_IMAGE}
+          imagePullPolicy: Always
           args:
             - --v=5
             - --csi-address=/csi/csi.sock
@@ -81,6 +82,7 @@ spec:
               name: csi-data-dir
         - name: csi-s3
           image: ${CSI_S3_IMAGE}
+          imagePullPolicy: Always
           args:
             - "--v=5"
             - "--endpoint=$(CSI_ENDPOINT)"

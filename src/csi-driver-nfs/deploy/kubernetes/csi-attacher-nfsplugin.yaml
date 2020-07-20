@@ -42,7 +42,7 @@ spec:
           env:
             - name: ADDRESS
               value: /csi/csi.sock
-          imagePullPolicy: "IfNotPresent"
+          imagePullPolicy: Always
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
@@ -59,7 +59,7 @@ spec:
                   fieldPath: spec.nodeName
             - name: CSI_ENDPOINT
               value: unix://plugin/csi.sock
-          imagePullPolicy: "IfNotPresent"
+          imagePullPolicy: Always
           volumeMounts:
             - name: socket-dir
               mountPath: /plugin
@@ -67,4 +67,4 @@ spec:
         - name: ${DOCKER_REGISTRY_SECRET}
       volumes:
         - name: socket-dir
-          emptyDir:
+          emptyDir: {}

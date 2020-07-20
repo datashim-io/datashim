@@ -19,7 +19,7 @@ spec:
           image: ${DATASET_OPERATOR_IMAGE}
           command:
             - dataset-operator
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8443
               name: webhook-api

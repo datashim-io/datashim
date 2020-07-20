@@ -33,6 +33,7 @@ spec:
       containers:
         - name: csi-attacher
           image: ${EXTERNAL_ATTACHER_IMAGE}
+          imagePullPolicy: Always
           args:
             - --v=5
             - --csi-address=/csi/csi.sock

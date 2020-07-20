@@ -32,6 +32,7 @@ spec:
       containers:
         - name: csi-provisioner
           image: ${EXTERNAL_PROVISIONER_IMAGE}
+          imagePullPolicy: Always
           args:
             - -v=5
             - --csi-address=/csi/csi.sock

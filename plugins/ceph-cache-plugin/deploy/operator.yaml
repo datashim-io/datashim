@@ -21,7 +21,7 @@ spec:
           image: ${IMAGE_NAME}
           command:
           - ceph-cache-plugin
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
               value: ""
