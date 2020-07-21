@@ -2,6 +2,8 @@ package s3
 
 import (
 	"fmt"
+	"github.com/golang/glog"
+	"github.com/kahing/goofys/api/common"
 	"os"
 
 	"context"
@@ -47,16 +49,28 @@ func (goofys *goofysMounter) Unstage(stageTarget string) error {
 }
 
 func (goofys *goofysMounter) Mount(source string, target string) error {
-	goofysCfg := &goofysApi.Config{
-		MountPoint: target,
-		Endpoint:   goofys.endpoint,
-		Region:     goofys.region,
-		DirMode:    0755,
-		FileMode:   0644,
-		MountOptions: map[string]string{
-			"allow_other": "",
-		},
+	//goofysCfg := &goofysApi.Config{
+	//	MountPoint: target,
+	//	Endpoint:   goofys.endpoint,
+	//	Region:     goofys.region,
+	//	DirMode:    0755,
+	//	FileMode:   0644,
+	//	MountOptions: map[string]string{
+	//		"allow_other": "",
+	//	},
+	//}
+
+	goofysCfg := &common.FlagStorage{
+			MountPoint: target,
+			Endpoint:   goofys.endpoint,
+			DirMode:    0755,
+			FileMode:   0644,
+			MountOptions: map[string]string{
+				"allow_other": "",
+			},
 	}
+
+	glog.V(3).Infof("Mounting using goofys!")
 
 	os.Setenv("AWS_ACCESS_KEY_ID", goofys.accessKeyID)
 	os.Setenv("AWS_SECRET_ACCESS_KEY", goofys.secretAccessKey)
