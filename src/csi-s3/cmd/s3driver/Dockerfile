@@ -5,7 +5,7 @@ LABEL description="csi-s3 slim image"
 RUN apt-get update -y && apt-get upgrade -y && apt-get install -y \
 libfuse2 gcc sqlite3 libsqlite3-dev \
 psmisc procps libcurl3 xfsprogs curl unzip \
-libfuse-dev libssl-dev git autotools-dev automake libc6-dev build-essential libcurl4-openssl-dev libxml2-dev pkg-config && \
+libfuse-dev fuse libssl-dev git autotools-dev automake libc6-dev build-essential libcurl4-openssl-dev libxml2-dev pkg-config && \
 git clone https://github.com/s3fs-fuse/s3fs-fuse.git && cd s3fs-fuse && \
 # git checkout v1.86 && \
 ./autogen.sh && ./configure && make && make install && \
