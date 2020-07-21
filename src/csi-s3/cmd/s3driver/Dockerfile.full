@@ -91,5 +91,5 @@ RUN cd /tmp \
   && rm -r /tmp/rclone*
 
 COPY --from=base /_output/s3driver /s3driver
-COPY --from=base /go/bin/goofys /goofys
+COPY --from=base /go/bin/goofys /bin/goofys
 ENTRYPOINT ["/s3driver"]
