@@ -1,6 +1,13 @@
 module github.com/ctrox/csi-s3
 
 require (
+	github.com/Azure/azure-pipeline-go v0.2.3 // indirect
+	github.com/Azure/azure-sdk-for-go v44.1.0+incompatible // indirect
+	github.com/Azure/azure-storage-blob-go v0.10.0 // indirect
+	github.com/Azure/go-autorest/autorest v0.11.2 // indirect
+	github.com/Azure/go-autorest/autorest/azure/auth v0.5.0 // indirect
+	github.com/Azure/go-autorest/autorest/to v0.4.0 // indirect
+	github.com/Azure/go-autorest/autorest/validation v0.3.0 // indirect
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
 	github.com/aws/aws-sdk-go v1.14.27 // indirect
 	github.com/container-storage-interface/spec v1.1.0
@@ -9,10 +16,8 @@ require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/protobuf v1.1.0 // indirect
 	github.com/jacobsa/fuse v0.0.0-20180417054321-cd3959611bcb // indirect
-	github.com/jinzhu/copier v0.0.0-20180308034124-7e38e58719c3 // indirect
 	github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8 // indirect
-	github.com/kahing/go-xattr v1.1.1 // indirect
-	github.com/kahing/goofys v0.19.0
+	github.com/kahing/goofys v0.24.0
 	github.com/kubernetes-csi/csi-lib-utils v0.6.1 // indirect
 	github.com/kubernetes-csi/csi-test v2.0.0+incompatible
 	github.com/kubernetes-csi/drivers v1.0.2
@@ -21,19 +26,19 @@ require (
 	github.com/mitchellh/go-ps v0.0.0-20170309133038-4fdf99ab2936
 	github.com/onsi/ginkgo v1.5.0
 	github.com/onsi/gomega v1.4.0
+	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/shirou/gopsutil v0.0.0-20180625081143-4a180b209f5f // indirect
+	github.com/shirou/w32 v0.0.0-20160930032740-bb4de0191aa4 // indirect
 	github.com/sirupsen/logrus v1.0.5 // indirect
 	github.com/smartystreets/goconvey v0.0.0-20190222223459-a17d461953aa // indirect
 	github.com/spf13/afero v1.2.1 // indirect
-	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/urfave/cli v1.20.0 // indirect
-	golang.org/x/net v0.0.0-20190213061140-3a22650c66bd
+	golang.org/x/net v0.0.0-20191112182307-2180aed22343
 	golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6 // indirect
 	google.golang.org/genproto v0.0.0-20180716172848-2731d4fa720b // indirect
 	google.golang.org/grpc v1.13.0
 	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
-	gopkg.in/ini.v1 v1.41.0
 	gopkg.in/yaml.v2 v2.2.1 // indirect
 	k8s.io/apimachinery v0.0.0-20180714051327-705cfa51a97f // indirect
 	k8s.io/klog v0.2.0 // indirect
