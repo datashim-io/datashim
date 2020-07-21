@@ -90,7 +90,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return nil, err
 	}
 
-	mounter, err := newMounter(b, s3.cfg)
+	mounter, err := newMounter(b, s3.cfg, volumeID)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +159,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	if err != nil {
 		return nil, err
 	}
-	mounter, err := newMounter(b, s3.cfg)
+	mounter, err := newMounter(b, s3.cfg, volumeID)
 	if err != nil {
 		return nil, err
 	}

@@ -1,12 +1,14 @@
 package s3
 
 import (
+	"fmt"
 	"github.com/golang/glog"
+	"log"
+	"os"
 )
 
 const (
 	goofysCmd     = "goofys"
-	defaultRegion = "us-east-1"
 )
 
 // Implements Mounter
@@ -16,20 +18,24 @@ type goofysMounter struct {
 	region          string
 	accessKeyID     string
 	secretAccessKey string
+	volumeID		string
 }
 
-func newGoofysMounter(b *bucket, cfg *Config) (Mounter, error) {
-	region := cfg.Region
-	// if endpoint is set we need a default region
-	if region == "" && cfg.Endpoint != "" {
-		region = defaultRegion
-	}
+func newGoofysMounter(b *bucket, cfg *Config, volume string) (Mounter, error) {
+	glog.V(3).Infof("Mounting using goofys volume %s",volume)
+	//TODO we need to handle regions as well
+	//region := cfg.Region
+	//// if endpoint is set we need a default region
+	//if region == "" && cfg.Endpoint != "" {
+	//	region = defaultRegion
+	//}
 	return &goofysMounter{
 		bucket:          b,
 		endpoint:        cfg.Endpoint,
-		region:          region,
+		region:          cfg.Region,
 		accessKeyID:     cfg.AccessKeyID,
 		secretAccessKey: cfg.SecretAccessKey,
+		volumeID:		 volume,
 	}, nil
 }
 
@@ -42,37 +48,40 @@ func (goofys *goofysMounter) Unstage(stageTarget string) error {
 }
 
 func (goofys *goofysMounter) Mount(source string, target string) error {
-	//goofysCfg := &goofysApi.Config{
-	//	MountPoint: target,
-	//	Endpoint:   goofys.endpoint,
-	//	Region:     goofys.region,
-	//	DirMode:    0755,
-	//	FileMode:   0644,
-	//	MountOptions: map[string]string{
-	//		"allow_other": "",
-	//	},
-	//}
-
-	//goofysCfg := &common.FlagStorage{
-	//		MountPoint: target,
-	//		Endpoint:   goofys.endpoint,
-	//		DirMode:    0755,
-	//		FileMode:   0644,
-	//		MountOptions: map[string]string{
-	//			"allow_other": "",
-	//		},
-	//}
-
 	glog.V(3).Infof("Mounting using goofys!")
 
-	//os.Setenv("AWS_ACCESS_KEY_ID", goofys.accessKeyID)
-	//os.Setenv("AWS_SECRET_ACCESS_KEY", goofys.secretAccessKey)
-	//fullPath := fmt.Sprintf("%s:%s", goofys.bucket.Name, "/") //TODO check if it works with goofys correctly
+	if err := writes3fsPassGoofy(goofys); err != nil {
+		return err
+	}
+	args := []string{
+		fmt.Sprintf("--endpoint=%s", goofys.endpoint),
+		fmt.Sprintf("--profile=%s", goofys.volumeID),
+		fmt.Sprintf("%s", goofys.bucket.Name),
+		fmt.Sprintf("%s", target),
+	}
+	return fuseMount(target, goofysCmd, args)
 
-	//_, _, err := goofysApi.Mount(context.Background(), fullPath, goofysCfg)
+}
 
-	//if err != nil {
-	//	return fmt.Errorf("Error mounting via goofys: %s", err)
-	//}
+
+func writes3fsPassGoofy(goofys *goofysMounter) error {
+	awsPath := fmt.Sprintf("%s/.aws", os.Getenv("HOME"))
+	if _, err := os.Stat(awsPath); os.IsNotExist(err) {
+		mkdir_err := os.Mkdir(awsPath,os.ModePerm)
+		return mkdir_err
+	}
+
+	pwFileName := fmt.Sprintf("%s/.aws/credentials", os.Getenv("HOME"))
+	f, err := os.OpenFile(pwFileName,
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+	textToAdd := "["+goofys.volumeID+"]\naws_access_key_id = "+goofys.accessKeyID+"\naws_secret_access_key ="+goofys.secretAccessKey+"\n"
+	if _, err := f.WriteString(textToAdd); err != nil {
+		log.Println(err)
+	}
 	return nil
 }
+
