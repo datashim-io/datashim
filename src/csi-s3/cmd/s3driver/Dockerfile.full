@@ -24,6 +24,7 @@ ENV GO111MODULE=on
 
 COPY go.mod .
 COPY go.sum .
+RUN go get github.com/kahing/goofys@v0.20.0
 
 RUN go mod download
 RUN if [ "$ARCH" = "ppc64le" ]; then \
@@ -31,6 +32,8 @@ RUN if [ "$ARCH" = "ppc64le" ]; then \
     sed -i 's/17/21/g' $GOPATH/pkg/mod/github.com/jacobsa/fuse*/internal/buffer/in_message_linux.go ; \
     sed -i 's/17/21/g' $GOPATH/pkg/mod/github.com/jacobsa/fuse*/internal/buffer/out_message_linux.go ; \
     else echo 'true'; fi
+
+RUN go install github.com/kahing/goofys
 
 COPY . /csi-s3
 WORKDIR /csi-s3
@@ -88,4 +91,5 @@ RUN cd /tmp \
   && rm -r /tmp/rclone*
 
 COPY --from=base /_output/s3driver /s3driver
+COPY --from=base /go/bin/goofys /goofys
 ENTRYPOINT ["/s3driver"]
