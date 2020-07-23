@@ -268,9 +268,9 @@ dataset on `/mnt/datasets/<dataset-name>`.
 ## Contact
 
 Reach out to us via email:
-- Yiannis Gkoufas, [yiannisg@ie.ibm.com](yiannisg@ie.ibm.com)
-- Christian Pinto, [christian.pinto@ibm.com](christian.pinto@ibm.com)
-- Srikumar Venugopal, [srikumarv@ie.ibm.com](srikumarv@ie.ibm.com)
+- Yiannis Gkoufas, <yiannisg@ie.ibm.com>
+- Christian Pinto, <christian.pinto@ibm.com>
+- Srikumar Venugopal, <srikumarv@ie.ibm.com>
 
 ## Acknowledgements
 This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement No 825061.
