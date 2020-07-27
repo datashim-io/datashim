@@ -4,6 +4,7 @@ metadata:
   name: dlf-mutating-webhook-cfg
 webhooks:
   - name: admission.webhook.dlf
+    reinvocationPolicy: IfNeeded
     clientConfig:
       service:
         name: webhook-server
