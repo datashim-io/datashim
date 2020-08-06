@@ -58,7 +58,7 @@ func (goofys *goofysMounter) Mount(source string, target string) error {
 		fmt.Sprintf("--profile=%s", goofys.volumeID),
 		//"--dir-mode","0777",
 		//"--file-mode","0777",
-		"--cheap",os.Getenv("cheap"),
+		fmt.Sprintf("--cheap=%s", os.Getenv("cheap")),
 		"-o", "allow_other",
 		fmt.Sprintf("%s", goofys.bucket.Name),
 		fmt.Sprintf("%s", target),

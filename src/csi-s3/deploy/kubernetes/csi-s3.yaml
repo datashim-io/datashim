@@ -96,7 +96,7 @@ spec:
                   apiVersion: v1
                   fieldPath: spec.nodeName
             - name: cheap
-              value: off
+              value: "off"
           securityContext:
             privileged: true
           ports:
