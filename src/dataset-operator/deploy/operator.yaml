@@ -9,6 +9,8 @@ spec:
       name: dataset-operator
   template:
     metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
       labels:
         name: dataset-operator
     spec:
