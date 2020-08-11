@@ -99,10 +99,10 @@ spec:
               value: "off"
           securityContext:
             privileged: true
-          ports:
-            - containerPort: 9898
-              name: healthz
-              protocol: TCP
+#          ports:
+#            - containerPort: 9898
+#              name: healthz
+#              protocol: TCP
 #          TODO make it configurable and build it for ppc64le
 #          livenessProbe:
 #            failureThreshold: 5
