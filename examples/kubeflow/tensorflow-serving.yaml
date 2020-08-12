@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mnist
+  name: tensorflow-serving
+spec:
+  selector:
+    matchLabels:
+      app: mnist-model
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+      labels:
+        app: mnist-model
+        version: v1
+    spec:
+      serviceAccount: default-editor
+      containers:
+        - args:
+            - --port=9000
+            - --rest_api_port=8500
+            - --model_name=mnist
+            - --model_base_path=/mnt/dataset/mnist/export
+          command:
+            - /usr/bin/tensorflow_model_server
+          env:
+            - name: modelBasePath
+              value: /mnt/dataset/mnist/export
+          image: tensorflow/serving:1.15.0
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            tcpSocket:
+              port: 9000
+          name: mnist
+          ports:
+            - containerPort: 9000
+            - containerPort: 8500
+          resources:
+            limits:
+              cpu: "4"
+              memory: 4Gi
+            requests:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - mountPath: /var/config/
+              name: model-config
+            - mountPath: "/mnt/dataset"
+              name: "your-dataset"
+      volumes:
+        - configMap:
+            name: tensorflow-serving
+          name: model-config
+        - name: "your-dataset"
+          persistentVolumeClaim:
+            claimName: "your-dataset"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/path: /monitoring/prometheus/metrics
+    prometheus.io/port: "8500"
+    prometheus.io/scrape: "true"
+  labels:
+    app: mnist-model
+  name: tensorflow-serving
+spec:
+  ports:
+    - name: grpc-tf-serving
+      port: 9000
+      targetPort: 9000
+    - name: http-tf-serving
+      port: 8500
+      targetPort: 8500
+  selector:
+    app: mnist-model
+  type: ClusterIP
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: tensorflow-serving
+data:
+  monitoring_config.txt: |-
+    prometheus_config: {{
+      enable: true,
+      path: "/monitoring/prometheus/metrics"
+    }}

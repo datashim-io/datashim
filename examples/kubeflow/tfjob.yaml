@@ -1,0 +1,100 @@
+apiVersion: kubeflow.org/v1
+kind: TFJob
+metadata:
+  name: my-train
+spec:
+  tfReplicaSpecs:
+    Ps:
+      replicas: 1
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: "false"
+        spec:
+          serviceAccount: default-editor
+          containers:
+            - name: tensorflow
+              command:
+                - python
+                - /opt/model.py
+                - --tf-model-dir=/mnt/dataset/mnist
+                - --tf-export-dir=/mnt/dataset/mnist/export
+                - --tf-train-steps=200
+                - --tf-batch-size=100
+                - --tf-learning-rate=0.1
+              image: yiannisgkoufas/mnist
+              volumeMounts:
+                - mountPath: "/mnt/dataset"
+                  name: "your-dataset"
+              workingDir: /opt
+              resources:
+                limits:
+                  ephemeral-storage: "10Gi"
+                requests:
+                  ephemeral-storage: "10Gi"
+          volumes:
+            - name: "your-dataset"
+              persistentVolumeClaim:
+                claimName: "your-dataset"
+          restartPolicy: OnFailure
+    Chief:
+      replicas: 1
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: "false"
+        spec:
+          serviceAccount: default-editor
+          containers:
+            - name: tensorflow
+              resources:
+                limits:
+                  ephemeral-storage: "10Gi"
+                requests:
+                  ephemeral-storage: "10Gi"
+              command:
+                - python
+                - /opt/model.py
+                - --tf-model-dir=/mnt/dataset/mnist
+                - --tf-export-dir=/mnt/dataset/mnist/export
+                - --tf-train-steps=200
+                - --tf-batch-size=100
+                - --tf-learning-rate=0.1
+              image: yiannisgkoufas/mnist
+              volumeMounts:
+                - mountPath: "/mnt/dataset"
+                  name: "your-dataset"
+              workingDir: /opt
+          volumes:
+            - name: "your-dataset"
+              persistentVolumeClaim:
+                claimName: "your-dataset"
+          restartPolicy: OnFailure
+    Worker:
+      replicas: 1
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: "false"
+        spec:
+          serviceAccount: default-editor
+          containers:
+            - name: tensorflow
+              command:
+                - python
+                - /opt/model.py
+                - --tf-model-dir=/mnt/dataset/mnist
+                - --tf-export-dir=/mnt/dataset/mnist/export
+                - --tf-train-steps=200
+                - --tf-batch-size=100
+                - --tf-learning-rate=0.1
+              image: yiannisgkoufas/mnist
+              volumeMounts:
+                - mountPath: "/mnt/dataset"
+                  name: "your-dataset"
+              workingDir: /opt
+          volumes:
+            - name: "your-dataset"
+              persistentVolumeClaim:
+                claimName: "your-dataset"
+          restartPolicy: OnFailure

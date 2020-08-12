@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mnist-tensorboard
+  name: mnist-tensorboard
+spec:
+  selector:
+    matchLabels:
+      app: mnist-tensorboard
+  template:
+    metadata:
+      labels:
+        app: mnist-tensorboard
+        version: v1
+    spec:
+      serviceAccount: default-editor
+      containers:
+        - command:
+            - /usr/local/bin/tensorboard
+            - --logdir=/mnt/dataset/mnist
+            - --port=80
+          image: tensorflow/tensorflow:1.15.2-py3
+          volumeMounts:
+            - mountPath: "/mnt/dataset"
+              name: "your-dataset"
+          name: tensorboard
+          ports:
+            - containerPort: 80
+      volumes:
+        - name: "your-dataset"
+          persistentVolumeClaim:
+            claimName: "your-dataset"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: mnist-tensorboard
+  name: mnist-tensorboard
+spec:
+  ports:
+    - name: http-tb
+      port: 80
+      targetPort: 80
+  selector:
+    app: mnist-tensorboard
+  type: ClusterIP
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: mnist-tensorboard
+spec:
+  gateways:
+    - kubeflow/kubeflow-gateway
+  hosts:
+    - '*'
+  http:
+    - match:
+        - uri:
+            prefix: /mnist/default/tensorboard/
+      rewrite:
+        uri: /
+      route:
+        - destination:
+            host: mnist-tensorboard.default.svc.cluster.local
+            port:
+              number: 80
+      timeout: 300s
