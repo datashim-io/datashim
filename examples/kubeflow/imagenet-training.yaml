@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: tf2cpumodels
+  annotations:
+    sidecar.istio.io/inject: "false"
+spec:
+  containers:
+    - name: tf2cpumodels
+      image: yiannisgkoufas/s3benchmarks:x86_64
+      imagePullPolicy: Always
+      resources:
+        limits:
+          ephemeral-storage: "15Gi"
+        requests:
+          ephemeral-storage: "15Gi"
+      command: ["bash"]
+      args: ["/entrypoint.sh", "--data_dir=/mount/dataset1", "--model_dir=/mount/dataset1", "--batch_size=64", "--train_steps=10", "--train_epochs=3", "--use_synthetic_data=false", "--all_reduce_alg=hierarchical_copy", "--skip_eval=true",
+             "--data_format=channels_last",
+             "--num_gpus=0"]
+      volumeMounts:
+        - mountPath: "/mount/dataset1" #optional, if not specified it would be mounted in /mnt/datasets/example-dataset
+          name: "imagenet-dataset"
+  volumes:
+    - name: imagenet-dataset
+      persistentVolumeClaim:
+        claimName: imagenet-dataset
