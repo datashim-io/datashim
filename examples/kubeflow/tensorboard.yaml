@@ -13,24 +13,21 @@ spec:
       labels:
         app: mnist-tensorboard
         version: v1
+        dataset.0.id: "your-dataset"
+        dataset.0.useas: "mount"
+      annotations:
+        sidecar.istio.io/inject: "false"
     spec:
       serviceAccount: default-editor
       containers:
         - command:
             - /usr/local/bin/tensorboard
-            - --logdir=/mnt/dataset/mnist
+            - --logdir=/mnt/datasets/your-dataset/mnist
             - --port=80
           image: tensorflow/tensorflow:1.15.2-py3
-          volumeMounts:
-            - mountPath: "/mnt/dataset"
-              name: "your-dataset"
           name: tensorboard
           ports:
             - containerPort: 80
-      volumes:
-        - name: "your-dataset"
-          persistentVolumeClaim:
-            claimName: "your-dataset"
 ---
 apiVersion: v1
 kind: Service

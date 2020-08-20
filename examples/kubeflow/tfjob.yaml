@@ -8,6 +8,9 @@ spec:
       replicas: 1
       template:
         metadata:
+          labels:
+            dataset.0.id: "your-dataset"
+            dataset.0.useas: "mount"
           annotations:
             sidecar.istio.io/inject: "false"
         spec:
@@ -17,30 +20,26 @@ spec:
               command:
                 - python
                 - /opt/model.py
-                - --tf-model-dir=/mnt/dataset/mnist
-                - --tf-export-dir=/mnt/dataset/mnist/export
+                - --tf-model-dir=/mnt/datasets/your-dataset/mnist
+                - --tf-export-dir=/mnt/datasets/your-dataset/mnist/export
                 - --tf-train-steps=200
                 - --tf-batch-size=100
                 - --tf-learning-rate=0.1
               image: yiannisgkoufas/mnist
-              volumeMounts:
-                - mountPath: "/mnt/dataset"
-                  name: "your-dataset"
               workingDir: /opt
               resources:
                 limits:
                   ephemeral-storage: "10Gi"
                 requests:
                   ephemeral-storage: "10Gi"
-          volumes:
-            - name: "your-dataset"
-              persistentVolumeClaim:
-                claimName: "your-dataset"
           restartPolicy: OnFailure
     Chief:
       replicas: 1
       template:
         metadata:
+          labels:
+            dataset.0.id: "your-dataset"
+            dataset.0.useas: "mount"
           annotations:
             sidecar.istio.io/inject: "false"
         spec:
@@ -55,25 +54,20 @@ spec:
               command:
                 - python
                 - /opt/model.py
-                - --tf-model-dir=/mnt/dataset/mnist
-                - --tf-export-dir=/mnt/dataset/mnist/export
+                - --tf-model-dir=/mnt/datasets/your-dataset/mnist
+                - --tf-export-dir=/mnt/datasets/your-dataset/mnist/export
                 - --tf-train-steps=200
                 - --tf-batch-size=100
                 - --tf-learning-rate=0.1
               image: yiannisgkoufas/mnist
-              volumeMounts:
-                - mountPath: "/mnt/dataset"
-                  name: "your-dataset"
-              workingDir: /opt
-          volumes:
-            - name: "your-dataset"
-              persistentVolumeClaim:
-                claimName: "your-dataset"
           restartPolicy: OnFailure
     Worker:
       replicas: 1
       template:
         metadata:
+          labels:
+            dataset.0.id: "your-dataset"
+            dataset.0.useas: "mount"
           annotations:
             sidecar.istio.io/inject: "false"
         spec:
@@ -83,18 +77,11 @@ spec:
               command:
                 - python
                 - /opt/model.py
-                - --tf-model-dir=/mnt/dataset/mnist
-                - --tf-export-dir=/mnt/dataset/mnist/export
+                - --tf-model-dir=/mnt/datasets/your-dataset/mnist
+                - --tf-export-dir=/mnt/datasets/your-dataset/mnist/export
                 - --tf-train-steps=200
                 - --tf-batch-size=100
                 - --tf-learning-rate=0.1
               image: yiannisgkoufas/mnist
-              volumeMounts:
-                - mountPath: "/mnt/dataset"
-                  name: "your-dataset"
               workingDir: /opt
-          volumes:
-            - name: "your-dataset"
-              persistentVolumeClaim:
-                claimName: "your-dataset"
           restartPolicy: OnFailure

@@ -15,6 +15,8 @@ spec:
       labels:
         app: mnist-model
         version: v1
+        dataset.0.id: "your-dataset"
+        dataset.0.useas: "mount"
     spec:
       serviceAccount: default-editor
       containers:
@@ -22,12 +24,12 @@ spec:
             - --port=9000
             - --rest_api_port=8500
             - --model_name=mnist
-            - --model_base_path=/mnt/dataset/mnist/export
+            - --model_base_path=/mnt/datasets/your-dataset/mnist/export
           command:
             - /usr/bin/tensorflow_model_server
           env:
             - name: modelBasePath
-              value: /mnt/dataset/mnist/export
+              value: /mnt/datasets/your-dataset/mnist/export
           image: tensorflow/serving:1.15.0
           imagePullPolicy: IfNotPresent
           livenessProbe:
@@ -49,15 +51,10 @@ spec:
           volumeMounts:
             - mountPath: /var/config/
               name: model-config
-            - mountPath: "/mnt/dataset"
-              name: "your-dataset"
       volumes:
         - configMap:
             name: tensorflow-serving
           name: model-config
-        - name: "your-dataset"
-          persistentVolumeClaim:
-            claimName: "your-dataset"
 ---
 apiVersion: v1
 kind: Service
