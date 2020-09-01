@@ -8,7 +8,7 @@ access to tha data with no need for providing any futher information on tha data
 sources.
 Our framework takes care of all the dirty details of __mounting or
 giving your pods access to the data__. Once a dataset exists in a Kubernetes cluster,
-users will just need to reference it using the unique ID defined at creation time.
+users will just need to reference it using the name you defined at creation time.
 
 This framework targets any *Kubernetes 1.15+* installation; it is built on the
 [Operator SDK](https://github.com/operator-framework/operator-sdk) and is extensible to support any
