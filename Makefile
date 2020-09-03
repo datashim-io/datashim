@@ -61,12 +61,12 @@ deployment:
 		kubectl label namespace $$namespace monitor-pods-datasets=enabled ;\
 	done
 
-deployment-operator-only: keys-installation
+deployment-operator-only:
 	@for file in $(OPERATOR_ONLY_K8S_FILES); do \
   		echo creating $$file ;\
 		$(SHELL_EXPORT) envsubst < $$file | kubectl apply -n $(DATASET_OPERATOR_NAMESPACE) -f - ;\
 	done
-	@IFS=',' read -ra namespace_array <<< $(DATASET_OPERATOR_NAMESPACE) &&\
+	@IFS=',' read -ra namespace_array <<< $(NAMESPACES_TO_MONITOR) &&\
 	for namespace in "$${namespace_array[@]}"; \
 	do\
 		kubectl label namespace $$namespace monitor-pods-datasets=enabled ;\

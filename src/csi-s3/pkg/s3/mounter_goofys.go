@@ -56,6 +56,8 @@ func (goofys *goofysMounter) Mount(source string, target string) error {
 	args := []string{
 		fmt.Sprintf("--endpoint=%s", goofys.endpoint),
 		fmt.Sprintf("--profile=%s", goofys.volumeID),
+		"--type-cache-ttl","0s",
+		"--stat-cache-ttl","0s",
 		//"--dir-mode","0777",
 		//"--file-mode","0777",
 		//fmt.Sprintf("--cheap=%s", os.Getenv("cheap")),

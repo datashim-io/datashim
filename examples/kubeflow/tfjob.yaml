@@ -27,11 +27,6 @@ spec:
                 - --tf-learning-rate=0.1
               image: yiannisgkoufas/mnist
               workingDir: /opt
-              resources:
-                limits:
-                  ephemeral-storage: "10Gi"
-                requests:
-                  ephemeral-storage: "10Gi"
           restartPolicy: OnFailure
     Chief:
       replicas: 1
@@ -46,11 +41,6 @@ spec:
           serviceAccount: default-editor
           containers:
             - name: tensorflow
-              resources:
-                limits:
-                  ephemeral-storage: "10Gi"
-                requests:
-                  ephemeral-storage: "10Gi"
               command:
                 - python
                 - /opt/model.py
