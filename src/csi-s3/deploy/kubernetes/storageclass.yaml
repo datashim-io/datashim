@@ -7,7 +7,7 @@ provisioner: ch.ctrox.csi.s3-driver
 parameters:
   # specify which mounter to use
   # can be set to rclone, s3fs, goofys or s3backer
-  mounter: goofys
+  mounter: s3fs
 
   csi.storage.k8s.io/provisioner-secret-name: ${pvc.name}
   csi.storage.k8s.io/provisioner-secret-namespace: ${pvc.namespace}
