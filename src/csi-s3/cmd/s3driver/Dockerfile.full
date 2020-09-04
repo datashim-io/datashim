@@ -18,22 +18,30 @@ RUN wget -q https://dl.google.com/go/go$GO_VERSION.linux-$ARCH.tar.gz && \
 
 ENV GOROOT /usr/local/go
 ENV GOPATH /go
-ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH:/opt/goofys
 ENV GOARCH $ARCH
 ENV GO111MODULE=on
 
 COPY go.mod .
 COPY go.sum .
-RUN go get github.com/kahing/goofys@v0.20.0
+COPY go.mod.goofys .
 
 RUN go mod download
-RUN if [ "$ARCH" = "ppc64le" ]; then \
-    sed -i 's/4096/65536/g' $GOPATH/pkg/mod/github.com/jacobsa/fuse*/internal/buffer/in_message.go ; \
-    sed -i 's/17/21/g' $GOPATH/pkg/mod/github.com/jacobsa/fuse*/internal/buffer/in_message_linux.go ; \
-    sed -i 's/17/21/g' $GOPATH/pkg/mod/github.com/jacobsa/fuse*/internal/buffer/out_message_linux.go ; \
-    else echo 'true'; fi
 
-RUN go install github.com/kahing/goofys
+#modified instructions according to https://github.com/kahing/goofys/issues/527
+
+RUN cd /opt && \
+    git clone https://github.com/kahing/goofys.git && \
+    cd goofys && \
+    cp /go.mod.goofys go.mod && \
+    git submodule init && \
+    git submodule update && \
+    if [ "$ARCH" = "ppc64le" ]; then \
+    sed -i 's/4096/65536/g' /opt/goofys/vendor/github.com/jacobsa/fuse*/internal/buffer/in_message.go ; \
+    sed -i 's/17/21/g' /opt/goofys/vendor/github.com/jacobsa/fuse*/internal/buffer/in_message_linux.go ; \
+    sed -i 's/17/21/g' /opt/goofys/vendor/github.com/jacobsa/fuse*/internal/buffer/out_message_linux.go ; \
+    else echo 'true'; fi && \
+    go build
 
 COPY . /csi-s3
 WORKDIR /csi-s3
@@ -91,5 +99,5 @@ RUN cd /tmp \
   && rm -r /tmp/rclone*
 
 COPY --from=base /_output/s3driver /s3driver
-COPY --from=base /go/bin/goofys /bin/goofys
+COPY --from=base /opt/goofys/goofys /bin/goofys
 ENTRYPOINT ["/s3driver"]
