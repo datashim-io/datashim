@@ -45,8 +45,7 @@ func (s3fs *s3fsMounter) Mount(source string, target string) error {
 		"-o", fmt.Sprintf("url=%s", s3fs.url),
 		"-o", fmt.Sprintf("endpoint=%s", s3fs.region),
 		"-o", "allow_other",
-		//"-o", "umask=0077",
-		//"-o", "mp_umask=0077",
+		"-o", "umask=0000",
 	}
 	return fuseMount(target, s3fsCmd, args)
 }
