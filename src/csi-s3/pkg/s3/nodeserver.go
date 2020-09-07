@@ -85,9 +85,14 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	if(len(s3.cfg.ExistingBucket)!=0) {
 		bucketName = s3.cfg.ExistingBucket
 	}
-	b, err := s3.getBucket(bucketName)
-	if err != nil {
-		return nil, err
+
+	//b, err := s3.getBucket(bucketName)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	b := &bucket{
+		Name:          bucketName,
 	}
 
 	mounter, err := newMounter(b, s3.cfg, volumeID)
@@ -155,10 +160,13 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	if(len(s3.cfg.ExistingBucket)!=0) {
 		bucketName = s3.cfg.ExistingBucket
 	}
-	b, err := s3.getBucket(bucketName)
-	if err != nil {
-		return nil, err
+	b := &bucket{
+		Name:          bucketName,
 	}
+	//b, err := s3.getBucket(bucketName)
+	//if err != nil {
+	//	return nil, err
+	//}
 	mounter, err := newMounter(b, s3.cfg, volumeID)
 	if err != nil {
 		return nil, err
