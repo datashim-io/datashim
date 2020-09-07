@@ -46,8 +46,8 @@ func newMounter(bucket *bucket, cfg *Config, volumeId string) (Mounter, error) {
 		return newRcloneMounter(bucket, cfg)
 
 	default:
-		// default to s3backer
-		return newS3backerMounter(bucket, cfg)
+		// default to s3fsMounter
+		return newS3fsMounter(bucket, cfg)
 	}
 }
 
