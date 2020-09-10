@@ -8,7 +8,7 @@ access to tha data with no need for providing any futher information on tha data
 sources.
 Our framework takes care of all the dirty details of __mounting or
 giving your pods access to the data__. Once a dataset exists in a Kubernetes cluster,
-users will just need to reference it using the unique ID defined at creation time.
+users will just need to reference it using the name you defined at creation time.
 
 This framework targets any *Kubernetes 1.15+* installation; it is built on the
 [Operator SDK](https://github.com/operator-framework/operator-sdk) and is extensible to support any
@@ -17,11 +17,7 @@ This framework targets any *Kubernetes 1.15+* installation; it is built on the
 
 ## Roadmap
 
-- Support for NFS directories as Datasets [pull/3](https://github.com/IBM/dataset-lifecycle-framework/pull/3)
-- Support lookup for Dataset information in Hive metastore [pull/4](https://github.com/IBM/dataset-lifecycle-framework/pull/4)
-- Integration with Multi-Cloud Object Gateway (Noobaa)
-- Pluggable caching mechanism
-- Optimizations for data-aware scheduling
+Have a look on our wiki for [Roadmap](https://github.com/IBM/dataset-lifecycle-framework/wiki/Roadmap)
 
 ## Quickstart
 
@@ -269,6 +265,12 @@ the user wants to mount a dataset in a specific location.
 If the user doesn't specify the mount point, as a convention we will mount the
 dataset on `/mnt/datasets/<dataset-name>`.
 
+## Contact
+
+Reach out to us via email:
+- Yiannis Gkoufas, <yiannisg@ie.ibm.com>
+- Christian Pinto, <christian.pinto@ibm.com>
+- Srikumar Venugopal, <srikumarv@ie.ibm.com>
 
 ## Acknowledgements
 This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement No 825061.
