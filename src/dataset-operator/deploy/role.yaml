@@ -61,12 +61,6 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - ceph.rook.io
-  resources:
-  - '*'
-  verbs:
-  - '*'
-- apiGroups:
   - storage.k8s.io
   resources:
   - '*'
