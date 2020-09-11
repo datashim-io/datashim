@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ceph-cache-plugin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: ceph-cache-plugin
+  template:
+    metadata:
+      labels:
+        name: ceph-cache-plugin
+        dlf-plugin-type: caching
+        dlf-plugin-name: ceph-cache-plugin
+    spec:
+      serviceAccountName: ceph-cache-plugin
+      containers:
+        - name: ceph-cache-plugin
+          # Replace this with the built image name
+          image: ${IMAGE_NAME}
+          command:
+          - ceph-cache-plugin
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              value: ""
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "ceph-cache-plugin"
+            - name: ROOK_NAMESPACE
+              value: "rook-ceph"
+            - name: OPERATOR_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+      imagePullSecrets:
+        - name: ${DOCKER_REGISTRY_SECRET}

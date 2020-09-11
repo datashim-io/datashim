@@ -1,0 +1,77 @@
+apiVersion: kubeflow.org/v1
+kind: TFJob
+metadata:
+  name: my-train
+spec:
+  tfReplicaSpecs:
+    Ps:
+      replicas: 1
+      template:
+        metadata:
+          labels:
+            dataset.0.id: "your-dataset"
+            dataset.0.useas: "mount"
+          annotations:
+            sidecar.istio.io/inject: "false"
+        spec:
+          serviceAccount: default-editor
+          containers:
+            - name: tensorflow
+              command:
+                - python
+                - /opt/model.py
+                - --tf-model-dir=/mnt/datasets/your-dataset/mnist
+                - --tf-export-dir=/mnt/datasets/your-dataset/mnist/export
+                - --tf-train-steps=200
+                - --tf-batch-size=100
+                - --tf-learning-rate=0.1
+              image: yiannisgkoufas/mnist
+              workingDir: /opt
+          restartPolicy: OnFailure
+    Chief:
+      replicas: 1
+      template:
+        metadata:
+          labels:
+            dataset.0.id: "your-dataset"
+            dataset.0.useas: "mount"
+          annotations:
+            sidecar.istio.io/inject: "false"
+        spec:
+          serviceAccount: default-editor
+          containers:
+            - name: tensorflow
+              command:
+                - python
+                - /opt/model.py
+                - --tf-model-dir=/mnt/datasets/your-dataset/mnist
+                - --tf-export-dir=/mnt/datasets/your-dataset/mnist/export
+                - --tf-train-steps=200
+                - --tf-batch-size=100
+                - --tf-learning-rate=0.1
+              image: yiannisgkoufas/mnist
+          restartPolicy: OnFailure
+    Worker:
+      replicas: 1
+      template:
+        metadata:
+          labels:
+            dataset.0.id: "your-dataset"
+            dataset.0.useas: "mount"
+          annotations:
+            sidecar.istio.io/inject: "false"
+        spec:
+          serviceAccount: default-editor
+          containers:
+            - name: tensorflow
+              command:
+                - python
+                - /opt/model.py
+                - --tf-model-dir=/mnt/datasets/your-dataset/mnist
+                - --tf-export-dir=/mnt/datasets/your-dataset/mnist/export
+                - --tf-train-steps=200
+                - --tf-batch-size=100
+                - --tf-learning-rate=0.1
+              image: yiannisgkoufas/mnist
+              workingDir: /opt
+          restartPolicy: OnFailure

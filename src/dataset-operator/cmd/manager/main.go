@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"dataset-operator/pkg/admissioncontroller"
+	"github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/admissioncontroller"
 	"errors"
 	"flag"
 	"fmt"
@@ -10,16 +10,19 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"strings"
 	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
-	"dataset-operator/pkg/apis"
-	"dataset-operator/pkg/controller"
-	"dataset-operator/version"
+	"github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/apis"
+	"github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/controller"
+	"github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/version"
 
+	objectstorage "github.com/kube-object-storage/lib-bucket-provisioner/pkg/apis/objectbucket.io/v1alpha1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
@@ -74,11 +77,11 @@ func main() {
 	printVersion()
 
 	// TODO add multi-namespace support
-	//namespace, err := k8sutil.GetWatchNamespace()
-	//if err != nil {
-	//	log.Error(err, "Failed to get watch namespace")
-	//	os.Exit(1)
-	//}
+	namespace, err := k8sutil.GetWatchNamespace()
+	if err != nil {
+		log.Error(err, "Failed to get watch namespace")
+		os.Exit(1)
+	}
 
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
@@ -98,7 +101,7 @@ func main() {
 	// Set default manager options
 	// TODO add multi-namespace support
 	options := manager.Options{
-		Namespace:          "",
+		Namespace:          namespace,
 		MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 	}
 
@@ -107,10 +110,10 @@ func main() {
 	// Also note that you may face performance issues when using this with a high number of namespaces.
 	// More Info: https://godoc.org/github.com/kubernetes-sigs/controller-runtime/pkg/cache#MultiNamespacedCacheBuilder
 	// TODO add multi-namespace support
-	//if strings.Contains(namespace, ",") {
-	//	options.Namespace = ""
-	//	options.NewCache = cache.MultiNamespacedCacheBuilder(strings.Split(namespace, ","))
-	//}
+	if strings.Contains(namespace, ",") {
+		options.Namespace = ""
+		options.NewCache = cache.MultiNamespacedCacheBuilder(strings.Split(namespace, ","))
+	}
 
 	// Create a new manager to provide shared dependencies and start components
 	mgr, err := manager.New(cfg, options)
@@ -123,6 +126,10 @@ func main() {
 
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Error(err, "")
+		os.Exit(1)
+	}
+	if err := objectstorage.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
 	}

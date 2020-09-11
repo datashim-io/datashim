@@ -26,7 +26,7 @@ const (
 )
 
 // newMounter returns a new mounter depending on the mounterType parameter
-func newMounter(bucket *bucket, cfg *Config) (Mounter, error) {
+func newMounter(bucket *bucket, cfg *Config, volumeId string) (Mounter, error) {
 	mounter := bucket.Mounter
 	// Fall back to mounterType in cfg
 	if len(bucket.Mounter) == 0 {
@@ -37,7 +37,7 @@ func newMounter(bucket *bucket, cfg *Config) (Mounter, error) {
 		return newS3fsMounter(bucket, cfg)
 
 	case goofysMounterType:
-		return newGoofysMounter(bucket, cfg)
+		return newGoofysMounter(bucket, cfg, volumeId)
 
 	case s3backerMounterType:
 		return newS3backerMounter(bucket, cfg)
@@ -46,8 +46,8 @@ func newMounter(bucket *bucket, cfg *Config) (Mounter, error) {
 		return newRcloneMounter(bucket, cfg)
 
 	default:
-		// default to s3backer
-		return newS3backerMounter(bucket, cfg)
+		// default to s3fsMounter
+		return newS3fsMounter(bucket, cfg)
 	}
 }
 

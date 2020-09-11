@@ -1,4 +1,4 @@
-package dataset
+package datasetinternal
 
 import (
 	"errors"

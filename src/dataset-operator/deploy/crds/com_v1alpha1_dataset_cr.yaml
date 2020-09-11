@@ -1,9 +1,0 @@
-apiVersion: com.ie.ibm.hpsys/v1alpha1
-kind: Dataset
-metadata:
-  name: example-dataset
-spec:
-  # Add fields here
-  conf:
-    onefield: valueaa
-    anotherfield: bb

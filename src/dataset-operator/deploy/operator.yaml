@@ -9,6 +9,8 @@ spec:
       name: dataset-operator
   template:
     metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
       labels:
         name: dataset-operator
     spec:
@@ -19,7 +21,7 @@ spec:
           image: ${DATASET_OPERATOR_IMAGE}
           command:
             - dataset-operator
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8443
               name: webhook-api
@@ -32,6 +34,10 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: "dataset-operator"
+            - name: OPERATOR_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
           volumeMounts:
             - name: webhook-tls-certs
               mountPath: /run/secrets/tls

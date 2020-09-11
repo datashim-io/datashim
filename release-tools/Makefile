@@ -1,17 +1,27 @@
 SHELL=/bin/bash
 
+# returns arch as amd64,ppc64le, mostly needed for golang
+define get_arch
+$(shell if [ "$$(arch)" == "x86_64" ]; then echo amd64; elif [ "$$(arch)" == "i386" ]; then echo amd64; else echo "$$(arch)"; fi)
+endef
+
 DATASET_OPERATOR_IMAGE := dataset-operator
-DATASET_OPERATOR_TAG := latest
+DATASET_OPERATOR_TAG := latest-$(call get_arch)
 DATASET_OPERATOR_IMAGE := $(DOCKER_REGISTRY_COMPONENTS)/$(DATASET_OPERATOR_IMAGE)
 DATASET_OPERATOR_IMAGE := $(DATASET_OPERATOR_IMAGE):$(DATASET_OPERATOR_TAG)
 
+GENERAGE_KEYS_IMAGE := generate-keys
+GENERAGE_KEYS_IMAGE_TAG := latest-$(call get_arch)
+GENERAGE_KEYS_IMAGE := $(DOCKER_REGISTRY_COMPONENTS)/$(GENERAGE_KEYS_IMAGE)
+GENERAGE_KEYS_IMAGE := $(GENERAGE_KEYS_IMAGE):$(GENERAGE_KEYS_IMAGE_TAG)
+
 CSI_S3_IMAGE := csi-s3
-CSI_S3_IMAGE_TAG := dev-full
+CSI_S3_IMAGE_TAG := dev-full-$(call get_arch)
 CSI_S3_IMAGE := $(DOCKER_REGISTRY_COMPONENTS)/$(CSI_S3_IMAGE)
 CSI_S3_IMAGE := $(CSI_S3_IMAGE):$(CSI_S3_IMAGE_TAG)
 
 CSI_NFS_IMAGE := csi-nfs
-CSI_NFS_IMAGE_TAG := dev-full
+CSI_NFS_IMAGE_TAG := dev-full-$(call get_arch)
 CSI_NFS_IMAGE := $(DOCKER_REGISTRY_COMPONENTS)/$(CSI_NFS_IMAGE)
 CSI_NFS_IMAGE := $(CSI_NFS_IMAGE):$(CSI_NFS_IMAGE_TAG)
 
@@ -38,6 +48,9 @@ MAKE_ENV += DATASET_OPERATOR_IMAGE
 MAKE_ENV += DATASET_OPERATOR_NAMESPACE
 MAKE_ENV += DOCKER_REGISTRY_SECRET
 MAKE_ENV += KEY_DIR
+MAKE_ENV += NAMESPACES_TO_MONITOR
+MAKE_ENV += KUBELET_PATH
+MAKE_ENV += GENERAGE_KEYS_IMAGE
 
 SHELL_EXPORT := $(foreach v,$(MAKE_ENV),$(v)='$($(v))' )
 
@@ -46,10 +59,8 @@ K8S_FILES += $(shell find ./src/csi-driver-nfs/deploy/kubernetes -maxdepth 1 -na
 K8S_FILES += $(shell find ./src/dataset-operator/deploy -maxdepth 1 -name '*.yaml')
 K8S_FILES += $(shell find ./src/dataset-operator/deploy/crds -maxdepth 1 -name '*crd.yaml')
 
-# returns arch as amd64,ppc64le, mostly needed for golang
-define get_arch
-$(shell if [ "$$(arch)" == "x86_64" ]; then echo amd64; elif [ "$$(arch)" == "i386" ]; then echo amd64; else echo "$$(arch)"; fi)
-endef
+OPERATOR_ONLY_K8S_FILES += $(shell find ./src/dataset-operator/deploy -maxdepth 1 -name '*.yaml')
+
 #1: git repo url
 #2: git tag
 #3: directory created from pull

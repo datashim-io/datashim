@@ -53,8 +53,8 @@ func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 		return nil, status.Error(codes.InvalidArgument, "Volume Capabilities missing in request")
 	}
 
-	params := req.GetParameters()
-	mounter := params[mounterTypeKey]
+	//params := req.GetParameters()
+	//mounter := params[mounterTypeKey]
 
 	glog.V(4).Infof("Got a request to create volume %s", volumeID)
 
@@ -74,13 +74,16 @@ func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 			return nil, fmt.Errorf("failed to create volume %s: %v", volumeID, err)
 		}
 	}
-	b := &bucket{
-		Name:          bucketName,
-		Mounter:       mounter,
-	}
-	if err := s3.setBucket(b); err != nil {
-		return nil, fmt.Errorf("Error setting bucket metadata: %v", err)
-	}
+	//b := &bucket{
+	//	Name:          bucketName,
+	//	Mounter:       mounter,
+	//}
+
+	//TODO check for readonly
+
+	//if err := s3.setBucket(b); err != nil {
+	//	return nil, fmt.Errorf("Error setting bucket metadata: %v", err)
+	//}
 
 	glog.V(4).Infof("create volume %s", volumeID)
 	s3Vol := s3Volume{}
