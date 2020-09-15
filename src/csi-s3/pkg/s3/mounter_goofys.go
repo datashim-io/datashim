@@ -56,10 +56,11 @@ func (goofys *goofysMounter) Mount(source string, target string) error {
 	args := []string{
 		fmt.Sprintf("--endpoint=%s", goofys.endpoint),
 		fmt.Sprintf("--profile=%s", goofys.volumeID),
-		"--type-cache-ttl","0s",
-		"--stat-cache-ttl","0s",
-		//"--dir-mode","0777",
-		//"--file-mode","0777",
+		"--type-cache-ttl","1s","-f",
+		"--stat-cache-ttl","1s",
+		"--dir-mode","0777",
+		"--file-mode","0777",
+		"--http-timeout","5m",
 		//fmt.Sprintf("--cheap=%s", os.Getenv("cheap")),
 		"-o", "allow_other",
 		fmt.Sprintf("%s", goofys.bucket.Name),
@@ -73,7 +74,7 @@ func (goofys *goofysMounter) Mount(source string, target string) error {
 func writes3fsPassGoofy(goofys *goofysMounter) error {
 	awsPath := fmt.Sprintf("%s/.aws", os.Getenv("HOME"))
 	if _, err := os.Stat(awsPath); os.IsNotExist(err) {
-		mkdir_err := os.Mkdir(awsPath,os.ModePerm)
+		mkdir_err := os.Mkdir(awsPath,0700)
 		return mkdir_err
 	}
 

@@ -90,9 +90,11 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	//if err != nil {
 	//	return nil, err
 	//}
+	volContext := req.GetVolumeContext()
 
 	b := &bucket{
 		Name:          bucketName,
+		Mounter: volContext[mounterTypeKey],
 	}
 
 	mounter, err := newMounter(b, s3.cfg, volumeID)
