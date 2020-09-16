@@ -55,6 +55,10 @@ deployment:
   		echo creating $$file ;\
 		$(SHELL_EXPORT) envsubst < $$file | kubectl apply -n $(DATASET_OPERATOR_NAMESPACE) -f - ;\
 	done
+	@for file in $(K8S_CRD_FILES); do \
+  		echo creating $$file ;\
+		$(SHELL_EXPORT) envsubst < $$file | kubectl apply -n $(DATASET_OPERATOR_NAMESPACE) -f - ;\
+	done
 	@IFS=',' read -ra namespace_array <<< $(NAMESPACES_TO_MONITOR) &&\
 	for namespace in "$${namespace_array[@]}"; \
 	do\
