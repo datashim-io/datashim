@@ -14,6 +14,9 @@ This framework targets any *Kubernetes 1.15+* installation; it is built on the
 [Operator SDK](https://github.com/operator-framework/operator-sdk) and is extensible to support any
 [CSI](https://kubernetes-csi.github.io/docs/) enabled storage system.
 
+## FAQ
+
+Have a look on our wiki for [Frequently Asked Questions](https://github.com/IBM/dataset-lifecycle-framework/wiki/FAQ)
 
 ## Roadmap
 
