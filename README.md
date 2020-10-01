@@ -25,7 +25,7 @@ _In case don't have an existing S3 Bucket follow our wiki to [deploy an Object S
 and populate it with data._
 
 We will create now a Dataset named `example-dataset` pointing to your S3 bucket.
-```
+```yaml
 cat <<EOF | kubectl apply -f -
 apiVersion: com.ie.ibm.hpsys/v1alpha1
 kind: Dataset
@@ -44,7 +44,7 @@ EOF
 
 If everything worked okay, you should see a PVC and a ConfigMap named `example-dataset` which you can mount in your pods.
 As an easier way to use the Dataset in your pod, you can instead label the pod as follows:
-<pre>
+```yaml
 apiVersion: v1
 kind: Pod
 metadata:
@@ -56,7 +56,7 @@ spec:
   containers:
     - name: nginx
       image: nginx
-</pre>
+```
 
 As a convention the Dataset will be mounted in `/mnt/datasets/example-dataset`. If instead you wish to pass the connection
 details as environment variables, change the `useas` line to `dataset.0.useas: "configmap"`
