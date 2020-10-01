@@ -1,0 +1,7 @@
+# override from the root values.yaml
+# just for reference, you can emit
+sidecars: {}
+csis3: {}
+# baseRepo: "anotherrepo"
+# dockerRegistrySecret: "anothersecret"
+mounter: "goofys"

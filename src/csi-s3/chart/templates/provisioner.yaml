@@ -1,0 +1,62 @@
+{{- $csiS3Properties := merge .Values $.Values.global}}
+kind: Service
+apiVersion: v1
+metadata:
+  name: csi-provisioner-s3
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: csi-provisioner-s3
+    {{- include "common.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: csi-provisioner-s3
+  ports:
+    - name: dummy
+      port: 12345
+---
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: csi-provisioner-s3
+  labels:
+  {{- include "common.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  serviceName: "csi-provisioner-s3"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csi-provisioner-s3
+  template:
+    metadata:
+      labels:
+        app: csi-provisioner-s3
+    spec:
+      serviceAccountName: csi-provisioner
+      {{- if or (.Values.dockerRegistrySecret) (.Values.global.dockerRegistrySecret) }}
+      imagePullSecrets:
+        - name: {{ .Values.dockerRegistrySecret | default .Values.global.dockerRegistrySecret }}
+      {{- end}}
+      containers:
+        - name: csi-provisioner
+          {{- with $csiS3Properties.sidecars}}
+          image: "{{ .baseRepo }}/{{ .images.externalProvisioner.image }}:{{ .images.externalProvisioner.tag }}"
+          {{- end}}
+          imagePullPolicy: Always
+          args:
+            - -v=5
+            - --csi-address=/csi/csi.sock
+            - --feature-gates=Topology=true
+          securityContext:
+            # This is necessary only for systems with SELinux, where
+            # non-privileged sidecar containers cannot access unix domain socket
+            # created by privileged CSI driver container.
+            privileged: true
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+      volumes:
+        - hostPath:
+            path: {{ $csiS3Properties.sidecars.kubeletPath }}/plugins/csi-s3
+            type: DirectoryOrCreate
+          name: socket-dir

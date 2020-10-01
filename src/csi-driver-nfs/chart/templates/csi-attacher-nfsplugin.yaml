@@ -1,0 +1,77 @@
+# This YAML file contains attacher & csi driver API objects that are necessary
+# to run external CSI attacher for nfs
+{{- $csiNFSProperties := merge .Values $.Values.global}}
+kind: Service
+apiVersion: v1
+metadata:
+  name: csi-attacher-nfsplugin
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: csi-attacher-nfsplugin
+  {{- include "common.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: csi-attacher-nfsplugin
+  ports:
+    - name: dummy
+      port: 12345
+
+---
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: csi-attacher-nfsplugin
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "common.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: csi-attacher-nfsplugin
+  serviceName: "csi-attacher-nfsplugin"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels" . | nindent 8 }}
+        app: csi-attacher-nfsplugin
+    spec:
+      serviceAccountName: csi-attacher-nfs
+      {{- if or (.Values.dockerRegistrySecret) (.Values.global.dockerRegistrySecret) }}
+      imagePullSecrets:
+        - name: {{ .Values.dockerRegistrySecret | default .Values.global.dockerRegistrySecret }}
+      {{- end}}
+      containers:
+        - name: csi-attacher
+          {{- with $csiNFSProperties.sidecars}}
+          image: "{{ .baseRepo }}/{{ .images.externalAttacher.image }}:{{ .images.externalAttacher.tag }}"
+          {{- end}}
+          args:
+            - "--v=10"
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+        - name: nfs
+          image: "{{ $csiNFSProperties.baseRepo }}/{{ $csiNFSProperties.csinfs.image }}:{{ $csiNFSProperties.csinfs.tag }}-{{ $csiNFSProperties.arch }}"
+          args :
+            - "--nodeid=$(NODE_ID)"
+            - "--endpoint=$(CSI_ENDPOINT)"
+          env:
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: CSI_ENDPOINT
+              value: unix://plugin/csi.sock
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /plugin
+      volumes:
+        - name: socket-dir
+          emptyDir: {}

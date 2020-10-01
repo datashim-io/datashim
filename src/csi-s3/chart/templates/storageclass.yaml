@@ -3,12 +3,14 @@ kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
   name: csi-s3
+  labels:
+  {{- include "common.labels" . | nindent 4 }}
 provisioner: ch.ctrox.csi.s3-driver
 parameters:
   # specify which mounter to use
   # can be set to s3fs, goofys
   # OTHER OPTIONS NOT WORKING!
-  mounter: goofys
+  mounter: {{ .Values.mounter }}
 
   csi.storage.k8s.io/provisioner-secret-name: ${pvc.name}
   csi.storage.k8s.io/provisioner-secret-namespace: ${pvc.namespace}

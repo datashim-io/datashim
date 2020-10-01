@@ -1,0 +1,86 @@
+# This YAML file contains driver-registrar & csi driver nodeplugin API objects
+# that are necessary to run CSI nodeplugin for nfs
+{{- $csiNFSProperties := merge .Values $.Values.global}}
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: csi-nodeplugin-nfsplugin
+  labels:
+  {{- include "common.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: csi-nodeplugin-nfsplugin
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels" . | nindent 8 }}
+        app: csi-nodeplugin-nfsplugin
+    spec:
+      {{- if or (.Values.dockerRegistrySecret) (.Values.global.dockerRegistrySecret) }}
+      imagePullSecrets:
+        - name: {{ .Values.dockerRegistrySecret | default .Values.global.dockerRegistrySecret }}
+      {{- end}}
+      serviceAccountName: csi-nodeplugin
+      hostNetwork: true
+      containers:
+        - name: node-driver-registrar
+          {{- with $csiNFSProperties.sidecars}}
+          image: "{{ .baseRepo }}/{{ .images.nodeDriverRegistrar.image }}:{{ .images.nodeDriverRegistrar.tag }}"
+          {{- end}}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "rm -rf /registration/csi-nfsplugin /registration/csi-nfsplugin-reg.sock"]
+          args:
+            - --v=10
+            - --csi-address=/plugin/csi.sock
+            - --kubelet-registration-path={{ $csiNFSProperties.sidecars.kubeletPath }}/plugins/csi-nfsplugin/csi.sock
+          env:
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /plugin
+            - name: registration-dir
+              mountPath: /registration
+        - name: nfs
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+          image: "{{ $csiNFSProperties.baseRepo }}/{{ $csiNFSProperties.csinfs.image }}:{{ $csiNFSProperties.csinfs.tag }}-{{ $csiNFSProperties.arch }}"
+          args :
+            - "--nodeid=$(NODE_ID)"
+            - "--endpoint=$(CSI_ENDPOINT)"
+          env:
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: CSI_ENDPOINT
+              value: unix://plugin/csi.sock
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /plugin
+            - name: pods-mount-dir
+              mountPath: {{ $csiNFSProperties.sidecars.kubeletPath }}/pods
+              mountPropagation: "Bidirectional"
+      volumes:
+        - name: plugin-dir
+          hostPath:
+            path: {{ $csiNFSProperties.sidecars.kubeletPath }}/plugins/csi-nfsplugin
+            type: DirectoryOrCreate
+        - name: pods-mount-dir
+          hostPath:
+            path: {{ $csiNFSProperties.sidecars.kubeletPath }}/pods
+            type: Directory
+        - hostPath:
+            path: {{ $csiNFSProperties.sidecars.kubeletPath }}/plugins_registry
+            type: Directory
+          name: registration-dir

@@ -1,0 +1,45 @@
+global:
+  dockerRegistrySecret: "" # leave empty if public repo
+  baseRepo: "yiannisgkoufas"
+  arch: "amd64"
+
+  sidecars:
+    kubeletPath: "/var/lib/kubelet"
+    baseRepo: "quay.io/k8scsi"
+    images:
+      externalAttacher:
+        image: "csi-attacher"
+        tag: "v3.0.0-rc1"
+      nodeDriverRegistrar:
+        image: "csi-node-driver-registrar"
+        tag: "v1.3.0"
+      externalProvisioner:
+        image: "csi-provisioner"
+        tag: "v2.0.0-rc2"
+
+csi-s3-chart:
+# baseRepo: "anotherrepo"
+# dockerRegistrySecret: "anothersecret"
+# mounter: "goofys"
+  csis3:
+    image: "csi-s3"
+    tag: "dev-full"
+  sidecars: {} # in case you want to force override regardless of the csi-s3-chart/values.yaml
+
+csi-nfs-chart:
+# baseRepo: "anotherrepo"
+# dockerRegistrySecret: "anothersecret"
+  csinfs:
+    image: "csi-nfs"
+    tag: "dev-full"
+  sidecars: {} # in case you want to force override regardless of the csi-nfs-chart/values.yaml
+
+dataset-operator-chart:
+# baseRepo: "anotherrepo"
+# dockerRegistrySecret: "anothersecret"
+  generatekeys:
+    image: "generate-keys"
+    tag: "latest"
+  datasetoperator:
+    image: "dataset-operator"
+    tag: "latest"
