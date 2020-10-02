@@ -50,8 +50,8 @@ kind: Pod
 metadata:
   name: nginx
   labels:
-    <b>dataset.0.id: "example-dataset"</b>
-    <b>dataset.0.useas: "mount"</b>
+    dataset.0.id: "example-dataset"
+    dataset.0.useas: "mount"
 spec:
   containers:
     - name: nginx
