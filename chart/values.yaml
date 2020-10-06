@@ -9,13 +9,13 @@ global:
     images:
       externalAttacher:
         image: "csi-attacher"
-        tag: "v3.0.0-rc1"
+        tag: "v3.0.0"
       nodeDriverRegistrar:
         image: "csi-node-driver-registrar"
-        tag: "v1.3.0"
+        tag: "v2.0.1"
       externalProvisioner:
         image: "csi-provisioner"
-        tag: "v2.0.0-rc2"
+        tag: "v2.0.2"
 
 csi-s3-chart:
 # baseRepo: "anotherrepo"

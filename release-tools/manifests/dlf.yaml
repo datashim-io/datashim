@@ -29,7 +29,7 @@ metadata:
     app.kubernetes.io/name: "dlf"
   namespace: dlf
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/attacher-rbac-3.0.0-rc1.yaml
+# Source: dlf-chart/charts/csi-s3-chart/templates/attacher-rbac.yaml
 # This YAML file contains all RBAC objects that are necessary to run external
 # CSI attacher.
 #
@@ -58,7 +58,7 @@ metadata:
     app.kubernetes.io/name: "dlf"
   namespace: dlf
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner-rbac-2.0.0-rc2.yaml
+# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner-rbac.yaml
 # This YAML file contains all RBAC objects that are necessary to run external
 # CSI provisioner.
 #
@@ -273,7 +273,7 @@ rules:
     resources: ["volumeattachments"]
     verbs: ["get", "list", "watch", "update"]
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/attacher-rbac-3.0.0-rc1.yaml
+# Source: dlf-chart/charts/csi-s3-chart/templates/attacher-rbac.yaml
 # Attacher must be able to work with PVs, CSINodes and VolumeAttachments
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -284,13 +284,13 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["persistentvolumes"]
-    verbs: ["get", "list", "watch", "update", "patch"]
+    verbs: ["get", "list", "watch", "update", "patch"] #Adding "update"
   - apiGroups: ["storage.k8s.io"]
     resources: ["csinodes"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["storage.k8s.io"]
     resources: ["volumeattachments"]
-    verbs: ["get", "list", "watch", "update", "patch", "create"]
+    verbs: ["get", "list", "watch", "update", "patch", "create"]  #Adding "update"
   - apiGroups: ["storage.k8s.io"]
     resources: ["volumeattachments/status"]
     verbs: ["patch"]
@@ -327,7 +327,7 @@ rules:
     resources: ["volumeattachments"]
     verbs: ["get", "list", "watch", "update","create"]
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner-rbac-2.0.0-rc2.yaml
+# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner-rbac.yaml
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -337,7 +337,7 @@ metadata:
   namespace: dlf
 rules:
   # The following rule should be uncommented for plugins that require secrets
-  # for provisioning.
+  # for provisioning. #Enabling secrets
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "list"]
@@ -365,6 +365,10 @@ rules:
   - apiGroups: [""]
     resources: ["nodes"]
     verbs: ["get", "list", "watch"]
+  # Access to volumeattachments is only needed when the CSI driver
+  # has the PUBLISH_UNPUBLISH_VOLUME controller capability.
+  # In that case, external-provisioner will watch volumeattachments
+  # to determine when it is safe to delete a volume.
   - apiGroups: ["storage.k8s.io"]
     resources: ["volumeattachments"]
     verbs: ["get", "list", "watch","create"]
@@ -488,7 +492,7 @@ roleRef:
   name: csi-nodeplugin
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/attacher-rbac-3.0.0-rc1.yaml
+# Source: dlf-chart/charts/csi-s3-chart/templates/attacher-rbac.yaml
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -522,7 +526,7 @@ roleRef:
   name: csi-s3
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner-rbac-2.0.0-rc2.yaml
+# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner-rbac.yaml
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -557,7 +561,7 @@ roleRef:
   name: dataset-operator
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/attacher-rbac-3.0.0-rc1.yaml
+# Source: dlf-chart/charts/csi-s3-chart/templates/attacher-rbac.yaml
 # Attacher must be able to work with configmaps or leases in the current namespace
 # if (and only if) leadership election is enabled
 kind: Role
@@ -573,7 +577,7 @@ rules:
     resources: ["leases"]
     verbs: ["get", "watch", "list", "delete", "update", "create"]
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner-rbac-2.0.0-rc2.yaml
+# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner-rbac.yaml
 # Provisioner must be able to work with endpoints in current namespace
 # if (and only if) leadership election is enabled
 kind: Role
@@ -593,8 +597,23 @@ rules:
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]
     verbs: ["get", "watch", "list", "delete", "update", "create"]
+  # Permissions for CSIStorageCapacity are only needed enabling the publishing
+  # of storage capacity information.
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["csistoragecapacities"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # The GET permissions below are needed for walking up the ownership chain
+  # for CSIStorageCapacity. They are sufficient for deployment via
+  # StatefulSet (only needs to get Pod) and Deployment (needs to get
+  # Pod and then ReplicaSet to find the Deployment).
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get"]
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/attacher-rbac-3.0.0-rc1.yaml
+# Source: dlf-chart/charts/csi-s3-chart/templates/attacher-rbac.yaml
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -613,7 +632,7 @@ roleRef:
   name: external-attacher-cfg
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner-rbac-2.0.0-rc2.yaml
+# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner-rbac.yaml
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -722,7 +741,7 @@ spec:
       hostNetwork: true
       containers:
         - name: node-driver-registrar
-          image: "quay.io/k8scsi/csi-node-driver-registrar:v1.3.0"
+          image: "quay.io/k8scsi/csi-node-driver-registrar:v2.0.1"
           lifecycle:
             preStop:
               exec:
@@ -801,7 +820,7 @@ spec:
       hostNetwork: true
       containers:
         - name: driver-registrar
-          image: "quay.io/k8scsi/csi-node-driver-registrar:v1.3.0"
+          image: "quay.io/k8scsi/csi-node-driver-registrar:v2.0.1"
           imagePullPolicy: Always
           args:
             - --v=5
@@ -984,7 +1003,7 @@ spec:
       serviceAccountName: csi-attacher-nfs
       containers:
         - name: csi-attacher
-          image: "quay.io/k8scsi/csi-attacher:v3.0.0-rc1"
+          image: "quay.io/k8scsi/csi-attacher:v3.0.0"
           args:
             - "--v=10"
             - "--csi-address=$(ADDRESS)"
@@ -1038,7 +1057,7 @@ spec:
       serviceAccountName: csi-attacher
       containers:
         - name: csi-attacher
-          image: "quay.io/k8scsi/csi-attacher:v3.0.0-rc1"
+          image: "quay.io/k8scsi/csi-attacher:v3.0.0"
           imagePullPolicy: Always
           args:
             - --v=5
@@ -1080,7 +1099,7 @@ spec:
       serviceAccountName: csi-provisioner
       containers:
         - name: csi-provisioner
-          image: "quay.io/k8scsi/csi-provisioner:v2.0.0-rc2"
+          image: "quay.io/k8scsi/csi-provisioner:v2.0.2"
           imagePullPolicy: Always
           args:
             - -v=5

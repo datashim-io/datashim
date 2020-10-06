@@ -27,9 +27,9 @@ metadata:
 rules:
   # The following rule should be uncommented for plugins that require secrets
   # for provisioning. #Enabling secrets
-  # - apiGroups: [""]
-  #   resources: ["secrets"]
-  #   verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list"]
   - apiGroups: [""]
     resources: ["persistentvolumes"]
     verbs: ["get", "list", "watch", "create", "delete"]
