@@ -1,0 +1,6 @@
+apiVersion: v2
+name: csi-s3-chart
+description: Dataset Lifecycle Framework chart, CSI S3 Chart
+type: application
+version: 0.1.0
+appVersion: 0.1.0
