@@ -13,16 +13,20 @@ kind: ServiceAccount
 metadata:
   name: csi-provisioner
   # replace with non-default namespace name
-  namespace: ${DATASET_OPERATOR_NAMESPACE}
-
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "common.labels" . | nindent 4 }}
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: external-provisioner-runner
+  labels:
+  {{- include "common.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
 rules:
   # The following rule should be uncommented for plugins that require secrets
-  # for provisioning.
+  # for provisioning. #Enabling secrets
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "list"]
@@ -50,6 +54,10 @@ rules:
   - apiGroups: [""]
     resources: ["nodes"]
     verbs: ["get", "list", "watch"]
+  # Access to volumeattachments is only needed when the CSI driver
+  # has the PUBLISH_UNPUBLISH_VOLUME controller capability.
+  # In that case, external-provisioner will watch volumeattachments
+  # to determine when it is safe to delete a volume.
   - apiGroups: ["storage.k8s.io"]
     resources: ["volumeattachments"]
     verbs: ["get", "list", "watch","create"]
@@ -59,11 +67,14 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: csi-provisioner-role
+  labels:
+  {{- include "common.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
 subjects:
   - kind: ServiceAccount
     name: csi-provisioner
     # replace with non-default namespace name
-    namespace: ${DATASET_OPERATOR_NAMESPACE}
+    namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
   name: external-provisioner-runner
@@ -76,8 +87,10 @@ kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   # replace with non-default namespace name
-  namespace: ${DATASET_OPERATOR_NAMESPACE}
+  namespace: {{ .Release.Namespace }}
   name: external-provisioner-cfg
+  labels:
+  {{- include "common.labels" . | nindent 4 }}
 rules:
   # Only one of the following rules for endpoints or leases is required based on
   # what is set for `--leader-election-type`. Endpoints are deprecated in favor of Leases.
@@ -87,6 +100,21 @@ rules:
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]
     verbs: ["get", "watch", "list", "delete", "update", "create"]
+  # Permissions for CSIStorageCapacity are only needed enabling the publishing
+  # of storage capacity information.
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["csistoragecapacities"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # The GET permissions below are needed for walking up the ownership chain
+  # for CSIStorageCapacity. They are sufficient for deployment via
+  # StatefulSet (only needs to get Pod) and Deployment (needs to get
+  # Pod and then ReplicaSet to find the Deployment).
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get"]
 
 ---
 kind: RoleBinding
@@ -94,12 +122,14 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: csi-provisioner-role-cfg
   # replace with non-default namespace name
-  namespace: ${DATASET_OPERATOR_NAMESPACE}
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "common.labels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
     name: csi-provisioner
     # replace with non-default namespace name
-    namespace: ${DATASET_OPERATOR_NAMESPACE}
+    namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
   name: external-provisioner-cfg
