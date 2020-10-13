@@ -2,6 +2,8 @@ apiVersion: admissionregistration.k8s.io/v1beta1
 kind: MutatingWebhookConfiguration
 metadata:
   name: dlf-mutating-webhook-cfg
+  labels:
+    app.kubernetes.io/name: "dlf"
 webhooks:
   - name: admission.webhook.dlf
     reinvocationPolicy: IfNeeded

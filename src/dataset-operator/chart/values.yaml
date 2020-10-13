@@ -1,0 +1,4 @@
+## Defined in Values.global, only if you want to override change them
+#baseRepo: ""
+#dockerRegistrySecret: ""
+generatekeys: {}

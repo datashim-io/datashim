@@ -1,0 +1,32 @@
+{{- $datasetProperties := merge .Values $.Values.global}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-keys
+  labels:
+  {{- include "common.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  template:
+    metadata:
+      labels:
+      {{- include "common.labels" . | nindent 8 }}
+      annotations:
+        sidecar.istio.io/inject: "false"
+    spec:
+      serviceAccountName: dataset-operator
+      {{- if or (.Values.dockerRegistrySecret) (.Values.global.dockerRegistrySecret) }}
+      imagePullSecrets:
+        - name: {{ .Values.dockerRegistrySecret | default .Values.global.dockerRegistrySecret }}
+      {{- end}}
+      containers:
+        - name: generate-keys
+          {{- with $datasetProperties}}
+          image: "{{ .baseRepo }}/{{ .generatekeys.image }}:{{ .generatekeys.tag }}-{{ .arch }}"
+          {{- end}}
+          imagePullPolicy: Always
+          env:
+            - name: DATASET_OPERATOR_NAMESPACE
+              value: {{ .Release.Namespace }}
+      restartPolicy: Never
+  backoffLimit: 4

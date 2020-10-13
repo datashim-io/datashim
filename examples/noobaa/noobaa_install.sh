@@ -3,10 +3,10 @@
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 function check_minikube_version() {
-  is_correct_version=$(minikube config get kubernetes-version | grep "v1.17")
+  is_correct_version=$(kubectl version | grep 'Server Version: version.Info{Major:"1", Minor:"18"')
   if [ -z "$is_correct_version" ]; then
     echo "Minikube uses incompatible k8s version"
-    echo "Execute 'minikube config set kubernetes-version v1.17.8' and restart minikube"
+    echo "Execute 'minikube config set kubernetes-version v1.18.8' and restart minikube"
     exit 0
   fi
 }
@@ -26,11 +26,11 @@ function wait_for_backingstore_ready() {
 function wait_for_pods_created() {
   for (( ; ; )); do
     noobaa_pods=$(kubectl get pods --no-headers -l app=noobaa | wc -l)
-    if [[ $noobaa_pods == "2" ]]; then
+    if [[ $noobaa_pods == "3" ]]; then
       echo "Noobaa pods ready!"
       break
     fi
-    echo "Waiting for the 2 noobaa pods to be ready"
+    echo "Waiting for the 3 noobaa pods to be ready"
     sleep 5
   done
 }
@@ -46,18 +46,18 @@ function install_noobaa() {
   Darwin*) os=mac ;;
   Linux*) os=linux ;;
   esac
-  wget -P ${DIR} https://github.com/noobaa/noobaa-operator/releases/download/v2.0.10/noobaa-${os}-v2.0.10 >/dev/null 2>&1
+  wget -P ${DIR} https://github.com/noobaa/noobaa-operator/releases/download/v2.3.0/noobaa-${os}-v2.3.0 >/dev/null 2>&1
   mv ${DIR}/noobaa-${os}-* ${DIR}/noobaa
   chmod +x ${DIR}/noobaa
   echo "done"
 
   echo "Installing NooBaa..."
-  ${DIR}/noobaa install >/dev/null 2>&1
+  ${DIR}/noobaa install --mini=true >/dev/null 2>&1
   wait_for_pods_created
   wait_for_pods_running
   echo "Installed NooBaa"
   echo "Creating Backing Store"
-  ${DIR}/noobaa backingstore create pv-pool my-pv-bs --num-volumes 3 --pv-size-gb 1 --storage-class standard >/dev/null 2>&1
+  ${DIR}/noobaa backingstore create pv-pool my-pv-bs --num-volumes 3 --pv-size-gb 16 --storage-class standard >/dev/null 2>&1
   echo "Created Backing Store"
   wait_for_backingstore_ready
   echo "Delete Bucket Class"
@@ -66,19 +66,6 @@ function install_noobaa() {
   echo "Creating Bucket Class"
   ${DIR}/noobaa bucketclass create noobaa-default-bucket-class --backingstores=my-pv-bs --placement="" >/dev/null 2>&1
   echo "Created Bucket Class"
-  echo "done"
-}
-
-function build_data_loader() {
-  echo -n "Building NooBaa data loader..."
-  driver_check=$(cat $HOME/.minikube/machines/minikube/config.json | grep DriverName)
-  if [[ $driver_check != *"none"* ]]; then
-    eval $(minikube docker-env)
-  fi
-  docker build -f ${DIR}/Dockerfile-awscli-alpine -t awscli-alpine . >/dev/null 2>&1
-  if [[ $driver_check != *"none"* ]]; then
-    eval $(minikube docker-env -u)
-  fi
   echo "done"
 }
 
@@ -102,5 +89,4 @@ function run_data_loader() {
 
 check_minikube_version
 install_noobaa
-build_data_loader
 run_data_loader

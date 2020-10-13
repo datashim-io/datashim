@@ -1,0 +1,25 @@
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: csi-s3
+  labels:
+  {{- include "common.labels" . | nindent 4 }}
+provisioner: ch.ctrox.csi.s3-driver
+parameters:
+  # specify which mounter to use
+  # can be set to s3fs, goofys
+  # OTHER OPTIONS NOT WORKING!
+  mounter: {{ .Values.mounter }}
+
+  csi.storage.k8s.io/provisioner-secret-name: ${pvc.name}
+  csi.storage.k8s.io/provisioner-secret-namespace: ${pvc.namespace}
+
+  csi.storage.k8s.io/controller-publish-secret-name: ${pvc.name}
+  csi.storage.k8s.io/controller-publish-secret-namespace: ${pvc.namespace}
+
+  csi.storage.k8s.io/node-stage-secret-name: ${pvc.name}
+  csi.storage.k8s.io/node-stage-secret-namespace: ${pvc.namespace}
+
+  csi.storage.k8s.io/node-publish-secret-name: ${pvc.name}
+  csi.storage.k8s.io/node-publish-secret-namespace: ${pvc.namespace}
