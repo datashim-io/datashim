@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ -z "$DOCKER_REGISTRY" ]
+then
+      echo "please specify \$DOCKER_REGISTRY"
+      exit 1
+fi
+
 export ARCH=`arch`;
 if [ "$ARCH" == "x86_64" ]; then export ARCH="amd64"; fi
-make ARCH=$ARCH DOCKER_REGISTRY_URL=$DOCKER_REGISTRY_URL DOCKER_REGISTRY=$DOCKER_REGISTRY USERNAME=$USERNAME PASSWORD=$PASSWORD build-components push-components
+make ARCH=$ARCH DOCKER_REGISTRY=$DOCKER_REGISTRY build-components push-components
