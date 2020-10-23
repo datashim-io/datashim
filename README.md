@@ -13,8 +13,15 @@ A Kubernetes Framework to provide easy access to S3 and NFS **Datasets** within 
 ## Quickstart
 
 In order to quickly deploy DLF in your Kubernetes execute the following:
-```
+```bash
 kubectl apply -f https://raw.githubusercontent.com/IBM/dataset-lifecycle-framework/master/release-tools/manifests/dlf.yaml
+
+# Configure RBAC for csi-related ServiceAccounts
+kubectl patch scc privileged --type=json -p '[
+  {"op": "add", "path": "/users/-", "value": "system:serviceaccount:dlf:csi-provisioner"}, 
+  {"op": "add", "path": "/users/-", "value": "system:serviceaccount:dlf:csi-nodeplugin"}, 
+  {"op": "add", "path": "/users/-", "value": "system:serviceaccount:dlf:csi-attacher"}, 
+  {"op": "add", "path": "/users/-", "value": "system:serviceaccount:dlf:csi-s3"}]'
 
 #[OPTIONAL] Label the namespace you want to have the pods labelling functionality (see below)
 kubectl label namespace default monitor-pods-datasets=enabled
