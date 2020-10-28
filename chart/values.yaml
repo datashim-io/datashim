@@ -2,6 +2,7 @@ global:
   dockerRegistrySecret: "" # leave empty if public repo
   baseRepo: "yiannisgkoufas"
   arch: "amd64"
+  type: "k8s"
 
   sidecars:
     kubeletPath: "/var/lib/kubelet"

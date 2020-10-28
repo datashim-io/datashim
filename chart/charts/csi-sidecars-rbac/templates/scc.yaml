@@ -1,0 +1,34 @@
+{{if eq .Values.global.type "oc"}}
+kind: SecurityContextConstraints
+apiVersion: security.openshift.io/v1
+metadata:
+  name: dlf-sidecars-scc
+allowPrivilegedContainer: true
+allowHostNetwork: true
+allowHostDirVolumePlugin: true
+priority:
+allowedCapabilities: ['*']
+allowHostPorts: true
+allowHostPID: true
+allowHostIPC: true
+readOnlyRootFilesystem: false
+requiredDropCapabilities: []
+defaultAddCapabilities: []
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+fsGroup:
+  type: RunAsAny
+supplementalGroups:
+  type: RunAsAny
+volumes: ['*']
+users:
+  # A user needs to be added for each rook service account.
+  # This assumes running in the default sample "rook-ceph" namespace.
+  # If other namespaces or service accounts are configured, they need to be updated here.
+  - system:serviceaccount:{{ .Release.Namespace }}:csi-provisioner
+  - system:serviceaccount:{{ .Release.Namespace }}:csi-nodeplugin
+  - system:serviceaccount:{{ .Release.Namespace }}:csi-attacher
+  - system:serviceaccount:{{ .Release.Namespace }}:csi-s3
+{{ end }}
