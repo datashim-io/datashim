@@ -19,6 +19,7 @@ type goofysMounter struct {
 	accessKeyID     string
 	secretAccessKey string
 	volumeID		string
+	readonly 		bool
 }
 
 func newGoofysMounter(b *bucket, cfg *Config, volume string) (Mounter, error) {
@@ -35,6 +36,7 @@ func newGoofysMounter(b *bucket, cfg *Config, volume string) (Mounter, error) {
 		region:          cfg.Region,
 		accessKeyID:     cfg.AccessKeyID,
 		secretAccessKey: cfg.SecretAccessKey,
+		readonly: 		 cfg.Readonly,
 		volumeID:		 volume,
 	}, nil
 }
@@ -63,9 +65,13 @@ func (goofys *goofysMounter) Mount(source string, target string) error {
 		"--http-timeout","5m",
 		//fmt.Sprintf("--cheap=%s", os.Getenv("cheap")),
 		"-o", "allow_other",
-		fmt.Sprintf("%s", goofys.bucket.Name),
-		fmt.Sprintf("%s", target),
 	}
+	if(goofys.readonly) {
+		args = append(args, "-o","ro")
+	}
+	args = append(args,
+		fmt.Sprintf("%s", goofys.bucket.Name),
+		fmt.Sprintf("%s", target))
 	return fuseMount(target, goofysCmd, args)
 
 }

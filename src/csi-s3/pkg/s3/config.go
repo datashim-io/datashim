@@ -8,4 +8,5 @@ type Config struct {
 	Endpoint        string
 	Mounter         string
 	ExistingBucket  string
+	Readonly		bool
 }
