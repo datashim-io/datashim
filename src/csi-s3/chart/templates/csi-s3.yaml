@@ -66,6 +66,7 @@ spec:
     spec:
       serviceAccountName: csi-s3
       hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       {{- if or (.Values.dockerRegistrySecret) (.Values.global.dockerRegistrySecret) }}
       imagePullSecrets:
         - name: {{ .Values.dockerRegistrySecret | default .Values.global.dockerRegistrySecret }}

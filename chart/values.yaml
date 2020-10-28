@@ -13,7 +13,7 @@ global:
         tag: "v3.0.0"
       nodeDriverRegistrar:
         image: "csi-node-driver-registrar"
-        tag: "v2.0.1"
+        tag: "v1.3.0"
       externalProvisioner:
         image: "csi-provisioner"
         tag: "v2.0.2"
@@ -24,7 +24,7 @@ csi-s3-chart:
 # mounter: "goofys"
   csis3:
     image: "csi-s3"
-    tag: "dev-full"
+    tag: "latest"
   sidecars: {} # in case you want to force override regardless of the csi-s3-chart/values.yaml
 
 csi-nfs-chart:
@@ -32,7 +32,7 @@ csi-nfs-chart:
 # dockerRegistrySecret: "anothersecret"
   csinfs:
     image: "csi-nfs"
-    tag: "dev-full"
+    tag: "latest"
   sidecars: {} # in case you want to force override regardless of the csi-nfs-chart/values.yaml
 
 dataset-operator-chart:
@@ -43,4 +43,4 @@ dataset-operator-chart:
     tag: "latest"
   datasetoperator:
     image: "dataset-operator"
-    tag: "latest"
+    tag: "readonly"

@@ -9,4 +9,5 @@ spec:
     secretAccessKey: "{AWS_SECRET_ACCESS_KEY}"
     endpoint: "{S3_SERVICE_URL}"
     bucket: "{BUCKET_NAME}"
+    readonly: "true" # default is false
     region: "" #it can be empty

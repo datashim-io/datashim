@@ -167,6 +167,10 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 	endpoint := cr.Spec.Local["endpoint"]
 	bucket := cr.Spec.Local["bucket"]
 	region := cr.Spec.Local["region"]
+	readonly := "false"
+	if readonlyValueString, ok := cr.Spec.Local["readonly"]; ok {
+		readonly = readonlyValueString
+	}
 
 	stringData := map[string]string{
 		"accessKeyID":     accessKeyID,
@@ -174,6 +178,7 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 		"endpoint":        endpoint,
 		"bucket":          bucket,
 		"region":          region,
+		"readonly":        readonly,
 	}
 
 	labels := map[string]string{

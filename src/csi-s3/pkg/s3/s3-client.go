@@ -3,6 +3,7 @@ package s3
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 
 	"github.com/golang/glog"
 	"github.com/minio/minio-go"
@@ -44,12 +45,15 @@ func newS3Client(cfg *Config) (*s3Client, error) {
 }
 
 func newS3ClientFromSecrets(secrets map[string]string) (*s3Client, error) {
+	readonly := false
+	readonly, _ = strconv.ParseBool(secrets["readonly"])
 	return newS3Client(&Config{
 		AccessKeyID:     secrets["accessKeyID"],
 		SecretAccessKey: secrets["secretAccessKey"],
 		Region:          secrets["region"],
 		Endpoint:        secrets["endpoint"],
 		ExistingBucket:  secrets["bucket"],
+		Readonly:		 readonly,
 		// Mounter is set in the volume preferences, not secrets
 		Mounter: "",
 	})
