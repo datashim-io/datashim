@@ -8,5 +8,5 @@ undeployment:
 	kubectl delete clusterrole,clusterrolebinding,csidriver,mutatingwebhookconfiguration,storageclass -l app.kubernetes.io/name=dlf
 	kubectl label namespace default monitor-pods-datasets-
 deployment:
-	kubectl apply -f ./release-tools/manifests/manifests/dlf.yaml
+	kubectl apply -f ./release-tools/manifests/dlf.yaml
 	kubectl label namespace default monitor-pods-datasets=enabled
