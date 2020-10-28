@@ -6,6 +6,7 @@ manifests:
 undeployment:
 	kubectl delete namespace $(DATASET_OPERATOR_NAMESPACE)
 	kubectl delete clusterrole,clusterrolebinding,csidriver,mutatingwebhookconfiguration,storageclass -l app.kubernetes.io/name=dlf
+	kubectl delete scc/dlf-sidecars-scc | true
 	kubectl label namespace default monitor-pods-datasets-
 deployment:
 	kubectl apply -f ./release-tools/manifests/dlf.yaml
