@@ -4,6 +4,7 @@ import (
 	"context"
 	comv1alpha1 "github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/apis/com/v1alpha1"
 	cephv1 "github.com/rook/rook/pkg/apis/ceph.rook.io/v1"
+	rookv1 "github.com/rook/rook/pkg/apis/rook.io/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
@@ -68,8 +69,38 @@ func createCephObjectStore(c client.Client,dataset *comv1alpha1.Dataset) error{
 			},
 		},
 	}
-	err := c.Create(context.TODO(),newRgw)
-	return err;
+
+	rgwNode, present := os.LookupEnv("ROOK_RGW_NODE")
+	if present {
+		var nodes = &corev1.NodeList{}
+		err := populateListOfObjects(c, nodes, []client.ListOption{
+			client.MatchingLabels{"kubernetes.io/hostname": rgwNode},
+		})
+		if err == nil && len(nodes.Items) > 0 {
+			newRgw.Spec.Gateway.Placement = rookv1.Placement{
+				NodeAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{
+										Key:      "kubernetes.io/hostname",
+										Operator: corev1.NodeSelectorOpIn,
+										Values:   []string{rgwNode},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+		} else {
+			log.Info("Couldn't set rgw pod node affinity")
+		}
+	}
+
+	err := c.Create(context.TODO(), newRgw)
+	return err
 }
 
 func createCephObjectStoreUser(c client.Client, dataset *comv1alpha1.Dataset) error{
