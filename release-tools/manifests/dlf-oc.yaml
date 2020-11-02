@@ -1128,6 +1128,15 @@ spec:
       restartPolicy: Never
   backoffLimit: 4
 ---
+# Source: dlf-chart/charts/csi-s3-chart/templates/driver.yaml
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  name: ch.ctrox.csi.s3-driver
+spec:
+  attachRequired: false
+  podInfoOnMount: false
+---
 # Source: dlf-chart/charts/csi-s3-chart/templates/scc.yaml
 kind: SecurityContextConstraints
 apiVersion: security.openshift.io/v1
