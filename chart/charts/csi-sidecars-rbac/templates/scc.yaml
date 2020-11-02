@@ -3,26 +3,33 @@ kind: SecurityContextConstraints
 apiVersion: security.openshift.io/v1
 metadata:
   name: dlf-sidecars-scc
-allowPrivilegedContainer: true
-allowHostNetwork: true
 allowHostDirVolumePlugin: true
-priority:
-allowedCapabilities: ['*']
-allowHostPorts: true
-allowHostPID: true
 allowHostIPC: true
+allowHostNetwork: true
+allowHostPID: true
+allowHostPorts: true
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: true
+priority: 0
+allowedCapabilities:
+  - '*'
+allowedUnsafeSysctls:
+  - '*'
+defaultAddCapabilities: []
+fsGroup:
+  type: RunAsAny
 readOnlyRootFilesystem: false
 requiredDropCapabilities: []
-defaultAddCapabilities: []
 runAsUser:
   type: RunAsAny
 seLinuxContext:
   type: RunAsAny
-fsGroup:
-  type: RunAsAny
+seccompProfiles:
+  - '*'
 supplementalGroups:
   type: RunAsAny
-volumes: ['*']
+volumes:
+  - '*'
 users:
   # A user needs to be added for each rook service account.
   # This assumes running in the default sample "rook-ceph" namespace.

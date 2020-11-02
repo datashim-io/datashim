@@ -36,6 +36,14 @@ type controllerServer struct {
 	*csicommon.DefaultControllerServer
 }
 
+func (cs *controllerServer) ControllerPublishVolume(ctx context.Context, req *csi.ControllerPublishVolumeRequest) (*csi.ControllerPublishVolumeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "")
+}
+
+func (cs *controllerServer) ControllerUnpublishVolume(ctx context.Context, req *csi.ControllerUnpublishVolumeRequest) (*csi.ControllerUnpublishVolumeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "")
+}
+
 func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
 	volumeID := sanitizeVolumeID(req.GetName())
 	bucketName := volumeID
