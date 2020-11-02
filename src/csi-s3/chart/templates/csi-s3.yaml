@@ -65,8 +65,6 @@ spec:
         app: csi-s3
     spec:
       serviceAccountName: csi-s3
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
       {{- if or (.Values.dockerRegistrySecret) (.Values.global.dockerRegistrySecret) }}
       imagePullSecrets:
         - name: {{ .Values.dockerRegistrySecret | default .Values.global.dockerRegistrySecret }}
@@ -97,8 +95,6 @@ spec:
               name: socket-dir
             - mountPath: /registration
               name: registration-dir
-            - mountPath: /csi-data-dir
-              name: csi-data-dir
         - name: csi-s3
           image: "{{ $csiS3Properties.baseRepo }}/{{ $csiS3Properties.csis3.image }}:{{ $csiS3Properties.csis3.tag }}-{{ $csiS3Properties.arch }}"
           imagePullPolicy: Always
@@ -134,14 +130,9 @@ spec:
           volumeMounts:
             - mountPath: /csi
               name: socket-dir
-            - mountPath: {{ $csiS3Properties.sidecars.kubeletPath }}/pods
+            - mountPath: /var/lib/kubelet/pods
               mountPropagation: Bidirectional
               name: mountpoint-dir
-            - mountPath: {{ $csiS3Properties.sidecars.kubeletPath }}/plugins
-              mountPropagation: Bidirectional
-              name: plugins-dir
-            - mountPath: /csi-data-dir
-              name: csi-data-dir
             - mountPath: /dev
               name: dev-dir
           ##TODO make it configurable and build it for ppc64le
@@ -166,16 +157,6 @@ spec:
             path: {{ $csiS3Properties.sidecars.kubeletPath }}/plugins_registry
             type: Directory
           name: registration-dir
-        - hostPath:
-            path: {{ $csiS3Properties.sidecars.kubeletPath }}/plugins
-            type: Directory
-          name: plugins-dir
-        - hostPath:
-            # 'path' is where PV data is persisted on host.
-            # using /tmp is also possible while the PVs will not available after plugin container recreation or host reboot
-            path: /var/lib/csi-s3/
-            type: DirectoryOrCreate
-          name: csi-data-dir
         - hostPath:
             path: /dev
             type: Directory

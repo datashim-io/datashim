@@ -741,7 +741,7 @@ spec:
       hostNetwork: true
       containers:
         - name: node-driver-registrar
-          image: "quay.io/k8scsi/csi-node-driver-registrar:v1.3.0"
+          image: "quay.io/k8scsi/csi-node-driver-registrar:v1.2.0"
           lifecycle:
             preStop:
               exec:
@@ -817,11 +817,9 @@ spec:
         app: csi-s3
     spec:
       serviceAccountName: csi-s3
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: driver-registrar
-          image: "quay.io/k8scsi/csi-node-driver-registrar:v1.3.0"
+          image: "quay.io/k8scsi/csi-node-driver-registrar:v1.2.0"
           imagePullPolicy: Always
           args:
             - --v=5
@@ -843,8 +841,6 @@ spec:
               name: socket-dir
             - mountPath: /registration
               name: registration-dir
-            - mountPath: /csi-data-dir
-              name: csi-data-dir
         - name: csi-s3
           image: "yiannisgkoufas/csi-s3:latest-amd64"
           imagePullPolicy: Always
@@ -883,11 +879,6 @@ spec:
             - mountPath: /var/lib/kubelet/pods
               mountPropagation: Bidirectional
               name: mountpoint-dir
-            - mountPath: /var/lib/kubelet/plugins
-              mountPropagation: Bidirectional
-              name: plugins-dir
-            - mountPath: /csi-data-dir
-              name: csi-data-dir
             - mountPath: /dev
               name: dev-dir
           ##TODO make it configurable and build it for ppc64le
@@ -912,16 +903,6 @@ spec:
             path: /var/lib/kubelet/plugins_registry
             type: Directory
           name: registration-dir
-        - hostPath:
-            path: /var/lib/kubelet/plugins
-            type: Directory
-          name: plugins-dir
-        - hostPath:
-            # 'path' is where PV data is persisted on host.
-            # using /tmp is also possible while the PVs will not available after plugin container recreation or host reboot
-            path: /var/lib/csi-s3/
-            type: DirectoryOrCreate
-          name: csi-data-dir
         - hostPath:
             path: /dev
             type: Directory
@@ -1004,7 +985,7 @@ spec:
       serviceAccountName: csi-attacher-nfs
       containers:
         - name: csi-attacher
-          image: "quay.io/k8scsi/csi-attacher:v3.0.0"
+          image: "quay.io/k8scsi/csi-attacher:v2.2.0"
           args:
             - "--v=10"
             - "--csi-address=$(ADDRESS)"
@@ -1058,7 +1039,7 @@ spec:
       serviceAccountName: csi-attacher
       containers:
         - name: csi-attacher
-          image: "quay.io/k8scsi/csi-attacher:v3.0.0"
+          image: "quay.io/k8scsi/csi-attacher:v2.2.0"
           imagePullPolicy: Always
           args:
             - --v=5
@@ -1152,26 +1133,33 @@ kind: SecurityContextConstraints
 apiVersion: security.openshift.io/v1
 metadata:
   name: dlf-sidecars-scc
-allowPrivilegedContainer: true
-allowHostNetwork: true
 allowHostDirVolumePlugin: true
-priority:
-allowedCapabilities: ['*']
-allowHostPorts: true
-allowHostPID: true
 allowHostIPC: true
+allowHostNetwork: true
+allowHostPID: true
+allowHostPorts: true
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: true
+priority: 0
+allowedCapabilities:
+  - '*'
+allowedUnsafeSysctls:
+  - '*'
+defaultAddCapabilities: []
+fsGroup:
+  type: RunAsAny
 readOnlyRootFilesystem: false
 requiredDropCapabilities: []
-defaultAddCapabilities: []
 runAsUser:
   type: RunAsAny
 seLinuxContext:
   type: RunAsAny
-fsGroup:
-  type: RunAsAny
+seccompProfiles:
+  - '*'
 supplementalGroups:
   type: RunAsAny
-volumes: ['*']
+volumes:
+  - '*'
 users:
   # A user needs to be added for each rook service account.
   # This assumes running in the default sample "rook-ceph" namespace.
