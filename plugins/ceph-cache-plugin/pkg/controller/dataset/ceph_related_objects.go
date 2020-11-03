@@ -70,8 +70,8 @@ func createCephObjectStore(c client.Client,dataset *comv1alpha1.Dataset) error{
 		},
 	}
 
-	rgwNode, present := os.LookupEnv("ROOK_RGW_NODE")
-	if present {
+	rgwNode, found := dataset.Labels["cache.hostname"]
+	if found {
 		var nodes = &corev1.NodeList{}
 		err := populateListOfObjects(c, nodes, []client.ListOption{
 			client.MatchingLabels{"kubernetes.io/hostname": rgwNode},

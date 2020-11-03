@@ -37,7 +37,5 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            # - name: ROOK_RGW_NODE
-            #   value: "hostname that rgw should be scheduled"
       imagePullSecrets:
         - name: ${DOCKER_REGISTRY_SECRET}
