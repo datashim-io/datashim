@@ -933,7 +933,7 @@ spec:
       containers:
         - name: dataset-operator
           # Replace this with the built image name
-          image: "yiannisgkoufas/dataset-operator:readonly-amd64"
+          image: "yiannisgkoufas/dataset-operator:latest-amd64"
           command:
             - dataset-operator
           imagePullPolicy: Always
