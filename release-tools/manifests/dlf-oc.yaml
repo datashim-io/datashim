@@ -1129,7 +1129,7 @@ spec:
   backoffLimit: 4
 ---
 # Source: dlf-chart/charts/csi-s3-chart/templates/driver.yaml
-apiVersion: storage.k8s.io/v1
+apiVersion: storage.k8s.io/v1beta1
 kind: CSIDriver
 metadata:
   name: ch.ctrox.csi.s3-driver
