@@ -6,6 +6,7 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - nodes
   - pods
   - services
   - services/finalizers
