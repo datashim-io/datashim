@@ -15,7 +15,7 @@ A Kubernetes Framework to provide easy access to S3 and NFS **Datasets** within 
 ## Quickstart
 
 In order to quickly deploy DLF in your Kubernetes execute the following:
-```
+```bash
 kubectl apply -f https://raw.githubusercontent.com/IBM/dataset-lifecycle-framework/master/release-tools/manifests/dlf.yaml
 # In case you are running it on Openshift, try instead:
 kubectl apply -f https://raw.githubusercontent.com/IBM/dataset-lifecycle-framework/master/release-tools/manifests/dlf-oc.yaml
