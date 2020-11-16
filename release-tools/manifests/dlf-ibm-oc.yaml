@@ -1,0 +1,1179 @@
+---
+# Source: dlf-chart/templates/namespace.yaml
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: dlf
+  labels:
+    app.kubernetes.io/name: "dlf"
+---
+# Source: dlf-chart/charts/csi-nfs-chart/templates/csi-attacher-rbac.yaml
+# This YAML file contains RBAC API objects that are necessary to run external
+# CSI attacher for nfs flex adapter
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: csi-attacher-nfs
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+---
+# Source: dlf-chart/charts/csi-nfs-chart/templates/csi-nodeplugin-rbac.yaml
+# This YAML defines all API objects to create RBAC roles for CSI node plugin
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: csi-nodeplugin
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/attacher-rbac.yaml
+# This YAML file contains all RBAC objects that are necessary to run external
+# CSI attacher.
+#
+# In production, each CSI driver deployment has to be customized:
+# - to avoid conflicts, use non-default namespace and different names
+#   for non-namespaced entities like the ClusterRole
+# - decide whether the deployment replicates the external CSI
+#   attacher, in which case leadership election must be enabled;
+#   this influences the RBAC setup, see below
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: csi-attacher
+  # replace with non-default namespace name
+  namespace: dlf
+  labels:
+    app.kubernetes.io/name: "dlf"
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/csi-s3.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: csi-s3
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner-rbac.yaml
+# This YAML file contains all RBAC objects that are necessary to run external
+# CSI provisioner.
+#
+# In production, each CSI driver deployment has to be customized:
+# - to avoid conflicts, use non-default namespace and different names
+#   for non-namespaced entities like the ClusterRole
+# - decide whether the deployment replicates the external CSI
+#   provisioner, in which case leadership election must be enabled;
+#   this influences the RBAC setup, see below
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: csi-provisioner
+  # replace with non-default namespace name
+  namespace: dlf
+  labels:
+    app.kubernetes.io/name: "dlf"
+---
+# Source: dlf-chart/charts/dataset-operator-chart/templates/rbac/service_account.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dataset-operator
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/storageclass.yaml
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: csi-s3
+  labels:
+    app.kubernetes.io/name: "dlf"
+provisioner: ch.ctrox.csi.s3-driver
+parameters:
+  # specify which mounter to use
+  # can be set to s3fs, goofys
+  # OTHER OPTIONS NOT WORKING!
+  mounter: goofys
+
+  csi.storage.k8s.io/provisioner-secret-name: ${pvc.name}
+  csi.storage.k8s.io/provisioner-secret-namespace: ${pvc.namespace}
+
+  csi.storage.k8s.io/controller-publish-secret-name: ${pvc.name}
+  csi.storage.k8s.io/controller-publish-secret-namespace: ${pvc.namespace}
+
+  csi.storage.k8s.io/node-stage-secret-name: ${pvc.name}
+  csi.storage.k8s.io/node-stage-secret-namespace: ${pvc.namespace}
+
+  csi.storage.k8s.io/node-publish-secret-name: ${pvc.name}
+  csi.storage.k8s.io/node-publish-secret-namespace: ${pvc.namespace}
+---
+# Source: dlf-chart/charts/dataset-operator-chart/templates/crds/com.ie.ibm.hpsys_datasetinternals_crd.yaml
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: datasetsinternal.com.ie.ibm.hpsys
+spec:
+  group: com.ie.ibm.hpsys
+  names:
+    kind: DatasetInternal
+    listKind: DatasetInternalList
+    plural: datasetsinternal
+    singular: datasetinternal
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: DatasetInternal is the Schema for the datasetsinternal API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: DatasetInternalSpec defines the desired state of DatasetInternal
+          properties:
+            local:
+              additionalProperties:
+                type: string
+              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                Important: Run "operator-sdk generate k8s" to regenerate code after
+                modifying this file Add custom validation using kubebuilder tags:
+                https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
+              type: object
+            remote:
+              additionalProperties:
+                type: string
+              type: object
+          type: object
+        status:
+          description: DatasetInternalStatus defines the observed state of DatasetInternal
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+---
+# Source: dlf-chart/charts/dataset-operator-chart/templates/crds/com.ie.ibm.hpsys_datasets_crd.yaml
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: datasets.com.ie.ibm.hpsys
+spec:
+  group: com.ie.ibm.hpsys
+  names:
+    kind: Dataset
+    listKind: DatasetList
+    plural: datasets
+    singular: dataset
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: Dataset is the Schema for the datasets API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: DatasetSpec defines the desired state of Dataset
+          properties:
+            local:
+              additionalProperties:
+                type: string
+              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                Important: Run "operator-sdk generate k8s" to regenerate code after
+                modifying this file Add custom validation using kubebuilder tags:
+                https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+                Conf map[string]string `json:"conf,omitempty"`'
+              type: object
+            remote:
+              additionalProperties:
+                type: string
+              type: object
+          type: object
+        status:
+          description: DatasetStatus defines the observed state of Dataset
+          properties:
+            error:
+              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                of cluster Important: Run "operator-sdk generate k8s" to regenerate
+                code after modifying this file Add custom validation using kubebuilder
+                tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
+              type: string
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+---
+# Source: dlf-chart/charts/csi-nfs-chart/templates/csi-attacher-rbac.yaml
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: external-attacher-runner-nfs
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch", "update"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["volumeattachments"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+---
+# Source: dlf-chart/charts/csi-nfs-chart/templates/csi-nodeplugin-rbac.yaml
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-nodeplugin
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch", "update"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch", "update"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["volumeattachments"]
+    verbs: ["get", "list", "watch", "update"]
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/attacher-rbac.yaml
+# Attacher must be able to work with PVs, CSINodes and VolumeAttachments
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: external-attacher-runner
+  labels:
+    app.kubernetes.io/name: "dlf"
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch", "update", "patch"] #Adding "update"
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["csinodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["volumeattachments"]
+    verbs: ["get", "list", "watch", "update", "patch", "create"]  #Adding "update"
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["volumeattachments/status"]
+    verbs: ["patch"]
+#Secret permission is optional.
+#Enable it if you need value from secret.
+#For example, you have key `csi.storage.k8s.io/controller-publish-secret-name` in StorageClass.parameters
+#see https://kubernetes-csi.github.io/docs/secrets-and-credentials.html
+#  - apiGroups: [""]
+#    resources: ["secrets"]
+#    verbs: ["get", "list"]
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/csi-s3.yaml
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-s3
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "update"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch", "update"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["volumeattachments"]
+    verbs: ["get", "list", "watch", "update","create"]
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner-rbac.yaml
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: external-provisioner-runner
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+rules:
+  # The following rule should be uncommented for plugins that require secrets
+  # for provisioning. #Enabling secrets
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "update"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["list", "watch", "create", "update", "patch"]
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshots"]
+    verbs: ["get", "list"]
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshotcontents"]
+    verbs: ["get", "list"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["csinodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+  # Access to volumeattachments is only needed when the CSI driver
+  # has the PUBLISH_UNPUBLISH_VOLUME controller capability.
+  # In that case, external-provisioner will watch volumeattachments
+  # to determine when it is safe to delete a volume.
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["volumeattachments"]
+    verbs: ["get", "list", "watch","create"]
+---
+# Source: dlf-chart/charts/dataset-operator-chart/templates/rbac/role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: dataset-operator
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - services
+  - endpoints
+  - persistentvolumeclaims
+  - persistentvolumes
+  - events
+  - configmaps
+  - secrets
+  verbs:
+  - '*'
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - daemonsets
+  - replicasets
+  - statefulsets
+  verbs:
+  - '*'
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - get
+  - create
+- apiGroups:
+  - apps
+  resourceNames:
+  - dataset-operator
+  resources:
+  - deployments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+- apiGroups:
+  - com.ie.ibm.hpsys
+  resources:
+  - '*'
+  - datasetsinternal
+  verbs:
+  - '*'
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - objectbucket.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+    - admissionregistration.k8s.io
+  resources:
+    - mutatingwebhookconfigurations
+  verbs:
+    - '*'
+---
+# Source: dlf-chart/charts/csi-nfs-chart/templates/csi-attacher-rbac.yaml
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-attacher-role-nfs
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+subjects:
+  - kind: ServiceAccount
+    name: csi-attacher-nfs
+    namespace: dlf
+roleRef:
+  kind: ClusterRole
+  name: external-attacher-runner-nfs
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: dlf-chart/charts/csi-nfs-chart/templates/csi-nodeplugin-rbac.yaml
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-nodeplugin
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+subjects:
+  - kind: ServiceAccount
+    name: csi-nodeplugin
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: csi-nodeplugin
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/attacher-rbac.yaml
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-attacher-role
+  labels:
+    app.kubernetes.io/name: "dlf"
+subjects:
+  - kind: ServiceAccount
+    name: csi-attacher
+    # replace with non-default namespace name
+    namespace: dlf
+roleRef:
+  kind: ClusterRole
+  name: external-attacher-runner
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/csi-s3.yaml
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-s3
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+subjects:
+  - kind: ServiceAccount
+    name: csi-s3
+    namespace: dlf
+roleRef:
+  kind: ClusterRole
+  name: csi-s3
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner-rbac.yaml
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-provisioner-role
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+subjects:
+  - kind: ServiceAccount
+    name: csi-provisioner
+    # replace with non-default namespace name
+    namespace: dlf
+roleRef:
+  kind: ClusterRole
+  name: external-provisioner-runner
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: dlf-chart/charts/dataset-operator-chart/templates/rbac/role_binding.yaml
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: dataset-operator
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+subjects:
+- kind: ServiceAccount
+  name: dataset-operator
+  namespace: dlf
+roleRef:
+  kind: ClusterRole
+  name: dataset-operator
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/attacher-rbac.yaml
+# Attacher must be able to work with configmaps or leases in the current namespace
+# if (and only if) leadership election is enabled
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  # replace with non-default namespace name
+  namespace: dlf
+  name: external-attacher-cfg
+  labels:
+    app.kubernetes.io/name: "dlf"
+rules:
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "watch", "list", "delete", "update", "create"]
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner-rbac.yaml
+# Provisioner must be able to work with endpoints in current namespace
+# if (and only if) leadership election is enabled
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  # replace with non-default namespace name
+  namespace: dlf
+  name: external-provisioner-cfg
+  labels:
+    app.kubernetes.io/name: "dlf"
+rules:
+  # Only one of the following rules for endpoints or leases is required based on
+  # what is set for `--leader-election-type`. Endpoints are deprecated in favor of Leases.
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["get", "watch", "list", "delete", "update", "create"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "watch", "list", "delete", "update", "create"]
+  # Permissions for CSIStorageCapacity are only needed enabling the publishing
+  # of storage capacity information.
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["csistoragecapacities"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # The GET permissions below are needed for walking up the ownership chain
+  # for CSIStorageCapacity. They are sufficient for deployment via
+  # StatefulSet (only needs to get Pod) and Deployment (needs to get
+  # Pod and then ReplicaSet to find the Deployment).
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get"]
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/attacher-rbac.yaml
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-attacher-role-cfg
+  # replace with non-default namespace name
+  namespace: dlf
+  labels:
+    app.kubernetes.io/name: "dlf"
+subjects:
+  - kind: ServiceAccount
+    name: csi-attacher
+    # replace with non-default namespace name
+    namespace: dlf
+roleRef:
+  kind: Role
+  name: external-attacher-cfg
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner-rbac.yaml
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-provisioner-role-cfg
+  # replace with non-default namespace name
+  namespace: dlf
+  labels:
+    app.kubernetes.io/name: "dlf"
+subjects:
+  - kind: ServiceAccount
+    name: csi-provisioner
+    # replace with non-default namespace name
+    namespace: dlf
+roleRef:
+  kind: Role
+  name: external-provisioner-cfg
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: dlf-chart/charts/csi-nfs-chart/templates/csi-attacher-nfsplugin.yaml
+# This YAML file contains attacher & csi driver API objects that are necessary
+# to run external CSI attacher for nfs
+kind: Service
+apiVersion: v1
+metadata:
+  name: csi-attacher-nfsplugin
+  namespace: dlf
+  labels:
+    app: csi-attacher-nfsplugin
+    app.kubernetes.io/name: "dlf"
+spec:
+  selector:
+    app: csi-attacher-nfsplugin
+  ports:
+    - name: dummy
+      port: 12345
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/attacher.yaml
+# needed for StatefulSet
+kind: Service
+apiVersion: v1
+metadata:
+  name: csi-attacher-s3
+  namespace: dlf
+  labels:
+    app: csi-attacher-s3
+    app.kubernetes.io/name: "dlf"
+spec:
+  selector:
+    app: csi-attacher-s3
+  ports:
+    - name: dummy
+      port: 12345
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner.yaml
+kind: Service
+apiVersion: v1
+metadata:
+  name: csi-provisioner-s3
+  namespace: dlf
+  labels:
+    app: csi-provisioner-s3
+    app.kubernetes.io/name: "dlf"
+spec:
+  selector:
+    app: csi-provisioner-s3
+  ports:
+    - name: dummy
+      port: 12345
+---
+# Source: dlf-chart/charts/dataset-operator-chart/templates/apps/operator.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook-server
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+spec:
+  selector:
+    name: dataset-operator
+  ports:
+    - port: 443
+      targetPort: webhook-api
+---
+# Source: dlf-chart/charts/csi-nfs-chart/templates/csi-nodeplugin-nfsplugin.yaml
+# This YAML file contains driver-registrar & csi driver nodeplugin API objects
+# that are necessary to run CSI nodeplugin for nfs
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: csi-nodeplugin-nfsplugin
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+spec:
+  selector:
+    matchLabels:
+      app: csi-nodeplugin-nfsplugin
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: "dlf"
+        app: csi-nodeplugin-nfsplugin
+    spec:
+      serviceAccountName: csi-nodeplugin
+      hostNetwork: true
+      containers:
+        - name: node-driver-registrar
+          image: "quay.io/k8scsi/csi-node-driver-registrar:v1.2.0"
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "rm -rf /registration/csi-nfsplugin /registration/csi-nfsplugin-reg.sock"]
+          args:
+            - --v=10
+            - --csi-address=/plugin/csi.sock
+            - --kubelet-registration-path=/var/data/kubelet/plugins/csi-nfsplugin/csi.sock
+          env:
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /plugin
+            - name: registration-dir
+              mountPath: /registration
+        - name: nfs
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+          image: "yiannisgkoufas/csi-nfs:latest-amd64"
+          args :
+            - "--nodeid=$(NODE_ID)"
+            - "--endpoint=$(CSI_ENDPOINT)"
+          env:
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: CSI_ENDPOINT
+              value: unix://plugin/csi.sock
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /plugin
+            - name: pods-mount-dir
+              mountPath: /var/data/kubelet/pods
+              mountPropagation: "Bidirectional"
+      volumes:
+        - name: plugin-dir
+          hostPath:
+            path: /var/data/kubelet/plugins/csi-nfsplugin
+            type: DirectoryOrCreate
+        - name: pods-mount-dir
+          hostPath:
+            path: /var/data/kubelet/pods
+            type: Directory
+        - hostPath:
+            path: /var/data/kubelet/plugins_registry
+            type: Directory
+          name: registration-dir
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/csi-s3.yaml
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: csi-s3
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+spec:
+  selector:
+    matchLabels:
+      app: csi-s3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: "dlf"
+        app: csi-s3
+    spec:
+      serviceAccountName: csi-s3
+      containers:
+        - name: driver-registrar
+          image: "quay.io/k8scsi/csi-node-driver-registrar:v1.2.0"
+          imagePullPolicy: Always
+          args:
+            - --v=5
+            - --csi-address=/csi/csi.sock
+            - --kubelet-registration-path=/var/data/kubelet/plugins/csi-s3/csi.sock
+          securityContext:
+            # This is necessary only for systems with SELinux, where
+            # non-privileged sidecar containers cannot access unix domain socket
+            # created by privileged CSI driver container.
+            privileged: true
+          env:
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+            - mountPath: /registration
+              name: registration-dir
+        - name: csi-s3
+          image: "yiannisgkoufas/csi-s3:latest-amd64"
+          imagePullPolicy: Always
+          args:
+            - "--v=5"
+            - "--endpoint=$(CSI_ENDPOINT)"
+            - "--nodeid=$(KUBE_NODE_NAME)"
+          env:
+            - name: CSI_ENDPOINT
+              value: unix:///csi/csi.sock
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: cheap
+              value: "off"
+          securityContext:
+            privileged: true
+          #          ports:
+          #            - containerPort: 9898
+          #              name: healthz
+          #              protocol: TCP
+          #          TODO make it configurable and build it for ppc64le
+          #          livenessProbe:
+          #            failureThreshold: 5
+          #            httpGet:
+          #              path: /healthz
+          #              port: healthz
+          #            initialDelaySeconds: 10
+          #            timeoutSeconds: 3
+          #            periodSeconds: 2
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+            - mountPath: /var/lib/kubelet/pods
+              mountPropagation: Bidirectional
+              name: mountpoint-dir
+            - mountPath: /dev
+              name: dev-dir
+          ##TODO make it configurable and build it for ppc64le
+      #        - name: liveness-probe
+      #          volumeMounts:
+      #            - mountPath: /csi
+      #              name: socket-dir
+      #          image: quay.io/k8scsi/livenessprobe:v1.1.0
+      #          args:
+      #            - --csi-address=/csi/csi.sock
+      #            - --health-port=9898
+      volumes:
+        - hostPath:
+            path: /var/data/kubelet/plugins/csi-s3
+            type: DirectoryOrCreate
+          name: socket-dir
+        - hostPath:
+            path: /var/data/kubelet/pods
+            type: DirectoryOrCreate
+          name: mountpoint-dir
+        - hostPath:
+            path: /var/data/kubelet/plugins_registry
+            type: Directory
+          name: registration-dir
+        - hostPath:
+            path: /dev
+            type: Directory
+          name: dev-dir
+---
+# Source: dlf-chart/charts/dataset-operator-chart/templates/apps/operator.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dataset-operator
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: dataset-operator
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+      labels:
+        name: dataset-operator
+        app.kubernetes.io/name: "dlf"
+    spec:
+      serviceAccountName: dataset-operator
+      containers:
+        - name: dataset-operator
+          # Replace this with the built image name
+          image: "yiannisgkoufas/dataset-operator:latest-amd64"
+          command:
+            - dataset-operator
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8443
+              name: webhook-api
+          env:
+            - name: WATCH_NAMESPACE
+              value: ""
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "dataset-operator"
+            - name: OPERATOR_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: webhook-tls-certs
+              mountPath: /run/secrets/tls
+              readOnly: true
+      volumes:
+        - name: webhook-tls-certs
+          secret:
+            secretName: webhook-server-tls
+---
+# Source: dlf-chart/charts/csi-nfs-chart/templates/csi-attacher-nfsplugin.yaml
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: csi-attacher-nfsplugin
+  namespace: dlf
+  labels:
+    app.kubernetes.io/name: "dlf"
+spec:
+  selector:
+    matchLabels:
+      app: csi-attacher-nfsplugin
+  serviceName: "csi-attacher-nfsplugin"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: "dlf"
+        app: csi-attacher-nfsplugin
+    spec:
+      serviceAccountName: csi-attacher-nfs
+      containers:
+        - name: csi-attacher
+          image: "quay.io/k8scsi/csi-attacher:v2.2.0"
+          args:
+            - "--v=10"
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+        - name: nfs
+          image: "yiannisgkoufas/csi-nfs:latest-amd64"
+          args :
+            - "--nodeid=$(NODE_ID)"
+            - "--endpoint=$(CSI_ENDPOINT)"
+          env:
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: CSI_ENDPOINT
+              value: unix://plugin/csi.sock
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /plugin
+      volumes:
+        - name: socket-dir
+          emptyDir: {}
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/attacher.yaml
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: csi-attacher-s3
+  namespace: dlf
+  labels:
+    app.kubernetes.io/name: "dlf"
+spec:
+  serviceName: "csi-attacher-s3"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csi-attacher-s3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: "dlf"
+        app: csi-attacher-s3
+    spec:
+      serviceAccountName: csi-attacher
+      containers:
+        - name: csi-attacher
+          image: "quay.io/k8scsi/csi-attacher:v2.2.0"
+          imagePullPolicy: Always
+          args:
+            - --v=5
+            - --csi-address=/csi/csi.sock
+          securityContext:
+            # This is necessary only for systems with SELinux, where
+            # non-privileged sidecar containers cannot access unix domain socket
+            # created by privileged CSI driver container.
+            privileged: true
+          volumeMounts:
+          - mountPath: /csi
+            name: socket-dir
+
+      volumes:
+        - hostPath:
+            path: /var/data/kubelet/plugins/csi-s3
+            type: DirectoryOrCreate
+          name: socket-dir
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner.yaml
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: csi-provisioner-s3
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+spec:
+  serviceName: "csi-provisioner-s3"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csi-provisioner-s3
+  template:
+    metadata:
+      labels:
+        app: csi-provisioner-s3
+    spec:
+      serviceAccountName: csi-provisioner
+      containers:
+        - name: csi-provisioner
+          image: "quay.io/k8scsi/csi-provisioner:v2.0.2"
+          imagePullPolicy: Always
+          args:
+            - -v=5
+            - --csi-address=/csi/csi.sock
+            - --feature-gates=Topology=true
+          securityContext:
+            # This is necessary only for systems with SELinux, where
+            # non-privileged sidecar containers cannot access unix domain socket
+            # created by privileged CSI driver container.
+            privileged: true
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+      volumes:
+        - hostPath:
+            path: /var/data/kubelet/plugins/csi-s3
+            type: DirectoryOrCreate
+          name: socket-dir
+---
+# Source: dlf-chart/charts/dataset-operator-chart/templates/apps/create-certificates.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-keys
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: "dlf"
+      annotations:
+        sidecar.istio.io/inject: "false"
+    spec:
+      serviceAccountName: dataset-operator
+      containers:
+        - name: generate-keys
+          image: "yiannisgkoufas/generate-keys:latest-amd64"
+          imagePullPolicy: Always
+          env:
+            - name: DATASET_OPERATOR_NAMESPACE
+              value: dlf
+      restartPolicy: Never
+  backoffLimit: 4
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/driver.yaml
+apiVersion: storage.k8s.io/v1beta1
+kind: CSIDriver
+metadata:
+  name: ch.ctrox.csi.s3-driver
+spec:
+  attachRequired: false
+  podInfoOnMount: false
+---
+# Source: dlf-chart/charts/csi-s3-chart/templates/scc.yaml
+kind: SecurityContextConstraints
+apiVersion: security.openshift.io/v1
+metadata:
+  name: dlf-sidecars-scc
+allowHostDirVolumePlugin: true
+allowHostIPC: true
+allowHostNetwork: true
+allowHostPID: true
+allowHostPorts: true
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: true
+priority: 0
+allowedCapabilities:
+  - '*'
+allowedUnsafeSysctls:
+  - '*'
+defaultAddCapabilities: []
+fsGroup:
+  type: RunAsAny
+readOnlyRootFilesystem: false
+requiredDropCapabilities: []
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - '*'
+supplementalGroups:
+  type: RunAsAny
+volumes:
+  - '*'
+users:
+  # A user needs to be added for each rook service account.
+  # This assumes running in the default sample "rook-ceph" namespace.
+  # If other namespaces or service accounts are configured, they need to be updated here.
+  - system:serviceaccount:dlf:csi-provisioner
+  - system:serviceaccount:dlf:csi-nodeplugin
+  - system:serviceaccount:dlf:csi-attacher
+  - system:serviceaccount:dlf:csi-s3

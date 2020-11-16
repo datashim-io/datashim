@@ -14,17 +14,33 @@ A Kubernetes Framework to provide easy access to S3 and NFS **Datasets** within 
 
 ## Quickstart
 
-In order to quickly deploy DLF in your Kubernetes execute the following:
+In order to quickly deploy DLF, based on your environment execute **one** of the following commands:
+
+- **Kubernetes/Minikube**
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/IBM/dataset-lifecycle-framework/master/release-tools/manifests/dlf.yaml
-# In case you are running it on Openshift, try instead:
+```
+- **Kubernetes on IBM Cloud**
+```bash
+kubectl apply -f https://raw.githubusercontent.com/IBM/dataset-lifecycle-framework/master/release-tools/manifests/dlf-ibm-k8s.yaml
+```
+- **Openshift**
+```bash
 kubectl apply -f https://raw.githubusercontent.com/IBM/dataset-lifecycle-framework/master/release-tools/manifests/dlf-oc.yaml
+```
+- **Openshift on IBM Cloud**
+```bash
+kubectl apply -f https://raw.githubusercontent.com/IBM/dataset-lifecycle-framework/master/release-tools/manifests/dlf-ibm-oc.yaml
+```
 
-#[OPTIONAL] Label the namespace you want to have the pods labelling functionality (see below)
-kubectl label namespace default monitor-pods-datasets=enabled
-
-# Wait for pods to be ready :)
+Wait for all the pods to be ready :)
+```bash
 kubectl wait --for=condition=ready pods -l app.kubernetes.io/name=dlf -n dlf
+```
+
+As an **optional** step, label the namespace you want to have the pods labelling functionality (see below)
+```bash
+kubectl label namespace default monitor-pods-datasets=enabled
 ```
 
 _In case don't have an existing S3 Bucket follow our wiki to [deploy an Object Store](https://github.com/IBM/dataset-lifecycle-framework/wiki/Deployment-and-Usage-of-S3-Object-Stores)
