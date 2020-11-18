@@ -1,0 +1,26 @@
+site_name: Dataset Lifecycle Framework
+repo_url: https://github.com/IBM/dataset-lifecycle-framework
+repo_name: IBM/dataset-lifecycle-framework
+theme:
+  name: material
+  features:
+    - navigation.instant
+  icon:
+    repo: fontawesome/brands/github
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.superfences
+plugins:
+  - search
+  - git-revision-date-localized:
+      fallback_to_build_date: true
+nav:
+  - Introduction: index.md
+  - FAQ: FAQ.md
+  - Kubeflow:
+      - Model Storing and Serving: kubeflow/Model-Storing-and-Serving-with-DLF.md
+      - Data Volumes for Notebook Servers: kubeflow/Data-Volumes-for-Notebook-Servers.md
+      - PVCs for Pipelines SDK: kubeflow/PVCs-for-Pipelines-SDK.md
+  - Ceph Caching: Ceph-Caching.md
+  - Archive-based Datasets: Archive-based-Datasets.md
+  - Roadmap: Roadmap.md
