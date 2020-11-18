@@ -199,7 +199,7 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 			reqLogger.Info("Rgw not ready, requeing")
 			return reconcile.Result{Requeue: true}, nil
 		}
-		if(cephObjectStore.Status!=nil && cephObjectStore.Status.Phase!="Ready"){
+		if(cephObjectStore.Status!=nil && cephObjectStore.Status.Phase!="Connected"){
 			reqLogger.Info("Rgw not ready, requeing")
 			return reconcile.Result{Requeue: true}, nil
 		}
