@@ -7,7 +7,7 @@
 >pods, letting them focus on the workload development and not on configuring/mounting/tuning the data access. Thanks to
 >[Container Storage Interface](https://kubernetes-csi.github.io/docs/) it is extensible to support additional data sources in the future.
 
-![DLF](./docs/pictures/dlf.png)
+![DLF](./pictures/dlf.png)
 
 A Kubernetes Framework to provide easy access to S3 and NFS **Datasets** within pods. Orchestrates the provisioning of
 **Persistent Volume Claims** and **ConfigMaps** needed for each **Dataset**. Find more details in our [FAQ](https://github.com/IBM/dataset-lifecycle-framework/wiki/FAQ)
@@ -86,10 +86,6 @@ details as environment variables, change the `useas` line to `dataset.0.useas: "
 
 Feel free to explore our [examples](./examples)
 
-## FAQ
-
-Have a look on our wiki for [Frequently Asked Questions](https://github.com/IBM/dataset-lifecycle-framework/wiki/FAQ)
-
 ## Roadmap
 
 Have a look on our wiki for [Roadmap](https://github.com/IBM/dataset-lifecycle-framework/wiki/Roadmap)
@@ -106,5 +102,4 @@ This project has received funding from the European Union’s Horizon 2020 resea
 
 [H2020 evolve](https://www.evolve-h2020.eu/).
 
-<img src="./docs/pictures/evolve-logo.png" alt="H2020 evolve logo" width="150" height="24.07">
-
+<img src="./pictures/evolve-logo.png" alt="H2020 evolve logo" width="150" height="24.07">
