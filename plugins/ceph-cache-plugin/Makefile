@@ -9,7 +9,7 @@ K8S_FILES += $(shell find ./deploy/crds -maxdepth 1 -name '*crd.yaml')
 
 PULL_IMAGE ?= false
 IMAGE_NAME ?= yiannisgkoufas/ceph-cache-plugin
-NAMESPACE ?= default
+NAMESPACE ?= dlf
 
 IMAGE_NAME := $(IMAGE_NAME)-$(call get_arch)
 
