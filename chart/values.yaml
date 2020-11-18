@@ -1,6 +1,6 @@
 global:
   dockerRegistrySecret: "" # leave empty if public repo
-  baseRepo: "yiannisgkoufas"
+  baseRepo: "quay.io/ibm-dlf"
   arch: "amd64"
   type: "k8s"
 

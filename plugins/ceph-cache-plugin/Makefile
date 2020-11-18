@@ -8,7 +8,7 @@ K8S_FILES += $(shell find ./deploy -maxdepth 1 -name '*.yaml')
 K8S_FILES += $(shell find ./deploy/crds -maxdepth 1 -name '*crd.yaml')
 
 PULL_IMAGE ?= false
-IMAGE_NAME ?= yiannisgkoufas/ceph-cache-plugin
+IMAGE_NAME ?= quay.io/ibm-dlf/ceph-cache-plugin
 NAMESPACE ?= dlf
 
 IMAGE_NAME := $(IMAGE_NAME)-$(call get_arch)

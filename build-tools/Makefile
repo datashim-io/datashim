@@ -1,4 +1,4 @@
-DOCKER_REGISTRY ?= yiannisgkoufas
+DOCKER_REGISTRY ?= quay.io/ibm-dlf
 
 ARCH ?=
 
