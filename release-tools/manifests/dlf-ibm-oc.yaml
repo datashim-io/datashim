@@ -486,7 +486,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: csi-nodeplugin
-    namespace: default
+    namespace: dlf
 roleRef:
   kind: ClusterRole
   name: csi-nodeplugin
