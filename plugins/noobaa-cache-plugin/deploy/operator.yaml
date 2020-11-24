@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: noobaa-cache-plugin
+  namespace: noobaa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: noobaa-cache-plugin
+  template:
+    metadata:
+      labels:
+        name: noobaa-cache-plugin
+        dlf-plugin-type: caching
+        dlf-plugin-name: noobaa-cache-plugin
+    spec:
+      serviceAccountName: noobaa-cache-plugin
+      containers:
+        - name: noobaa-cache-plugin
+          # Replace this with the built image name
+          image: ${IMAGE_NAME}
+          command:
+          - noobaa-cache-plugin
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              value: ""
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "noobaa-cache-plugin"
+          volumeMounts:
+            - mountPath: /etc/noobaa/auth
+              name: noobaa-auth
+            - mountPath: /etc/noobaa/s3
+              name: noobaa-s3
+      volumes:
+        - name: noobaa-auth
+          secret:
+            secretName: noobaa-operator
+        - name: noobaa-s3
+          secret:
+            secretName: noobaa-admin
