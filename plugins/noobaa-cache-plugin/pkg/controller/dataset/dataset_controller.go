@@ -4,6 +4,7 @@ import (
 	utils "github.com/IBM/dataset-lifecycle-framework/plugins/noobaa-cache-plugin/pkg"
 	"context"
 	comv1alpha1 "github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/apis/com/v1alpha1"
+	"github.com/go-logr/logr"
 	"io/ioutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -24,6 +25,7 @@ import (
 )
 
 var log = logf.Log.WithName("controller_dataset")
+const datasetFinalizer = "finalizer.dataset.ibm.com"
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -103,6 +105,54 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
+
+	existingDatasetInternal := &comv1alpha1.DatasetInternal{}
+	err = r.client.Get(context.TODO(), request.NamespacedName, existingDatasetInternal)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Request object not found, could have been deleted after reconcile request.
+			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+			// Return and don't requeue
+			reqLogger.Info("DatasetInternal doesn't exist, creating")
+		} else {
+			reqLogger.Info("Problem retrieving datasetInternal")
+			return reconcile.Result{}, err
+		}
+	} else {
+		reqLogger.Info("DatasetInternal exists already, no need for further processing")
+		return reconcile.Result{},nil
+	}
+
+	// Check if the Memcached instance is marked to be deleted, which is
+	// indicated by the deletion timestamp being set.
+	isMemcachedMarkedToBeDeleted := instance.GetDeletionTimestamp() != nil
+	if isMemcachedMarkedToBeDeleted {
+		if contains(instance.GetFinalizers(), datasetFinalizer) {
+			// Run finalization logic for memcachedFinalizer. If the
+			// finalization logic fails, don't remove the finalizer so
+			// that we can retry during the next reconciliation.
+			if err := r.finalizeDataset(reqLogger, instance); err != nil {
+				return reconcile.Result{}, err
+			}
+
+			// Remove memcachedFinalizer. Once all finalizers have been
+			// removed, the object will be deleted.
+			instance.SetFinalizers(remove(instance.GetFinalizers(), datasetFinalizer))
+			err := r.client.Update(context.TODO(), instance)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+		return reconcile.Result{}, nil
+	}
+
+	// Add finalizer for this CR
+	if !contains(instance.GetFinalizers(), datasetFinalizer) {
+		if err := r.addFinalizer(reqLogger, instance); err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+
 	params_add_external:= `{
         "name": "`+instance.ObjectMeta.Name+`",
 		"endpoint_type": "S3_COMPATIBLE",
@@ -124,7 +174,7 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 		"namespace":{
 		"write_resource": "`+instance.ObjectMeta.Name+`",
 		"read_resources": ["`+instance.ObjectMeta.Name+`"],
-		"caching": { "ttl_ms": 60000 }
+		"caching": { "ttl_ms": 6000000 }
 		}
     }`
 	utils.MakeNoobaaRequest("bucket_api","create_bucket",params_create_bucket)
@@ -169,4 +219,60 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 	// Pod already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Pod already exists")
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileDataset) finalizeDataset(reqLogger logr.Logger, m *comv1alpha1.Dataset) error {
+	// TODO(user): Add the cleanup steps that the operator
+	// needs to do before the CR can be deleted. Examples
+	// of finalizers include performing backups and deleting
+	// resources that are not owned by this CR, like a PVC.
+
+	params_delete_bucket:= `{
+		"name": "`+m.Spec.Local["bucket"]+`-cached"
+    }`
+	utils.MakeNoobaaRequest("bucket_api","delete_bucket",params_delete_bucket)
+
+	params_delete_pool:= `{
+    "name": "`+m.ObjectMeta.Name+`"
+    }`
+	utils.MakeNoobaaRequest("pool_api","delete_namespace_resource",params_delete_pool)
+
+	params_delete_external:= `{
+        "connection_name": "`+m.ObjectMeta.Name+`"
+		}`
+	utils.MakeNoobaaRequest("account_api","delete_external_connection",params_delete_external)
+
+	reqLogger.Info("Successfully finalized dataset")
+	return nil
+}
+
+func (r *ReconcileDataset) addFinalizer(reqLogger logr.Logger, m *comv1alpha1.Dataset) error {
+	reqLogger.Info("Adding Finalizer for the Memcached")
+	m.SetFinalizers(append(m.GetFinalizers(), datasetFinalizer))
+
+	// Update CR
+	err := r.client.Update(context.TODO(), m)
+	if err != nil {
+		reqLogger.Error(err, "Failed to update Memcached with finalizer")
+		return err
+	}
+	return nil
+}
+
+func contains(list []string, s string) bool {
+	for _, v := range list {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
+func remove(list []string, s string) []string {
+	for i, v := range list {
+		if v == s {
+			list = append(list[:i], list[i+1:]...)
+		}
+	}
+	return list
 }
