@@ -24,6 +24,15 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.dockerRegistrySecret | default .Values.global.dockerRegistrySecret }}
       {{- end}}
+      initContainers:
+        - name: generate-keys
+          {{- with $datasetProperties}}
+          image: "{{ .baseRepo }}/{{ .generatekeys.image }}:{{ .generatekeys.tag }}-{{ .arch }}"
+          {{- end}}
+          imagePullPolicy: Always
+          env:
+            - name: DATASET_OPERATOR_NAMESPACE
+              value: {{ .Release.Namespace }}
       containers:
         - name: dataset-operator
           # Replace this with the built image name

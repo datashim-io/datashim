@@ -87,6 +87,19 @@ metadata:
     app.kubernetes.io/name: "dlf"
   namespace: dlf
 ---
+# Source: dlf-chart/charts/dataset-operator-chart/templates/secrets/server-tls.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/name: dlf
+  name: webhook-server-tls
+  namespace: dlf
+type: kubernetes.io/tls
+data:
+  tls.crt: YmFyCg==
+  tls.key: YmFyCg==
+---
 # Source: dlf-chart/charts/csi-s3-chart/templates/storageclass.yaml
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
@@ -933,6 +946,13 @@ spec:
         app.kubernetes.io/name: "dlf"
     spec:
       serviceAccountName: dataset-operator
+      initContainers:
+        - name: generate-keys
+          image: "quay.io/ibm-dlf/generate-keys:latest-amd64"
+          imagePullPolicy: Always
+          env:
+            - name: DATASET_OPERATOR_NAMESPACE
+              value: dlf
       containers:
         - name: dataset-operator
           # Replace this with the built image name
@@ -1104,33 +1124,6 @@ spec:
             type: DirectoryOrCreate
           name: socket-dir
 ---
-# Source: dlf-chart/charts/dataset-operator-chart/templates/apps/create-certificates.yaml
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: generate-keys
-  labels:
-    app.kubernetes.io/name: "dlf"
-  namespace: dlf
-spec:
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: "dlf"
-      annotations:
-        sidecar.istio.io/inject: "false"
-    spec:
-      serviceAccountName: dataset-operator
-      containers:
-        - name: generate-keys
-          image: "quay.io/ibm-dlf/generate-keys:latest-amd64"
-          imagePullPolicy: Always
-          env:
-            - name: DATASET_OPERATOR_NAMESPACE
-              value: dlf
-      restartPolicy: Never
-  backoffLimit: 4
----
 # Source: dlf-chart/charts/csi-s3-chart/templates/driver.yaml
 apiVersion: storage.k8s.io/v1beta1
 kind: CSIDriver
@@ -1139,6 +1132,12 @@ metadata:
 spec:
   attachRequired: false
   podInfoOnMount: false
+---
+# Source: dlf-chart/charts/dataset-operator-chart/templates/apps/webhook-definition.yaml
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: dlf-mutating-webhook-cfg
 ---
 # Source: dlf-chart/charts/csi-sidecars-rbac/templates/scc.yaml
 kind: SecurityContextConstraints
