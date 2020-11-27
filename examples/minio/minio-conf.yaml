@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-conf
+data:
+  AWS_ACCESS_KEY_ID: bWluaW8= # minio
+  AWS_SECRET_ACCESS_KEY: bWluaW8xMjM= # minio123
+  ENDPOINT: aHR0cDovL21pbmlvLXNlcnZpY2U6OTAwMA== # http://minio-service:9000
+# or created like that:
+# kubectl create secret generic minio-conf --from-literal='AWS_ACCESS_KEY_ID=minio' --from-literal='AWS_SECRET_ACCESS_KEY=minio123' --from-literal='ENDPOINT=http://minio-service:9000' -n dlf

@@ -1,5 +1,5 @@
 apiVersion: v2
-name: csi-s3-chart
+name: csi-sidecars-rbac
 description: Dataset Lifecycle Framework chart, CSI Sidecars RBAC
 type: application
 version: 0.1.0

@@ -4,3 +4,17 @@ description: Dataset Lifecycle Framework chart
 type: application
 version: 0.1.0
 appVersion: 0.1.0
+
+dependencies:
+  - name: csi-sidecars-rbac
+    version: 0.1.0
+    condition: csi-sidecars-rbac.enabled
+  - name: csi-nfs-chart
+    version: 0.1.0
+    condition: csi-nfs-chart.enabled
+  - name: csi-s3-chart
+    version: 0.1.0
+    condition: csi-s3-chart.enabled
+  - name: dataset-operator-chart
+    version: 0.1.0
+    condition: dataset-operator-chart.enabled

@@ -3,6 +3,7 @@ kind: Service
 metadata:
   # This name uniquely identifies the service
   name: minio-service
+  namespace: dlf
 spec:
   type: LoadBalancer
   ports:
