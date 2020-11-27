@@ -1,9 +1,0 @@
-apiVersion: v1
-data:
-  file1.txt: |-
-    this is the content of file1
-  file2.txt: |
-    this is the content of file2
-kind: ConfigMap
-metadata:
-  name: dummy-data

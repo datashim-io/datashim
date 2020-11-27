@@ -130,7 +130,7 @@ spec:
           volumeMounts:
             - mountPath: /csi
               name: socket-dir
-            - mountPath: /var/lib/kubelet/pods
+            - mountPath: {{ $csiS3Properties.sidecars.kubeletPath }}/pods
               mountPropagation: Bidirectional
               name: mountpoint-dir
             - mountPath: /dev

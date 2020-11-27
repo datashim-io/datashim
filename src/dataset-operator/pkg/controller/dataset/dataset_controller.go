@@ -2,10 +2,12 @@ package dataset
 
 import (
 	"context"
+	b64 "encoding/base64"
 	comv1alpha1 "github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/apis/com/v1alpha1"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -125,6 +127,7 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 	} else if(err!=nil && errors.IsNotFound(err)){
 			//1-1 Dataset and DatasetInternal because there is no caching plugin
 			reqLogger.Info("1-1 Dataset and DatasetInternal because there is no caching plugin")
+
 			newDatasetInternalInstance := &comv1alpha1.DatasetInternal{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:                       datasetInstance.ObjectMeta.Name,
@@ -132,6 +135,45 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 				},
 				Spec:       datasetInstance.Spec,
 			}
+
+			if(len(datasetInstance.Spec.Type) > 0 && datasetInstance.Spec.Type == "ARCHIVE") {
+				podDownloadJob,bucket := getPodDataDownload(datasetInstance,os.Getenv("OPERATOR_NAMESPACE"))
+				err = r.client.Create(context.TODO(),podDownloadJob)
+				if(err!=nil){
+					reqLogger.Error(err,"Error while creating pod download")
+					return reconcile.Result{},err
+				}
+				minioConf := &v1.Secret{}
+				err = r.client.Get(context.TODO(),types.NamespacedName{
+					Namespace: os.Getenv("OPERATOR_NAMESPACE"),
+					Name:      "minio-conf",
+				},minioConf)
+				if err != nil {
+					reqLogger.Error(err,"Error while getting minio-conf secret")
+					return reconcile.Result{},err
+				}
+				endpoint, _ := b64.StdEncoding.DecodeString(b64.StdEncoding.EncodeToString(minioConf.Data["ENDPOINT"]))
+				accessKey, _ := b64.StdEncoding.DecodeString(b64.StdEncoding.EncodeToString(minioConf.Data["AWS_ACCESS_KEY_ID"]))
+				secretAccessKey, _ := b64.StdEncoding.DecodeString(b64.StdEncoding.EncodeToString(minioConf.Data["AWS_SECRET_ACCESS_KEY"]))
+				reqLogger.Info(string(endpoint))
+				extract := "false"
+				if(len(datasetInstance.Spec.Extract)>0) {
+					extract = datasetInstance.Spec.Extract
+				}
+				newDatasetInternalInstance.Spec = comv1alpha1.DatasetSpec{
+					Local: map[string]string{
+						"type": "COS",
+						"accessKeyID": string(accessKey),
+						"secretAccessKey": string(secretAccessKey),
+						"endpoint": string(endpoint),
+						"readonly": "true",
+						"bucket": bucket,
+						"extract": extract,
+						"region": "",
+					},
+				}
+			}
+
 			if err := controllerutil.SetControllerReference(datasetInstance, newDatasetInternalInstance, r.scheme); err != nil {
 				return reconcile.Result{}, err
 			}

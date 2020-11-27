@@ -29,7 +29,16 @@ metadata:
     app.kubernetes.io/name: "dlf"
   namespace: dlf
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/attacher-rbac.yaml
+# Source: dlf-chart/charts/csi-s3-chart/templates/csi-s3.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: csi-s3
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+---
+# Source: dlf-chart/charts/csi-sidecars-rbac/templates/attacher-rbac.yaml
 # This YAML file contains all RBAC objects that are necessary to run external
 # CSI attacher.
 #
@@ -49,16 +58,7 @@ metadata:
   labels:
     app.kubernetes.io/name: "dlf"
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/csi-s3.yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: csi-s3
-  labels:
-    app.kubernetes.io/name: "dlf"
-  namespace: dlf
----
-# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner-rbac.yaml
+# Source: dlf-chart/charts/csi-sidecars-rbac/templates/provisioner-rbac.yaml
 # This YAML file contains all RBAC objects that are necessary to run external
 # CSI provisioner.
 #
@@ -273,7 +273,32 @@ rules:
     resources: ["volumeattachments"]
     verbs: ["get", "list", "watch", "update"]
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/attacher-rbac.yaml
+# Source: dlf-chart/charts/csi-s3-chart/templates/csi-s3.yaml
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-s3
+  labels:
+    app.kubernetes.io/name: "dlf"
+  namespace: dlf
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "update"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch", "update"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["volumeattachments"]
+    verbs: ["get", "list", "watch", "update","create"]
+---
+# Source: dlf-chart/charts/csi-sidecars-rbac/templates/attacher-rbac.yaml
 # Attacher must be able to work with PVs, CSINodes and VolumeAttachments
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -302,32 +327,7 @@ rules:
 #    resources: ["secrets"]
 #    verbs: ["get", "list"]
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/csi-s3.yaml
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: csi-s3
-  labels:
-    app.kubernetes.io/name: "dlf"
-  namespace: dlf
-rules:
-  - apiGroups: [""]
-    resources: ["secrets"]
-    verbs: ["get", "list"]
-  - apiGroups: [""]
-    resources: ["nodes"]
-    verbs: ["get", "list", "update"]
-  - apiGroups: [""]
-    resources: ["namespaces"]
-    verbs: ["get", "list"]
-  - apiGroups: [""]
-    resources: ["persistentvolumes"]
-    verbs: ["get", "list", "watch", "update"]
-  - apiGroups: ["storage.k8s.io"]
-    resources: ["volumeattachments"]
-    verbs: ["get", "list", "watch", "update","create"]
----
-# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner-rbac.yaml
+# Source: dlf-chart/charts/csi-sidecars-rbac/templates/provisioner-rbac.yaml
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -457,6 +457,9 @@ rules:
     - mutatingwebhookconfigurations
   verbs:
     - '*'
+- apiGroups: ["batch", "extensions"]
+  resources: ["jobs"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 ---
 # Source: dlf-chart/charts/csi-nfs-chart/templates/csi-attacher-rbac.yaml
 kind: ClusterRoleBinding
@@ -492,23 +495,6 @@ roleRef:
   name: csi-nodeplugin
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/attacher-rbac.yaml
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: csi-attacher-role
-  labels:
-    app.kubernetes.io/name: "dlf"
-subjects:
-  - kind: ServiceAccount
-    name: csi-attacher
-    # replace with non-default namespace name
-    namespace: dlf
-roleRef:
-  kind: ClusterRole
-  name: external-attacher-runner
-  apiGroup: rbac.authorization.k8s.io
----
 # Source: dlf-chart/charts/csi-s3-chart/templates/csi-s3.yaml
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -526,7 +512,24 @@ roleRef:
   name: csi-s3
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner-rbac.yaml
+# Source: dlf-chart/charts/csi-sidecars-rbac/templates/attacher-rbac.yaml
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-attacher-role
+  labels:
+    app.kubernetes.io/name: "dlf"
+subjects:
+  - kind: ServiceAccount
+    name: csi-attacher
+    # replace with non-default namespace name
+    namespace: dlf
+roleRef:
+  kind: ClusterRole
+  name: external-attacher-runner
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: dlf-chart/charts/csi-sidecars-rbac/templates/provisioner-rbac.yaml
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -561,7 +564,7 @@ roleRef:
   name: dataset-operator
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/attacher-rbac.yaml
+# Source: dlf-chart/charts/csi-sidecars-rbac/templates/attacher-rbac.yaml
 # Attacher must be able to work with configmaps or leases in the current namespace
 # if (and only if) leadership election is enabled
 kind: Role
@@ -577,7 +580,7 @@ rules:
     resources: ["leases"]
     verbs: ["get", "watch", "list", "delete", "update", "create"]
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner-rbac.yaml
+# Source: dlf-chart/charts/csi-sidecars-rbac/templates/provisioner-rbac.yaml
 # Provisioner must be able to work with endpoints in current namespace
 # if (and only if) leadership election is enabled
 kind: Role
@@ -613,7 +616,7 @@ rules:
     resources: ["replicasets"]
     verbs: ["get"]
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/attacher-rbac.yaml
+# Source: dlf-chart/charts/csi-sidecars-rbac/templates/attacher-rbac.yaml
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -632,7 +635,7 @@ roleRef:
   name: external-attacher-cfg
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner-rbac.yaml
+# Source: dlf-chart/charts/csi-sidecars-rbac/templates/provisioner-rbac.yaml
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -876,7 +879,7 @@ spec:
           volumeMounts:
             - mountPath: /csi
               name: socket-dir
-            - mountPath: /var/lib/kubelet/pods
+            - mountPath: /var/data/kubelet/pods
               mountPropagation: Bidirectional
               name: mountpoint-dir
             - mountPath: /dev
