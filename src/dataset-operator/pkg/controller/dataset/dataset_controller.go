@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"os"
+	"strings"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -103,20 +104,28 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 
-	pluginPods, err := getCachingPlugins(r.client)
-	if(err!=nil){return reconcile.Result{},err}
+	useCachePlugin, found := datasetInstance.Labels["cache.use"]
+	// Default behavior (!found) is to use the caching plugin for every dataset.
+	// But when the user specifies this label in the dataset, it has to be equal
+	// to "true" in order to use the caching plugin
+	if !found || (found && strings.Compare(useCachePlugin, "true") == 0) {
+		pluginPods, err := getCachingPlugins(r.client)
+		if(err!=nil){return reconcile.Result{},err}
 
-	// This means that we should create a 1-1 DatasetInteral
-	if(len(pluginPods.Items)!=0){
-		//TODO pick the first plugin for the time being
-		datasetInstance.Annotations = pluginPods.Items[0].Labels
-		err = r.client.Update(context.TODO(),datasetInstance)
-		if(err!=nil){
-			reqLogger.Error(err,"Error while updating dataset according to caching plugin")
-			return reconcile.Result{},err
+		// This means that we should create a 1-1 DatasetInteral
+		if(len(pluginPods.Items)!=0){
+			//TODO pick the first plugin for the time being
+			datasetInstance.Annotations = pluginPods.Items[0].Labels
+			err = r.client.Update(context.TODO(),datasetInstance)
+			if(err!=nil){
+				reqLogger.Error(err,"Error while updating dataset according to caching plugin")
+				return reconcile.Result{},err
+			}
+			//In this case we are done, the caching plugin takes control of the dataset
+			return reconcile.Result{}, nil
 		}
-		//In this case we are done, the caching plugin takes control of the dataset
-		return reconcile.Result{}, nil
+	} else {
+		reqLogger.Info("user forced the use of no caching plugins")
 	}
 
 	datasetInternalInstance := &comv1alpha1.DatasetInternal{}
