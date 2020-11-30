@@ -1,0 +1,11 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: gpfs-cache-plugin
+subjects:
+- kind: ServiceAccount
+  name: gpfs-cache-plugin
+roleRef:
+  kind: Role
+  name: gpfs-cache-plugin
+  apiGroup: rbac.authorization.k8s.io
