@@ -16,6 +16,7 @@ import (
 	"github.com/IBM/dataset-lifecycle-framework/plugins/gpfs-cache-plugin/pkg/apis"
 	"github.com/IBM/dataset-lifecycle-framework/plugins/gpfs-cache-plugin/pkg/controller"
 	"github.com/IBM/dataset-lifecycle-framework/plugins/gpfs-cache-plugin/version"
+	comv1alpha1 "github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/apis"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
@@ -118,6 +119,11 @@ func main() {
 
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Error(err, "")
+		os.Exit(1)
+	}
+
+	if err := comv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
 	}

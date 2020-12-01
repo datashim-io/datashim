@@ -11,23 +11,29 @@ spec:
     metadata:
       labels:
         name: gpfs-cache-plugin
+        dlf-plugin-type: caching
+        dlf-plugin-name: gpfs-cache-plugin
     spec:
       serviceAccountName: gpfs-cache-plugin
       containers:
         - name: gpfs-cache-plugin
           # Replace this with the built image name
-          image: REPLACE_IMAGE
+          image: ${IMAGE_NAME}
           command:
-          - gpfs-cache-plugin
+            - gpfs-cache-plugin
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+              value: ""
             - name: POD_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: "gpfs-cache-plugin"
+            - name: OPERATOR_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+      imagePullSecrets:
+        - name: ${DOCKER_REGISTRY_SECRET}

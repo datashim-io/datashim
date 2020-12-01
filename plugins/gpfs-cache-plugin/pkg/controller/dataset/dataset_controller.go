@@ -2,11 +2,9 @@ package dataset
 
 import (
 	"context"
-	connectors "github.com/YiannisGkoufas/ibm-spectrum-scale-csi/driver/csiplugin/connectors"
-	"net/http"
-	"time"
-
 	comv1alpha1 "github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/apis/com/v1alpha1"
+	connectors "github.com/YiannisGkoufas/ibm-spectrum-scale-csi/driver/csiplugin/connectors"
+	"github.com/YiannisGkoufas/ibm-spectrum-scale-csi/driver/csiplugin/settings"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -89,19 +87,26 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 	clientSpectrumScale,err := connectors.NewSpectrumRestV2(settings.Clusters{
-		ID:            "",
-		Primary:       settings.Primary{},
-		SecureSslMode: false,
-		Cacert:        "",
-		Secrets:       "",
-		RestAPI:       nil,
-		MgmtUsername:  "",
-		MgmtPassword:  "",
-		CacertValue:   nil,
+		RestAPI: []settings.RestAPI{
+			{GuiHost: "55.55.55.5", GuiPort: 443},
+		},
+		MgmtUsername:  "root",
+		MgmtPassword:  "xxxxxx",
 	})
-	clientSpectrumScale.
+	if err != nil {
+		reqLogger.Info("Error with initializing the client")
+		return reconcile.Result{}, err
+	}
+	err = clientSpectrumScale.CreateBucketKeys(
+		"kubeflow-yiannis",
+		"XXXXX",
+		"XXXXXX")
+	if err != nil {
+		reqLogger.Info("Error with creating keys")
+		return reconcile.Result{}, err
+	}
 
 	// Pod already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
+	//reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
 	return reconcile.Result{}, nil
 }

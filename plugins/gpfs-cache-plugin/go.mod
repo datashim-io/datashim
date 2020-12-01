@@ -3,7 +3,8 @@ module github.com/IBM/dataset-lifecycle-framework/plugins/gpfs-cache-plugin
 go 1.13
 
 require (
-	github.com/IBM/dataset-lifecycle-framework/src/dataset-operator v0.0.0-20201127145714-1e90e93aef5b
+	github.com/IBM/dataset-lifecycle-framework/src/dataset-operator v0.0.0-20201130174300-c295d02c48b7
+	github.com/YiannisGkoufas/ibm-spectrum-scale-csi/driver v0.0.0-20201130174059-e3cf574580d3
 	github.com/operator-framework/operator-sdk v0.16.0
 	github.com/spf13/pflag v1.0.5
 	k8s.io/api v0.17.2
