@@ -109,12 +109,12 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 	// This means that we should create a 1-1 DatasetInteral
 	if(len(pluginPods.Items)!=0){
 		//TODO pick the first plugin for the time being
-		datasetInstance.Annotations = pluginPods.Items[0].Labels
-		err = r.client.Update(context.TODO(),datasetInstance)
-		if(err!=nil){
-			reqLogger.Error(err,"Error while updating dataset according to caching plugin")
-			return reconcile.Result{},err
-		}
+		//datasetInstance.Annotations = pluginPods.Items[0].Labels
+		//err = r.client.Update(context.TODO(),datasetInstance)
+		//if(err!=nil){
+		//	reqLogger.Error(err,"Error while updating dataset according to caching plugin")
+		//	return reconcile.Result{},err
+		//}
 		//In this case we are done, the caching plugin takes control of the dataset
 		return reconcile.Result{}, nil
 	}

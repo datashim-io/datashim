@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/IBM/dataset-lifecycle-framework/src/dataset-operator v0.0.0-20201130174300-c295d02c48b7
-	github.com/YiannisGkoufas/ibm-spectrum-scale-csi/driver v0.0.0-20201201165939-d02608c4a0ed
+	github.com/YiannisGkoufas/ibm-spectrum-scale-csi/driver v0.0.0-20201202155634-48abefa89e9a
 	github.com/operator-framework/operator-sdk v0.16.0
 	github.com/spf13/pflag v1.0.5
 	k8s.io/api v0.17.2

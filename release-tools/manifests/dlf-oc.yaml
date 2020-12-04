@@ -956,7 +956,7 @@ spec:
       containers:
         - name: dataset-operator
           # Replace this with the built image name
-          image: "quay.io/ibm-dlf/dataset-operator:latest-amd64"
+          image: "quay.io/ibm-dlf/dataset-operator:gpfs-caching-amd64"
           command:
             - dataset-operator
           imagePullPolicy: Always

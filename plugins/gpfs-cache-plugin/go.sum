@@ -71,6 +71,8 @@ github.com/YiannisGkoufas/ibm-spectrum-scale-csi/driver v0.0.0-20201130174059-e3
 github.com/YiannisGkoufas/ibm-spectrum-scale-csi/driver v0.0.0-20201130174059-e3cf574580d3/go.mod h1:2NvpsxFHEL+5Xaxj4T02BRN99cLI+oUMAzN4DJHQnFI=
 github.com/YiannisGkoufas/ibm-spectrum-scale-csi/driver v0.0.0-20201201165939-d02608c4a0ed h1:Khxd3J/ZuQUCZ8+rWLtEoRo/BIJeWAZeBCkFQr3imOI=
 github.com/YiannisGkoufas/ibm-spectrum-scale-csi/driver v0.0.0-20201201165939-d02608c4a0ed/go.mod h1:2NvpsxFHEL+5Xaxj4T02BRN99cLI+oUMAzN4DJHQnFI=
+github.com/YiannisGkoufas/ibm-spectrum-scale-csi/driver v0.0.0-20201202155634-48abefa89e9a h1:7MHiRwOdGYCWzqXfU70uHNpDDClH4lyUTVrnATV9lIw=
+github.com/YiannisGkoufas/ibm-spectrum-scale-csi/driver v0.0.0-20201202155634-48abefa89e9a/go.mod h1:2NvpsxFHEL+5Xaxj4T02BRN99cLI+oUMAzN4DJHQnFI=
 github.com/agnivade/levenshtein v1.0.1/go.mod h1:CURSv5d9Uaml+FovSIICkLbAUZ9S4RqaHDIsdSBg7lM=
 github.com/airbrake/gobrake v3.6.1+incompatible/go.mod h1:wM4gu3Cn0W0K7GUuVWnlXZU11AGBXMILnrdOU8Kn00o=
 github.com/akolb1/gometastore v0.0.0-20181012003105-a6ffbeed8c1a/go.mod h1:mdTAY/BIdq55FihYydBqwcXSd7QHl7oGSa+W7T/L88c=
