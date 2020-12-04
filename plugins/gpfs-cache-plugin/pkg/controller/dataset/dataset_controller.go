@@ -163,7 +163,7 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 		reqLogger.Info("Error with creating keys")
 		return reconcile.Result{}, err
 	}
-	err = clientSpectrumScale.CreateCOSFileset("scale0",bucket,endpoint,bucket,true,"sw",true)
+	err = clientSpectrumScale.CreateCOSFileset("scale0",dataset.ObjectMeta.Name,endpoint,bucket,true,"sw",true)
 	if err != nil {
 		reqLogger.Info("Error with creating COS Fileset")
 		return reconcile.Result{}, err
