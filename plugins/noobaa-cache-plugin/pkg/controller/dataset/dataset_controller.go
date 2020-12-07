@@ -25,7 +25,7 @@ import (
 )
 
 var log = logf.Log.WithName("controller_dataset")
-const datasetFinalizer = "finalizer.dataset.ibm.com"
+const datasetFinalizer = "noobaa.finalizer.dataset.ibm.com"
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -226,21 +226,30 @@ func (r *ReconcileDataset) finalizeDataset(reqLogger logr.Logger, m *comv1alpha1
 	// needs to do before the CR can be deleted. Examples
 	// of finalizers include performing backups and deleting
 	// resources that are not owned by this CR, like a PVC.
-
+	reqLogger.Info("Finalizing started")
 	params_delete_bucket:= `{
 		"name": "`+m.Spec.Local["bucket"]+`-cached"
     }`
-	utils.MakeNoobaaRequest("bucket_api","delete_bucket",params_delete_bucket)
+	_, err := utils.MakeNoobaaRequest("bucket_api","delete_bucket",params_delete_bucket)
+	if(err != nil){
+		return err
+	}
 
 	params_delete_pool:= `{
     "name": "`+m.ObjectMeta.Name+`"
     }`
-	utils.MakeNoobaaRequest("pool_api","delete_namespace_resource",params_delete_pool)
+	_, err = utils.MakeNoobaaRequest("pool_api","delete_namespace_resource",params_delete_pool)
+	if(err != nil){
+		return err
+	}
 
 	params_delete_external:= `{
         "connection_name": "`+m.ObjectMeta.Name+`"
 		}`
-	utils.MakeNoobaaRequest("account_api","delete_external_connection",params_delete_external)
+	_, err = utils.MakeNoobaaRequest("account_api","delete_external_connection",params_delete_external)
+	if(err != nil){
+		return err
+	}
 
 	reqLogger.Info("Successfully finalized dataset")
 	return nil
