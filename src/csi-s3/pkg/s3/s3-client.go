@@ -63,7 +63,9 @@ func newS3ClientFromSecrets(secrets map[string]string) (*s3Client, error) {
 }
 
 func (client *s3Client) bucketExists(bucketName string) (bool, error) {
-	return client.minio.BucketExists(bucketName)
+	//TODO very temporary thing!!!
+	return true,nil
+	//return client.minio.BucketExists(bucketName)
 }
 
 func (client *s3Client) createBucket(bucketName string) error {
