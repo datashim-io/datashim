@@ -1,7 +1,9 @@
 package s3
 
 import (
+	"crypto/tls"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strconv"
 
@@ -40,6 +42,7 @@ func newS3Client(cfg *Config) (*s3Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	minioClient.SetCustomTransport(&http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}})
 	client.minio = minioClient
 	return client, nil
 }
