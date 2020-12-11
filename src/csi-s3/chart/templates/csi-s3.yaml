@@ -69,6 +69,8 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.dockerRegistrySecret | default .Values.global.dockerRegistrySecret }}
       {{- end}}
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: driver-registrar
           {{- with $csiS3Properties.sidecars}}
