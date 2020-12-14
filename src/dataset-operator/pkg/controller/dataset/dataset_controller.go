@@ -8,6 +8,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"fmt"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -106,17 +107,47 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 	pluginPods, err := getCachingPlugins(r.client)
 	if(err!=nil){return reconcile.Result{},err}
 
+	cacheDisableLabel, foundCacheDisableLabel := datasetInstance.Labels["cache.disable"]
+	cacheDisable := foundCacheDisableLabel && cacheDisableLabel == "True"
+
+	if cacheDisable {
+		reqLogger.Info("User explicitly disabled caching. Falling back to no cache plugin")
+	}
+
 	// This means that we should create a 1-1 DatasetInteral
-	if(len(pluginPods.Items)!=0){
-		//TODO pick the first plugin for the time being
-		datasetInstance.Annotations = pluginPods.Items[0].Labels
-		err = r.client.Update(context.TODO(),datasetInstance)
-		if(err!=nil){
-			reqLogger.Error(err,"Error while updating dataset according to caching plugin")
-			return reconcile.Result{},err
+	if len(pluginPods.Items) != 0 && !cacheDisable {
+		cachePluginLabel, foundCachePluginLabel := datasetInstance.Labels["cache.plugin"]
+
+		if !foundCachePluginLabel {
+			//Default behavior: No cache.plugin label specified in the dataset
+			//thus pick the first plugin for the time being
+			datasetInstance.Annotations = pluginPods.Items[0].Labels
+			err = r.client.Update(context.TODO(), datasetInstance)
+			if err != nil {
+				reqLogger.Error(err, "Error while updating dataset according to caching plugin")
+				return reconcile.Result{}, err
+			}
+			reqLogger.Info(fmt.Sprintf("Using default behavior and choosing '%s' caching plugin", datasetInstance.Annotations["dlf-plugin-name"]))
+			//In this case we are done, the caching plugin takes control of the dataset
+			return reconcile.Result{}, nil
 		}
-		//In this case we are done, the caching plugin takes control of the dataset
-		return reconcile.Result{}, nil
+
+		//User has specified the cache.plugin label
+		for _, pluginItems := range pluginPods.Items {
+			if pluginItems.Labels["dlf-plugin-name"] == cachePluginLabel {
+				datasetInstance.Annotations = pluginItems.Labels
+				err = r.client.Update(context.TODO(), datasetInstance)
+				if err != nil {
+					reqLogger.Error(err, "Error while updating dataset according to caching plugin")
+					return reconcile.Result{}, err
+				}
+				reqLogger.Info(fmt.Sprintf("Using user specified caching plugin '%s'", cachePluginLabel))
+				//In this case we are done, the caching plugin takes control of the dataset
+				return reconcile.Result{}, nil
+			}
+		}
+
+		reqLogger.Info(fmt.Sprintf("User specified plugin '%s' was not found. Falling back to no cache plugin", cachePluginLabel))
 	}
 
 	datasetInternalInstance := &comv1alpha1.DatasetInternal{}
