@@ -10,7 +10,7 @@
 ![DLF](./docs/pictures/dlf.png)
 
 A Kubernetes Framework to provide easy access to S3 and NFS **Datasets** within pods. Orchestrates the provisioning of
-**Persistent Volume Claims** and **ConfigMaps** needed for each **Dataset**. Find more details in our [FAQ](https://github.com/IBM/dataset-lifecycle-framework/wiki/FAQ)
+**Persistent Volume Claims** and **ConfigMaps** needed for each **Dataset**. Find more details in our [FAQ](https://ibm.github.io/dataset-lifecycle-framework/FAQ/)
 
 ## Quickstart
 
