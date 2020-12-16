@@ -32,13 +32,7 @@ the same way Kubeflow makes Machine Learning frameworks accessible on Kubernetes
 
 ## **Are you competing with the COSI proposal?**
 
-**Absolutely no**. When we started the project the only S3-based CSI plugin we were aware of
-was https://github.com/ctrox/csi-s3 which we have forked and maintain in our repo
-https://github.com/IBM/dataset-lifecycle-framework/tree/master/src/csi-s3
-
-When the COSI interface becomes part of Kubernetes we will stop maintaining and directly
-**support COSI for creating a PVC for buckets in Object Stores**. COSI aims to manage the
-full lifecycle of a bucket like provisioning, configuring access etc. which is beyond our scope.
+**Absolutely no**. COSI aims to manage the full lifecycle of a bucket like provisioning, configuring access etc. which is beyond our scope. We just want to offer a mountpoint for COS buckets
 
 ## **Any other potential benefits you see with the framework?**
 
