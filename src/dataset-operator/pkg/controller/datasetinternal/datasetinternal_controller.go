@@ -196,7 +196,7 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 	}
 
 	if !authProvided {
-		err := errors.New("No useable secret provided for authentication")
+		err := errors.NewBadRequest("No useable secret provided for authentication")
 		processLocalDatasetLogger.Error(err, "Failed to initialise", "Dataset.Name", cr.Name)
 		return reconcile.Result{}, err
 	}
