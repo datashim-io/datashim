@@ -166,6 +166,7 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 
 	var secretName, secretNamespace, accessKeyID, secretAccessKey string
 	var ok bool = false
+
 	if secretName, ok = cr.Spec.Local["secret-name"]; ok {
 		if secretNamespace, ok = cr.Spec.Local["secret-namespace"]; !ok {
 			processLocalDatasetLogger.Info("Warning: Secret namespace not provided, using the dataset namespace", "Dataset.Name", cr.Name)
@@ -178,12 +179,19 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 
 		if err != nil && errors.IsNotFound(err) {
 			processLocalDatasetLogger.Error(err, "Provided secret not found! ", "Dataset.Name", cr.Name)
+			authProvided = false
 		} else {
-			accessKeyID = cosSecret.StringData["accessKeyID"]
-			secretAccessKey = cosSecret.StringData["secretAccessKey"]
+			_, accessIDPresent := cosSecret.Data["accessKeyID"]
+			_, secretAccessKeyPresent := cosSecret.Data["secretAccessKey"]
+			if accessIDPresent && secretAccessKeyPresent {
+				accessKeyID = string(cosSecret.Data["accessKeyID"])
+				secretAccessKey = string(cosSecret.Data["secretAccessKey"])
+				authProvided = true
+			} else {
+				processLocalDatasetLogger.Error(nil, "Secret does not have access Key or secret Access Key", "Dataset.Name", cr.Name)
+				authProvided = false
+			}
 		}
-		authProvided = true
-
 	} else {
 		if accessKeyID, ok = cr.Spec.Local["accessKeyID"]; ok {
 			if secretAccessKey, ok = cr.Spec.Local["secretAccessKey"]; !ok {
@@ -200,6 +208,8 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 		processLocalDatasetLogger.Error(err, "Failed to initialise", "Dataset.Name", cr.Name)
 		return reconcile.Result{}, err
 	}
+
+	processLocalDatasetLogger.Info("Authentication info has been successfully retrieved", "Dataset.Name", cr.Name)
 
 	endpoint := cr.Spec.Local["endpoint"]
 	bucket := cr.Spec.Local["bucket"]
