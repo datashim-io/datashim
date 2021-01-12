@@ -162,17 +162,66 @@ func (r *ReconcileDatasetInternal) Reconcile(request reconcile.Request) (reconci
 func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatasetInternal) (reconcile.Result, error) {
 	processLocalDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processLocalDataset")
 
-	accessKeyID := cr.Spec.Local["accessKeyID"]
-	secretAccessKey := cr.Spec.Local["secretAccessKey"]
+	authProvided := false
+
+	var secretName, secretNamespace, accessKeyID, secretAccessKey string
+	var ok bool = false
+
+	if secretName, ok = cr.Spec.Local["secret-name"]; ok {
+		if secretNamespace, ok = cr.Spec.Local["secret-namespace"]; !ok {
+			processLocalDatasetLogger.Info("Warning: Secret namespace not provided, using the dataset namespace", "Dataset.Name", cr.Name)
+			secretNamespace = cr.Namespace
+		}
+
+		// Check if the secret is present
+		cosSecret := &corev1.Secret{}
+		err := rc.client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: secretNamespace}, cosSecret)
+
+		if err != nil && errors.IsNotFound(err) {
+			processLocalDatasetLogger.Error(err, "Provided secret not found! ", "Dataset.Name", cr.Name)
+			authProvided = false
+		} else {
+			_, accessIDPresent := cosSecret.Data["accessKeyID"]
+			_, secretAccessKeyPresent := cosSecret.Data["secretAccessKey"]
+			if accessIDPresent && secretAccessKeyPresent {
+				accessKeyID = string(cosSecret.Data["accessKeyID"])
+				secretAccessKey = string(cosSecret.Data["secretAccessKey"])
+				authProvided = true
+			} else {
+				processLocalDatasetLogger.Error(nil, "Secret does not have access Key or secret Access Key", "Dataset.Name", cr.Name)
+				authProvided = false
+			}
+		}
+	} else {
+		if accessKeyID, ok = cr.Spec.Local["accessKeyID"]; ok {
+			if secretAccessKey, ok = cr.Spec.Local["secretAccessKey"]; !ok {
+				processLocalDatasetLogger.Error(nil, "Secret Key not provided with the access key", "Dataset.Name", cr.Name)
+				authProvided = false
+			} else {
+				authProvided = true
+			}
+		}
+	}
+
+	if !authProvided {
+		err := errors.NewBadRequest("No useable secret provided for authentication")
+		processLocalDatasetLogger.Error(err, "Failed to initialise", "Dataset.Name", cr.Name)
+		return reconcile.Result{}, err
+	}
+
+	processLocalDatasetLogger.Info("Authentication info has been successfully retrieved", "Dataset.Name", cr.Name)
+
 	endpoint := cr.Spec.Local["endpoint"]
 	bucket := cr.Spec.Local["bucket"]
 	region := cr.Spec.Local["region"]
 	readonly := "false"
+
 	if readonlyValueString, ok := cr.Spec.Local["readonly"]; ok {
 		readonly = readonlyValueString
 	}
+
 	extract := "false"
-	if(len(cr.Spec.Extract)>0) {
+	if len(cr.Spec.Extract) > 0 {
 		extract = cr.Spec.Extract
 	}
 
