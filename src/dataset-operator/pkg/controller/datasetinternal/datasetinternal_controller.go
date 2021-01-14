@@ -171,8 +171,18 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 	if readonlyValueString, ok := cr.Spec.Local["readonly"]; ok {
 		readonly = readonlyValueString
 	}
+
+	provision := "false"
+
+	if provisionValueString, ok := cr.Spec.Local["provision"]; ok {
+		provisionBool, err := strconv.ParseBool(provisionValueString)
+		if err == nil {
+			provision = strconv.FormatBool(provisionBool)
+		}
+	}
+
 	extract := "false"
-	if(len(cr.Spec.Extract)>0) {
+	if len(cr.Spec.Extract) > 0 {
 		extract = cr.Spec.Extract
 	}
 
@@ -184,6 +194,7 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 		"region":          region,
 		"readonly":        readonly,
 		"extract":         extract,
+		"provision":       provision,
 	}
 
 	labels := map[string]string{

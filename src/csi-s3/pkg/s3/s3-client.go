@@ -47,6 +47,8 @@ func newS3Client(cfg *Config) (*s3Client, error) {
 func newS3ClientFromSecrets(secrets map[string]string) (*s3Client, error) {
 	readonly := false
 	readonly, _ = strconv.ParseBool(secrets["readonly"])
+	provision := false
+	provision, _ = strconv.ParseBool(secrets["provision"])
 	return newS3Client(&Config{
 		AccessKeyID:     secrets["accessKeyID"],
 		SecretAccessKey: secrets["secretAccessKey"],
@@ -54,6 +56,7 @@ func newS3ClientFromSecrets(secrets map[string]string) (*s3Client, error) {
 		Endpoint:        secrets["endpoint"],
 		ExistingBucket:  secrets["bucket"],
 		Readonly:		 readonly,
+		Provision:       provision,
 		// Mounter is set in the volume preferences, not secrets
 		Mounter: "",
 	})
