@@ -3,14 +3,15 @@ package dataset
 import (
 	"context"
 	b64 "encoding/base64"
+	"fmt"
 	comv1alpha1 "github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/apis/com/v1alpha1"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"fmt"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -97,7 +98,7 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			reqLogger.Info("Dataset is deleted","name",request.NamespacedName)
+			reqLogger.Info("Dataset is deleted", "name", request.NamespacedName)
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -105,7 +106,9 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 
 	pluginPods, err := getCachingPlugins(r.client)
-	if(err!=nil){return reconcile.Result{},err}
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
 	cacheDisableLabel, foundCacheDisableLabel := datasetInstance.Labels["cache.disable"]
 	cacheDisable := foundCacheDisableLabel && cacheDisableLabel == "True"
@@ -152,91 +155,102 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 
 	datasetInternalInstance := &comv1alpha1.DatasetInternal{}
 	err = r.client.Get(context.TODO(), request.NamespacedName, datasetInternalInstance)
-	if(err!=nil && !errors.IsNotFound(err)){
+	if err != nil && !errors.IsNotFound(err) {
 		//Unknown error occured, shouldn't happen
 		return reconcile.Result{}, err
-	} else if(err!=nil && errors.IsNotFound(err)){
-			//1-1 Dataset and DatasetInternal because there is no caching plugin
-			reqLogger.Info("1-1 Dataset and DatasetInternal because there is no caching plugin")
+	} else if err != nil && errors.IsNotFound(err) {
+		//1-1 Dataset and DatasetInternal because there is no caching plugin
+		reqLogger.Info("1-1 Dataset and DatasetInternal because there is no caching plugin")
 
-			newDatasetInternalInstance := &comv1alpha1.DatasetInternal{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:                       datasetInstance.ObjectMeta.Name,
-					Namespace:                  datasetInstance.ObjectMeta.Namespace,
-				},
-				Spec:       datasetInstance.Spec,
-			}
+		newDatasetInternalInstance := &comv1alpha1.DatasetInternal{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      datasetInstance.ObjectMeta.Name,
+				Namespace: datasetInstance.ObjectMeta.Namespace,
+			},
+			Spec: datasetInstance.Spec,
+		}
 
-			if(len(datasetInstance.Spec.Type) > 0 && datasetInstance.Spec.Type == "ARCHIVE") {
-				podDownloadJob,bucket := getPodDataDownload(datasetInstance,os.Getenv("OPERATOR_NAMESPACE"))
-				err = r.client.Create(context.TODO(),podDownloadJob)
-				if(err!=nil){
-					reqLogger.Error(err,"Error while creating pod download")
-					return reconcile.Result{},err
-				}
-				minioConf := &v1.Secret{}
-				err = r.client.Get(context.TODO(),types.NamespacedName{
-					Namespace: os.Getenv("OPERATOR_NAMESPACE"),
-					Name:      "minio-conf",
-				},minioConf)
-				if err != nil {
-					reqLogger.Error(err,"Error while getting minio-conf secret")
-					return reconcile.Result{},err
-				}
-				endpoint, _ := b64.StdEncoding.DecodeString(b64.StdEncoding.EncodeToString(minioConf.Data["ENDPOINT"]))
-				accessKey, _ := b64.StdEncoding.DecodeString(b64.StdEncoding.EncodeToString(minioConf.Data["AWS_ACCESS_KEY_ID"]))
-				secretAccessKey, _ := b64.StdEncoding.DecodeString(b64.StdEncoding.EncodeToString(minioConf.Data["AWS_SECRET_ACCESS_KEY"]))
-				reqLogger.Info(string(endpoint))
-				extract := "false"
-				if(len(datasetInstance.Spec.Extract)>0) {
-					extract = datasetInstance.Spec.Extract
-				}
-				newDatasetInternalInstance.Spec = comv1alpha1.DatasetSpec{
-					Local: map[string]string{
-						"type": "COS",
-						"accessKeyID": string(accessKey),
-						"secretAccessKey": string(secretAccessKey),
-						"endpoint": string(endpoint),
-						"readonly": "true",
-						"bucket": bucket,
-						"extract": extract,
-						"region": "",
-					},
-				}
-			}
-
-			if err := controllerutil.SetControllerReference(datasetInstance, newDatasetInternalInstance, r.scheme); err != nil {
-				return reconcile.Result{}, err
-			}
-			err = r.client.Create(context.TODO(),newDatasetInternalInstance)
+		if len(datasetInstance.Spec.Type) > 0 && datasetInstance.Spec.Type == "ARCHIVE" {
+			podDownloadJob, bucket := getPodDataDownload(datasetInstance, os.Getenv("OPERATOR_NAMESPACE"))
+			err = r.client.Create(context.TODO(), podDownloadJob)
 			if err != nil {
+				reqLogger.Error(err, "Error while creating pod download")
 				return reconcile.Result{}, err
 			}
+			minioConf := &v1.Secret{}
+			err = r.client.Get(context.TODO(), types.NamespacedName{
+				Namespace: os.Getenv("OPERATOR_NAMESPACE"),
+				Name:      "minio-conf",
+			}, minioConf)
+			if err != nil {
+				reqLogger.Error(err, "Error while getting minio-conf secret")
+				return reconcile.Result{}, err
+			}
+			endpoint, _ := b64.StdEncoding.DecodeString(b64.StdEncoding.EncodeToString(minioConf.Data["ENDPOINT"]))
+			accessKey, _ := b64.StdEncoding.DecodeString(b64.StdEncoding.EncodeToString(minioConf.Data["AWS_ACCESS_KEY_ID"]))
+			secretAccessKey, _ := b64.StdEncoding.DecodeString(b64.StdEncoding.EncodeToString(minioConf.Data["AWS_SECRET_ACCESS_KEY"]))
+			reqLogger.Info(string(endpoint))
+
+			provision := "false"
+
+			if provisionValueString, ok := datasetInstance.Spec.Local["provision"]; ok {
+				provisionBool, err := strconv.ParseBool(provisionValueString)
+				if err == nil {
+					provision = strconv.FormatBool(provisionBool)
+				}
+			}
+
+			extract := "false"
+			if len(datasetInstance.Spec.Extract) > 0 {
+				extract = datasetInstance.Spec.Extract
+			}
+			newDatasetInternalInstance.Spec = comv1alpha1.DatasetSpec{
+				Local: map[string]string{
+					"type":            "COS",
+					"accessKeyID":     string(accessKey),
+					"secretAccessKey": string(secretAccessKey),
+					"endpoint":        string(endpoint),
+					"readonly":        "true",
+					"bucket":          bucket,
+					"extract":         extract,
+					"region":          "",
+					"provision":       provision,
+				},
+			}
+		}
+
+		if err := controllerutil.SetControllerReference(datasetInstance, newDatasetInternalInstance, r.scheme); err != nil {
+			return reconcile.Result{}, err
+		}
+		err = r.client.Create(context.TODO(), newDatasetInternalInstance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
 	return reconcile.Result{}, nil
 }
 
-func getCachingPlugins(c client.Client) (*v1.PodList,error){
+func getCachingPlugins(c client.Client) (*v1.PodList, error) {
 
 	namespace := os.Getenv("OPERATOR_NAMESPACE")
 	podList := &v1.PodList{}
 	listOpts := []client.ListOption{
 		client.InNamespace(namespace),
 		client.MatchingLabels(map[string]string{
-			"dlf-plugin-type":"caching",
+			"dlf-plugin-type": "caching",
 		}),
 		client.HasLabels{"dlf-plugin-name"},
 	}
-	err := c.List(context.TODO(),podList,listOpts...)
-	return podList,err
+	err := c.List(context.TODO(), podList, listOpts...)
+	return podList, err
 }
 
-func formatToYaml(in interface{}) (string,error) {
+func formatToYaml(in interface{}) (string, error) {
 	d, err := yaml.Marshal(&in)
 	if err != nil {
-		log.Error(err,"Error in marshaling")
+		log.Error(err, "Error in marshaling")
 		return "", err
 	}
-	return string(d),nil
+	return string(d), nil
 }
