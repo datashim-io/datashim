@@ -32,7 +32,7 @@ csi-nfs-chart:
 # dockerRegistrySecret: "anothersecret"
   csinfs:
     image: "csi-nfs"
-    tag: "nfs-create-dir"
+    tag: "latest"
   sidecars: {} # in case you want to force override regardless of the csi-nfs-chart/values.yaml
 
 dataset-operator-chart:
@@ -43,4 +43,4 @@ dataset-operator-chart:
     tag: "latest"
   datasetoperator:
     image: "dataset-operator"
-    tag: "nfs-create-dir"
+    tag: "latest"
