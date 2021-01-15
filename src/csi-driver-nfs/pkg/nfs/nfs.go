@@ -44,7 +44,7 @@ var (
 )
 
 func NewNFSdriver(nodeID, endpoint string) *nfsDriver {
-	glog.Infof("Driver: %v version: %v", driverName, version)
+	glog.Infof("Driver1: %v version: %v", driverName, version)
 
 	n := &nfsDriver{
 		name:     driverName,

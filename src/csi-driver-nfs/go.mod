@@ -1,4 +1,4 @@
-module /csi-driver-nfs
+module csi-driver-nfs
 
 go 1.12
 
@@ -32,7 +32,6 @@ require (
 	github.com/imdario/mergo v0.3.7
 	github.com/inconshreveable/mousetrap v1.0.0
 	github.com/json-iterator/go v1.1.6
-	github.com/kubernetes-csi/csi-driver-nfs v0.0.0-20200306155124-6c3e1fd23d1d
 	github.com/kubernetes-csi/csi-lib-utils v0.2.0
 	github.com/mailru/easyjson v0.0.0-20190403194419-1ea4449da983
 	github.com/matttproud/golang_protobuf_extensions v1.0.1

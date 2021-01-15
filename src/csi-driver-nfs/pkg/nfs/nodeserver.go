@@ -18,7 +18,11 @@ package nfs
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/golang/glog"
@@ -37,6 +41,7 @@ type nodeServer struct {
 
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
 	targetPath := req.GetTargetPath()
+	glog.Info("NodePublishVolume invoked")
 	notMnt, err := ns.mounter.IsLikelyNotMountPoint(targetPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -60,8 +65,54 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 
 	s := req.GetVolumeContext()["server"]
 	ep := req.GetVolumeContext()["share"]
+	createDirPVC := false
+	createDirPVC, _ = strconv.ParseBool(req.GetVolumeContext()["createDirPVC"])
+
 	source := fmt.Sprintf("%s:%s", s, ep)
 
+	if(createDirPVC == true) {
+
+		dir, err := ioutil.TempDir("", "")
+		if err != nil {
+			log.Fatal(err)
+		}
+		glog.Info("Creating temp directory "+dir)
+		err = ns.mounter.Mount(source, dir, "nfs", mo)
+		if err != nil {
+			if os.IsPermission(err) {
+				return nil, status.Error(codes.PermissionDenied, err.Error())
+			}
+			if strings.Contains(err.Error(), "invalid argument") {
+				return nil, status.Error(codes.InvalidArgument, err.Error())
+			}
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		glog.Info(req.GetVolumeContext())
+		glog.Info(req.GetPublishContext())
+		path := filepath.Join(dir, req.GetVolumeId())
+		err = os.MkdirAll(path, os.ModePerm)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		notMnt, err = ns.mounter.IsLikelyNotMountPoint(dir)
+
+		if err != nil {
+			if os.IsNotExist(err) {
+				return nil, status.Error(codes.NotFound, "Targetpath not found")
+			} else {
+				return nil, status.Error(codes.Internal, err.Error())
+			}
+		}
+		if notMnt {
+			return nil, status.Error(codes.NotFound, "Volume not mounted")
+		}
+
+		err = mount.CleanupMountPoint(dir, ns.mounter, false)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		source = filepath.Join(source, req.GetVolumeId())
+	}
 	err = ns.mounter.Mount(source, targetPath, "nfs", mo)
 	if err != nil {
 		if os.IsPermission(err) {
