@@ -294,10 +294,11 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 		Spec: comv1alpha1.DatasetSpec{
 			Local: map[string]string{
 				"type": "COS",
-				"accessKeyID":    string(AccessKey),
+				"accessKeyID":     string(AccessKey),
 				"secretAccessKey": string(SecretKey),
 				"endpoint":        "http://"+InternalEndpoint,
 				"bucket":          datasetInstance.Spec.Local["bucket"],
+				"provision": 	   "true", //TODO fix this in S3Mirror radosgw
 			},
 		},
 	}

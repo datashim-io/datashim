@@ -66,6 +66,9 @@ func (goofys *goofysMounter) Mount(source string, target string) error {
 		//fmt.Sprintf("--cheap=%s", os.Getenv("cheap")),
 		"-o", "allow_other",
 	}
+	if goofys.region != "" {
+		args = append(args, "--region", goofys.region)
+	}
 	if(goofys.readonly) {
 		args = append(args, "-o","ro")
 	}

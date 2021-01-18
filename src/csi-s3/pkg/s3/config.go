@@ -9,4 +9,5 @@ type Config struct {
 	Mounter         string
 	ExistingBucket  string
 	Readonly		bool
+	Provision       bool
 }

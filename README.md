@@ -38,7 +38,7 @@ Wait for all the pods to be ready :)
 kubectl wait --for=condition=ready pods -l app.kubernetes.io/name=dlf -n dlf
 ```
 
-As an **optional** step, label the namespace you want to have the pods labelling functionality (see below)
+As an **optional** step, label the namespace(or namespaces) you want in order have the pods labelling functionality (see below).
 ```bash
 kubectl label namespace default monitor-pods-datasets=enabled
 ```
