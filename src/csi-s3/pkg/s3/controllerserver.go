@@ -78,8 +78,12 @@ func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 		return nil, fmt.Errorf("failed to check if bucket %s exists: %v", bucketName, err)
 	}
 	if exists == false {
-		if err = s3.createBucket(bucketName); err != nil {
-			return nil, fmt.Errorf("failed to create volume %s: %v", volumeID, err)
+		if s3.cfg.Provision {
+			if err = s3.createBucket(bucketName); err != nil {
+				return nil, fmt.Errorf("failed to create volume %s: %v", volumeID, err)
+			}
+		} else {
+			return nil, fmt.Errorf("s3 bucket: %s does not exist", bucketName)
 		}
 	}
 	//b := &bucket{

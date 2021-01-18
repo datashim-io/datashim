@@ -17,13 +17,13 @@ limitations under the License.
 package main
 
 import (
+	"csi-driver-nfs/pkg/nfs"
 	"flag"
 	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
 
-	"github.com/kubernetes-csi/csi-driver-nfs/pkg/nfs"
 )
 
 var (

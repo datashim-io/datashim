@@ -2,6 +2,7 @@ package datasetinternal
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"strconv"
 
 	comv1alpha1 "github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/apis/com/v1alpha1"
@@ -220,6 +221,15 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 		readonly = readonlyValueString
 	}
 
+	provision := "false"
+
+	if provisionValueString, ok := cr.Spec.Local["provision"]; ok {
+		provisionBool, err := strconv.ParseBool(provisionValueString)
+		if err == nil {
+			provision = strconv.FormatBool(provisionBool)
+		}
+	}
+
 	extract := "false"
 	if len(cr.Spec.Extract) > 0 {
 		extract = cr.Spec.Extract
@@ -233,6 +243,7 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 		"region":          region,
 		"readonly":        readonly,
 		"extract":         extract,
+		"provision":       provision,
 	}
 
 	labels := map[string]string{
@@ -319,19 +330,34 @@ func processLocalDatasetNFS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 	processLocalDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processLocalDatasetNFS")
 	processLocalDatasetLogger.Info("Dataset type NFS")
 
+	foundPVC := &corev1.PersistentVolumeClaim{}
+	err := rc.client.Get(context.TODO(), types.NamespacedName{Name: cr.ObjectMeta.Name, Namespace: cr.ObjectMeta.Namespace}, foundPVC)
+	if err == nil {
+		processLocalDatasetLogger.Info("NFS Dataset has been provisioned, skipping...")
+		return reconcile.Result{}, nil
+	}
+
 	server := cr.Spec.Local["server"]
 	share := cr.Spec.Local["share"]
+	createDirPVC := "false"
+	if createDirPVCValueString, ok := cr.Spec.Local["createDirPVC"]; ok {
+		createDirPVC = createDirPVCValueString
+	}
 
 	labels := map[string]string{
 		"dataset": cr.Name,
 	}
 
+	uuidForPVC, _ := uuid.NewUUID()
+	uuidForPVCString := uuidForPVC.String()
+
 	storageClassName := "csi-nfs"
 	csiDriverName := "csi-nfsplugin"
-	csiVolumeHandle := "data-id"
+	csiVolumeHandle := cr.ObjectMeta.Name + "-" + uuidForPVCString[:6]
 	csiVolumeAttributes := map[string]string{
-		"server": server,
-		"share":  share,
+		"server":       server,
+		"share":        share,
+		"createDirPVC": createDirPVC,
 	}
 	pvSource := &corev1.CSIPersistentVolumeSource{
 		Driver:           csiDriverName,
@@ -363,7 +389,7 @@ func processLocalDatasetNFS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 
 	// the csi-nfs plugin does not support dynamic provisioning so PV and PVC must be created manually
 	foundPV := &corev1.PersistentVolume{}
-	err := rc.client.Get(context.TODO(), types.NamespacedName{Name: newPV.Name, Namespace: newPV.Namespace}, foundPV)
+	err = rc.client.Get(context.TODO(), types.NamespacedName{Name: newPV.Name, Namespace: newPV.Namespace}, foundPV)
 	if err != nil && errors.IsNotFound(err) {
 		processLocalDatasetLogger.Info("Creating new PV", "PV.Namespace", newPV.Namespace, "PV.Name", newPV.Name)
 		err = rc.client.Create(context.TODO(), newPV)
@@ -396,7 +422,7 @@ func processLocalDatasetNFS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 		return reconcile.Result{}, err
 	}
 
-	foundPVC := &corev1.PersistentVolumeClaim{}
+	foundPVC = &corev1.PersistentVolumeClaim{}
 	err = rc.client.Get(context.TODO(), types.NamespacedName{Name: newPVC.Name, Namespace: newPVC.Namespace}, foundPVC)
 	if err != nil && errors.IsNotFound(err) {
 		processLocalDatasetLogger.Info("Creating new pvc", "PVC.Namespace", newPVC.Namespace, "PVC.Name", newPVC.Name)

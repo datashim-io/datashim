@@ -5,5 +5,6 @@ metadata:
 spec:
   local:
     type: "NFS"
-    server: {IP_ADDRESS}
-    share: {/nfs/share/path}
+    server: 10.109.11.40
+    share: /
+    createDirPVC: "true"

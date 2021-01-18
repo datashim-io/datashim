@@ -1,0 +1,14 @@
+apiVersion: com.ie.ibm.hpsys/v1alpha1
+kind: Dataset
+metadata:
+  name: example-dataset
+spec:
+  local:
+    type: "COS"
+    secret-name: "{SECRET_NAME}" #see s3-secrets.yaml for an example
+    secret-namespace: "{SECRET_NAMESPACE}" #optional if the secret is in the same ns as dataset
+    endpoint: "{S3_SERVICE_URL}"
+    bucket: "{BUCKET_NAME}"
+    readonly: "true" # default is false
+    provision: "true" # DLF will allocate bucket on the COS if it doesn't exist [Default: false]
+    region: "" #it can be empty
