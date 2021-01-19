@@ -5,13 +5,16 @@ import (
 	b64 "encoding/base64"
 	"fmt"
 	comv1alpha1 "github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/apis/com/v1alpha1"
+	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"strconv"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,12 +37,27 @@ var log = logf.Log.WithName("controller_dataset")
 // Add creates a new Dataset Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
-	return add(mgr, newReconciler(mgr))
+	reconciler, err := newReconciler(mgr)
+	if err != nil {
+		return err
+	}
+
+	return add(mgr, reconciler)
 }
 
 // newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileDataset{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+func newReconciler(mgr manager.Manager) (reconcile.Reconciler, error) {
+
+	clientSet, err := kubernetes.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		return nil, err
+	}
+
+	return &ReconcileDataset{
+		clientSet: clientSet,
+		client:    mgr.GetClient(),
+		scheme:    mgr.GetScheme(),
+	}, nil
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -77,7 +95,11 @@ type ReconcileDataset struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client client.Client
-	scheme *runtime.Scheme
+	// This clientSet reads and writes directly to the apiserver
+	// and it is necessary for reading events as the above split client
+	// does not support this. Note that this clientSet does not support CRDs
+	clientSet *kubernetes.Clientset
+	scheme    *runtime.Scheme
 }
 
 // Reconcile reads that state of the cluster for a Dataset object and makes changes based on the state read
@@ -105,130 +127,293 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 
-	pluginPods, err := getCachingPlugins(r.client)
-	if err != nil {
-		return reconcile.Result{}, err
+	// Make sure that the Status of the Dataset is initialised
+	if initializeDatasetStatus(datasetInstance) {
+		return updateDatasetStatus(r.client, datasetInstance, reqLogger)
 	}
 
-	cacheDisableLabel, foundCacheDisableLabel := datasetInstance.Labels["cache.disable"]
-	cacheDisable := foundCacheDisableLabel && cacheDisableLabel == "True"
+	// Caching setup
+	if datasetInstance.Status.Caching.Status == comv1alpha1.StatusInitial {
 
-	if cacheDisable {
-		reqLogger.Info("User explicitly disabled caching. Falling back to no cache plugin")
-	}
+		cacheDisableLabel, err := strconv.ParseBool(datasetInstance.Labels["cache.disable"])
 
-	// This means that we should create a 1-1 DatasetInteral
-	if len(pluginPods.Items) != 0 && !cacheDisable {
-		cachePluginLabel, foundCachePluginLabel := datasetInstance.Labels["cache.plugin"]
-
-		if !foundCachePluginLabel {
-			//Default behavior: No cache.plugin label specified in the dataset
-			//thus pick the first plugin for the time being
-			datasetInstance.Annotations = pluginPods.Items[0].Labels
-			err = r.client.Update(context.TODO(), datasetInstance)
-			if err != nil {
-				reqLogger.Error(err, "Error while updating dataset according to caching plugin")
-				return reconcile.Result{}, err
-			}
-			reqLogger.Info(fmt.Sprintf("Using default behavior and choosing '%s' caching plugin", datasetInstance.Annotations["dlf-plugin-name"]))
-			//In this case we are done, the caching plugin takes control of the dataset
-			return reconcile.Result{}, nil
+		if err != nil {
+			cacheDisableLabel = false
 		}
 
-		//User has specified the cache.plugin label
-		for _, pluginItems := range pluginPods.Items {
-			if pluginItems.Labels["dlf-plugin-name"] == cachePluginLabel {
-				datasetInstance.Annotations = pluginItems.Labels
-				err = r.client.Update(context.TODO(), datasetInstance)
-				if err != nil {
-					reqLogger.Error(err, "Error while updating dataset according to caching plugin")
-					return reconcile.Result{}, err
-				}
-				reqLogger.Info(fmt.Sprintf("Using user specified caching plugin '%s'", cachePluginLabel))
-				//In this case we are done, the caching plugin takes control of the dataset
-				return reconcile.Result{}, nil
-			}
+		if cacheDisableLabel {
+			// mark caching status as disabled and requeue
+			datasetInstance.Status.Caching.Status = comv1alpha1.StatusDisabled
+			datasetInstance.Status.Caching.Info = "User explicitly disabled caching"
+			return updateDatasetStatus(r.client, datasetInstance, reqLogger)
 		}
 
-		reqLogger.Info(fmt.Sprintf("User specified plugin '%s' was not found. Falling back to no cache plugin", cachePluginLabel))
-	}
-
-	datasetInternalInstance := &comv1alpha1.DatasetInternal{}
-	err = r.client.Get(context.TODO(), request.NamespacedName, datasetInternalInstance)
-	if err != nil && !errors.IsNotFound(err) {
-		//Unknown error occured, shouldn't happen
-		return reconcile.Result{}, err
-	} else if err != nil && errors.IsNotFound(err) {
-		//1-1 Dataset and DatasetInternal because there is no caching plugin
-		reqLogger.Info("1-1 Dataset and DatasetInternal because there is no caching plugin")
-
-		newDatasetInternalInstance := &comv1alpha1.DatasetInternal{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      datasetInstance.ObjectMeta.Name,
-				Namespace: datasetInstance.ObjectMeta.Namespace,
-			},
-			Spec: datasetInstance.Spec,
-		}
-
-		if len(datasetInstance.Spec.Type) > 0 && datasetInstance.Spec.Type == "ARCHIVE" {
-			podDownloadJob, bucket := getPodDataDownload(datasetInstance, os.Getenv("OPERATOR_NAMESPACE"))
-			err = r.client.Create(context.TODO(), podDownloadJob)
-			if err != nil {
-				reqLogger.Error(err, "Error while creating pod download")
-				return reconcile.Result{}, err
-			}
-			minioConf := &v1.Secret{}
-			err = r.client.Get(context.TODO(), types.NamespacedName{
-				Namespace: os.Getenv("OPERATOR_NAMESPACE"),
-				Name:      "minio-conf",
-			}, minioConf)
-			if err != nil {
-				reqLogger.Error(err, "Error while getting minio-conf secret")
-				return reconcile.Result{}, err
-			}
-			endpoint, _ := b64.StdEncoding.DecodeString(b64.StdEncoding.EncodeToString(minioConf.Data["ENDPOINT"]))
-			accessKey, _ := b64.StdEncoding.DecodeString(b64.StdEncoding.EncodeToString(minioConf.Data["AWS_ACCESS_KEY_ID"]))
-			secretAccessKey, _ := b64.StdEncoding.DecodeString(b64.StdEncoding.EncodeToString(minioConf.Data["AWS_SECRET_ACCESS_KEY"]))
-			reqLogger.Info(string(endpoint))
-
-			provision := "false"
-
-			if provisionValueString, ok := datasetInstance.Spec.Local["provision"]; ok {
-				provisionBool, err := strconv.ParseBool(provisionValueString)
-				if err == nil {
-					provision = strconv.FormatBool(provisionBool)
-				}
-			}
-
-			extract := "false"
-			if len(datasetInstance.Spec.Extract) > 0 {
-				extract = datasetInstance.Spec.Extract
-			}
-			newDatasetInternalInstance.Spec = comv1alpha1.DatasetSpec{
-				Local: map[string]string{
-					"type":            "COS",
-					"accessKeyID":     string(accessKey),
-					"secretAccessKey": string(secretAccessKey),
-					"endpoint":        string(endpoint),
-					"readonly":        "true",
-					"bucket":          bucket,
-					"extract":         extract,
-					"region":          "",
-					"provision":       provision,
-				},
-			}
-		}
-
-		if err := controllerutil.SetControllerReference(datasetInstance, newDatasetInternalInstance, r.scheme); err != nil {
-			return reconcile.Result{}, err
-		}
-		err = r.client.Create(context.TODO(), newDatasetInternalInstance)
+		// get the installed DLF caching plugins
+		pluginPods, err := getCachingPlugins(r.client)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
+
+		// This means that we should create a 1-1 DatasetInternal
+		if len(pluginPods.Items) != 0 {
+			cachingPluginName, annotationsAreSet := datasetHasCachingAnnotationsSet(datasetInstance)
+			if !annotationsAreSet {
+				// if dataset does not contain the proper dlf caching annotations
+				// we must add them
+				cachePluginLabel, foundCachePluginLabel := datasetInstance.Labels["cache.plugin"]
+
+				if !foundCachePluginLabel {
+					//Default behavior: No cache.plugin label specified in the dataset
+					//thus pick the first plugin for the time being and requeue
+					datasetInstance.Annotations = pluginPods.Items[0].Labels
+					return updateDataset(r.client, datasetInstance, reqLogger)
+				}
+
+				//User has specified the cache.plugin label
+				for _, pluginItems := range pluginPods.Items {
+					if pluginItems.Labels["dlf-plugin-name"] == cachePluginLabel {
+						// Found the user specified plugin. Insert the proper annotations
+						// and requeue
+						datasetInstance.Annotations = pluginItems.Labels
+						return updateDataset(r.client, datasetInstance, reqLogger)
+					}
+				}
+
+				// User specified plugin not found. Disable caching and requeue
+				datasetInstance.Status.Caching.Status = comv1alpha1.StatusDisabled
+				datasetInstance.Status.Caching.Info = fmt.Sprintf(
+					"User specified plugin '%s' was not found. Falling back to disabled caching",
+					cachePluginLabel)
+				return updateDatasetStatus(r.client, datasetInstance, reqLogger)
+
+			}
+
+			// Dataset has the caching annotation embedded so now update accordingly
+			// the status and reconcile
+			// TODO the caching plugin is responsible for updating the caching status to OK
+			datasetInstance.Status.Caching.Status = comv1alpha1.StatusPending
+			datasetInstance.Status.Caching.Info = fmt.Sprintf(
+				"Caching is assigned to %s plugin",
+				cachingPluginName)
+			return updateDatasetStatus(r.client, datasetInstance, reqLogger)
+		}
+
+		datasetInstance.Status.Caching.Status = comv1alpha1.StatusDisabled
+		datasetInstance.Status.Caching.Info = "No DLF caching plugins are installed"
+		return updateDatasetStatus(r.client, datasetInstance, reqLogger)
 	}
 
+	// We need to create DatasetInternal when caching is disabled for this Dataset
+	// otherwise DatasetInternal is handled/created by the caching-plugin
+	if datasetInstance.Status.Caching.Status == comv1alpha1.StatusDisabled {
+		datasetInternalInstance := &comv1alpha1.DatasetInternal{}
+		err = r.client.Get(context.TODO(), request.NamespacedName, datasetInternalInstance)
+		if err != nil && !errors.IsNotFound(err) {
+			//Unknown error occured, shouldn't happen
+			return reconcile.Result{}, err
+		} else if err != nil && errors.IsNotFound(err) {
+			//1-1 Dataset and DatasetInternal because there is no caching plugin
+			reqLogger.Info("1-1 Dataset and DatasetInternal because there is no caching plugin")
+
+			newDatasetInternalInstance := &comv1alpha1.DatasetInternal{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      datasetInstance.ObjectMeta.Name,
+					Namespace: datasetInstance.ObjectMeta.Namespace,
+				},
+				Spec: datasetInstance.Spec,
+			}
+
+			if len(datasetInstance.Spec.Type) > 0 && datasetInstance.Spec.Type == "ARCHIVE" {
+				podDownloadJob, bucket := getPodDataDownload(datasetInstance, os.Getenv("OPERATOR_NAMESPACE"))
+				err = r.client.Create(context.TODO(), podDownloadJob)
+				if err != nil {
+					reqLogger.Error(err, "Error while creating pod download")
+					return reconcile.Result{}, err
+				}
+				minioConf := &v1.Secret{}
+				err = r.client.Get(context.TODO(), types.NamespacedName{
+					Namespace: os.Getenv("OPERATOR_NAMESPACE"),
+					Name:      "minio-conf",
+				}, minioConf)
+				if err != nil {
+					reqLogger.Error(err, "Error while getting minio-conf secret")
+					return reconcile.Result{}, err
+				}
+				endpoint, _ := b64.StdEncoding.DecodeString(b64.StdEncoding.EncodeToString(minioConf.Data["ENDPOINT"]))
+				accessKey, _ := b64.StdEncoding.DecodeString(b64.StdEncoding.EncodeToString(minioConf.Data["AWS_ACCESS_KEY_ID"]))
+				secretAccessKey, _ := b64.StdEncoding.DecodeString(b64.StdEncoding.EncodeToString(minioConf.Data["AWS_SECRET_ACCESS_KEY"]))
+				reqLogger.Info(string(endpoint))
+
+				provision := "false"
+
+				if provisionValueString, ok := datasetInstance.Spec.Local["provision"]; ok {
+					provisionBool, err := strconv.ParseBool(provisionValueString)
+					if err == nil {
+						provision = strconv.FormatBool(provisionBool)
+					}
+				}
+
+				extract := "false"
+				if len(datasetInstance.Spec.Extract) > 0 {
+					extract = datasetInstance.Spec.Extract
+				}
+				newDatasetInternalInstance.Spec = comv1alpha1.DatasetSpec{
+					Local: map[string]string{
+						"type":            "COS",
+						"accessKeyID":     string(accessKey),
+						"secretAccessKey": string(secretAccessKey),
+						"endpoint":        string(endpoint),
+						"readonly":        "true",
+						"bucket":          bucket,
+						"extract":         extract,
+						"region":          "",
+						"provision":       provision,
+					},
+				}
+			}
+
+			if err := controllerutil.SetControllerReference(datasetInstance, newDatasetInternalInstance, r.scheme); err != nil {
+				return reconcile.Result{}, err
+			}
+			err = r.client.Create(context.TODO(), newDatasetInternalInstance)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+	}
+
+	// Provision Status
+	// TODO for now for every Dataset kind we create a PVC, so the following is OK
+	// However, we should make this check for PVC status only if the Dataset kind
+	// is coupled with a PVC
+	if datasetInstance.Status.Provision.Status != comv1alpha1.StatusOK {
+		foundPVC := &v1.PersistentVolumeClaim{}
+		err = r.client.Get(context.TODO(), request.NamespacedName, foundPVC)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				// If PVC is not found yet, reconcile with some delay
+				if datasetInstance.Status.Provision.Status != comv1alpha1.StatusPending {
+					datasetInstance.Status.Provision.Status = comv1alpha1.StatusPending
+					return updateDatasetStatus(r.client, datasetInstance, reqLogger)
+				}
+
+				reqLogger.Info("PVC is not created yet")
+				return reconcile.Result{Requeue: true, RequeueAfter: 5 * time.Second}, nil
+			}
+			reqLogger.Error(err, "Unknown error")
+			return reconcile.Result{}, err
+		}
+
+		switch foundPVC.Status.Phase {
+		case v1.ClaimLost:
+		case v1.ClaimPending:
+			// ClaimLost & ClaimPending means that something is wrong with our PVC
+			// lets check for relevant events
+			statusUpdated := false
+			if datasetInstance.Status.Provision.Status != comv1alpha1.StatusPending {
+				datasetInstance.Status.Provision.Status = comv1alpha1.StatusPending
+				statusUpdated = true
+			}
+			lastEvent, err := readEventsForPVC(r.clientSet, foundPVC, reqLogger)
+			if err == nil && datasetInstance.Status.Provision.Info != lastEvent {
+				datasetInstance.Status.Provision.Info = lastEvent
+				statusUpdated = true
+			}
+
+			if statusUpdated {
+				return updateDatasetStatus(r.client, datasetInstance, reqLogger)
+			}
+			// In the case the Dataset Status is not modified requeue with some delay
+			// to re-check the status
+			return reconcile.Result{Requeue: true, RequeueAfter: 5 * time.Second}, nil
+
+		case v1.ClaimBound:
+			// if our PVC is bound make sure that the Provision Status of Dataset is
+			// shown as OK and requeue
+			if datasetInstance.Status.Provision.Status != comv1alpha1.StatusOK {
+				datasetInstance.Status.Provision.Status = comv1alpha1.StatusOK
+				datasetInstance.Status.Provision.Info = ""
+				return updateDatasetStatus(r.client, datasetInstance, reqLogger)
+			}
+		}
+	}
+
+	// everything OK don't requeue
+	// TODO maybe requeue with some delay if we
+	// need to monitor statuses
 	return reconcile.Result{}, nil
+}
+
+// initializeDataset initializing the Status of Dataset and
+// returns true if it modified the Status of the Dataset or
+// false otherwise
+func initializeDatasetStatus(d *comv1alpha1.Dataset) bool {
+	modifiedDatasetStatus := false
+	if d.Status.Provision.Status == comv1alpha1.StatusEmpty {
+		d.Status.Provision.Status = comv1alpha1.StatusInitial
+		modifiedDatasetStatus = true
+	}
+	if d.Status.Caching.Status == comv1alpha1.StatusEmpty {
+		d.Status.Caching.Status = comv1alpha1.StatusInitial
+		modifiedDatasetStatus = true
+	}
+	return modifiedDatasetStatus
+}
+
+func updateDatasetStatus(c client.Client, d *comv1alpha1.Dataset, logger logr.Logger) (reconcile.Result, error) {
+	err := c.Status().Update(context.TODO(), d)
+	if err != nil {
+		logger.Error(err, "Error updating dataset status")
+	}
+	return reconcile.Result{}, err
+}
+
+func updateDataset(c client.Client, d *comv1alpha1.Dataset, logger logr.Logger) (reconcile.Result, error) {
+	err := c.Update(context.TODO(), d)
+	if err != nil {
+		logger.Error(err, "Error updating dataset status")
+	}
+	return reconcile.Result{}, err
+}
+
+func readEventsForPVC(c *kubernetes.Clientset, pvc *v1.PersistentVolumeClaim, logger logr.Logger) (string, error) {
+	lastMessage := ""
+
+	listOpts := metav1.ListOptions{
+		FieldSelector: fmt.Sprintf(
+			"involvedObject.name=%s,"+
+				"involvedObject.resourceVersion=%s,"+
+				"involvedObject.kind=PersistentVolumeClaim,"+
+				"reason=ProvisioningFailed",
+			pvc.Name, pvc.ResourceVersion,
+		),
+	}
+	eventList, err := c.CoreV1().Events(pvc.Namespace).List(listOpts)
+	if err == nil {
+		eventsLen := len(eventList.Items)
+		if eventsLen > 0 {
+			// Assuming that always the last event in the list will be
+			// the latest?!
+			lastMessage = eventList.Items[eventsLen-1].Message
+		}
+	} else {
+		logger.Error(err, "Reading events failed")
+	}
+	return lastMessage, err
+}
+
+func datasetHasCachingAnnotationsSet(d *comv1alpha1.Dataset) (string, bool) {
+	cachingPluginName := ""
+	datasetHasCachingAnnotations := true
+	for _, cachingLabel := range []string{"dlf-plugin-type", "dlf-plugin-name"} {
+		value, exists := d.Annotations[cachingLabel]
+		if !exists {
+			datasetHasCachingAnnotations = false
+			break
+		}
+		cachingPluginName = value
+	}
+	return cachingPluginName, datasetHasCachingAnnotations
 }
 
 func getCachingPlugins(c client.Client) (*v1.PodList, error) {
