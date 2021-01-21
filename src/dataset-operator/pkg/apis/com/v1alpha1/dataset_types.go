@@ -17,10 +17,26 @@ type DatasetSpec struct {
 	Local  map[string]string `json:"local,omitempty"`
 	Remote map[string]string `json:"remote,omitempty"`
 	// TODO temp definition for archive
-	Type string `json:"type,omitempty"`
-	Url string `json:"url,omitempty"`
-	Format string `json:"format,omitempty"`
+	Type    string `json:"type,omitempty"`
+	Url     string `json:"url,omitempty"`
+	Format  string `json:"format,omitempty"`
 	Extract string `json:"extract,omitempty"`
+}
+
+const (
+	StatusEmpty    = ""
+	StatusInitial  = "Initializing"
+	StatusPending  = "Pending"
+	StatusOK       = "OK"
+	StatusDisabled = "Disabled"
+	StatusFail     = "Failed"
+)
+
+// DatasetStatusCondition defines sub-Status conditions
+// +k8s:openapi-gen=true
+type DatasetStatusCondition struct {
+	Status string `json:"status,omitempty"`
+	Info   string `json:"info,omitempty"`
 }
 
 // DatasetStatus defines the observed state of Dataset
@@ -29,7 +45,8 @@ type DatasetStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-	Error string `json:"error,omitempty"`
+	Caching   DatasetStatusCondition `json:"caching,omitempty"`
+	Provision DatasetStatusCondition `json:"provision,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

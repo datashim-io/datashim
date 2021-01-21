@@ -344,9 +344,9 @@ func getExactlyOneObject(c client.Client,instance runtime.Object, name string, n
 }
 
 func addErrorToDataset(c client.Client,errorString string,dataset *comv1alpha1.Dataset) error {
-	dataset.Status.Error = errorString
+	dataset.Status.Caching.Info = errorString
 	log.WithName("errorToDataset").Info(errorString)
-	err := c.Update(context.TODO(),dataset)
+	err := c.Status().Update(context.TODO(),dataset)
 	if(err!=nil){
 		return err
 	}
