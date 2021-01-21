@@ -1,0 +1,215 @@
+#################################################################################################################
+# Define the settings for the rook-ceph cluster with common settings for a production cluster.
+# All nodes with available raw devices will be used for the Ceph cluster. At least three nodes are required
+# in this example. See the documentation for more details on storage settings available.
+
+# For example, to create the cluster:
+#   kubectl create -f common.yaml
+#   kubectl create -f operator.yaml
+#   kubectl create -f cluster-on-pvc.yaml
+#################################################################################################################
+
+apiVersion: ceph.rook.io/v1
+kind: CephCluster
+metadata:
+  name: rook-ceph
+  namespace: rook-ceph
+spec:
+  dataDirHostPath: /var/lib/rook
+  mon:
+    count: 1
+    allowMultiplePerNode: false
+    # A volume claim template can be specified in which case new monitors (and
+    # monitors created during fail over) will construct a PVC based on the
+    # template for the monitor's primary storage. Changes to the template do not
+    # affect existing monitors. Log data is stored on the HostPath under
+    # dataDirHostPath. If no storage requirement is specified, a default storage
+    # size appropriate for monitor data will be used.
+    volumeClaimTemplate:
+      spec:
+        storageClassName: csi-lvm
+        resources:
+          requests:
+            storage: 4Gi
+  cephVersion:
+    #image: ceph/ceph:v15.2
+    image: quay.io/ibm-dlf/ceph-daemon:pullrequest-amd64
+    allowUnsupported: true
+  skipUpgradeChecks: false
+  continueUpgradeAfterChecksEvenIfNotHealthy: false
+  dashboard:
+    enabled: false
+    ssl: true
+  monitoring:
+    enabled: false
+    rulesNamespace: rook-ceph
+  network:
+    hostNetwork: false
+  rbdMirroring:
+    workers: 0
+  crashCollector:
+    disable: false
+  storage:
+    storageClassDeviceSets:
+      - name: set1
+        # The number of OSDs to create from this device set
+        count: 2
+        # IMPORTANT: If volumes specified by the storageClassName are not portable across nodes
+        # this needs to be set to false. For example, if using the local storage provisioner
+        # this should be false.
+        portable: false
+        # Certain storage class in the Cloud are slow
+        # Rook can configure the OSD running on PVC to accommodate that by tuning some of the Ceph internal
+        # Currently, "gp2" has been identified as such
+        tuneDeviceClass: true
+        # whether to encrypt the deviceSet or not
+        encrypted: false
+        # Since the OSDs could end up on any node, an effort needs to be made to spread the OSDs
+        # across nodes as much as possible. Unfortunately the pod anti-affinity breaks down
+        # as soon as you have more than one OSD per node. The topology spread constraints will
+        # give us an even spread on K8s 1.18 or newer.
+        placement:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: use-csi-lvm
+                      operator: In
+                      values:
+                        - "true"
+          topologySpreadConstraints:
+          - maxSkew: 1
+            topologyKey: kubernetes.io/hostname
+            whenUnsatisfiable: ScheduleAnyway
+            labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - rook-ceph-osd
+        preparePlacement:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: use-csi-lvm
+                      operator: In
+                      values:
+                        - "true"
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                podAffinityTerm:
+                  labelSelector:
+                    matchExpressions:
+                      - key: app
+                        operator: In
+                        values:
+                          - rook-ceph-osd
+                      - key: app
+                        operator: In
+                        values:
+                          - rook-ceph-osd-prepare
+                  topologyKey: kubernetes.io/hostname
+          topologySpreadConstraints:
+            - maxSkew: 1
+              topologyKey: topology.kubernetes.io/zone
+              whenUnsatisfiable: ScheduleAnyway
+              labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - rook-ceph-osd-prepare
+        resources:
+        # These are the OSD daemon limits. For OSD prepare limits, see the separate section below for "prepareosd" resources
+        #   limits:
+        #     cpu: "500m"
+        #     memory: "4Gi"
+        #   requests:
+        #     cpu: "500m"
+        #     memory: "4Gi"
+        volumeClaimTemplates:
+          - metadata:
+              name: data
+              # if you are looking at giving your OSD a different CRUSH device class than the one detected by Ceph
+              # annotations:
+              #   crushDeviceClass: hybrid
+            spec:
+              resources:
+                requests:
+                  storage: 10Gi
+              # IMPORTANT: Change the storage class depending on your environment (e.g. local-storage, gp2)
+              storageClassName: csi-lvm
+              volumeMode: Block
+              accessModes:
+                - ReadWriteOnce
+        # dedicated block device to store bluestore database (block.db)
+        # - metadata:
+        #     name: metadata
+        #   spec:
+        #     resources:
+        #       requests:
+        #         # Find the right size https://docs.ceph.com/docs/master/rados/configuration/bluestore-config-ref/#sizing
+        #         storage: 5Gi
+        #     # IMPORTANT: Change the storage class depending on your environment (e.g. local-storage, io1)
+        #     storageClassName: csi-lvm
+        #     volumeMode: Block
+        #     accessModes:
+        #       - ReadWriteOnce
+        # dedicated block device to store bluestore wal (block.wal)
+        # - metadata:
+        #     name: wal
+        #   spec:
+        #     resources:
+        #       requests:
+        #         # Find the right size https://docs.ceph.com/docs/master/rados/configuration/bluestore-config-ref/#sizing
+        #         storage: 5Gi
+        #     # IMPORTANT: Change the storage class depending on your environment (e.g. local-storage, io1)
+        #     storageClassName: io1
+        #     volumeMode: Block
+        #     accessModes:
+        #       - ReadWriteOnce
+        # Scheduler name for OSD pod placement
+        # schedulerName: osd-scheduler
+  placement:
+    arbiter:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: use-csi-lvm
+                  operator: In
+                  values:
+                    - "true"
+    mon:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: use-csi-lvm
+                  operator: In
+                  values:
+                    - "true"
+    mgr:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: use-csi-lvm
+                  operator: In
+                  values:
+                    - "true"
+  resources:
+  #  prepareosd:
+  #    limits:
+  #      cpu: "200m"
+  #      memory: "200Mi"
+  #   requests:
+  #      cpu: "200m"
+  #      memory: "200Mi"
+  disruptionManagement:
+    managePodBudgets: false
+    osdMaintenanceTimeout: 30
+    manageMachineDisruptionBudgets: false
+    machineDisruptionBudgetNamespace: openshift-machine-api
