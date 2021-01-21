@@ -129,7 +129,7 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 
 	// Make sure that the Status of the Dataset is initialised
 	if initializeDatasetStatus(datasetInstance) {
-		return updateDatasetStatus(r.client, datasetInstance, reqLogger)
+		return updateDatasetStatusAndReturn(r.client, datasetInstance, reqLogger)
 	}
 
 	// Caching setup
@@ -145,7 +145,7 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 			// mark caching status as disabled and requeue
 			datasetInstance.Status.Caching.Status = comv1alpha1.StatusDisabled
 			datasetInstance.Status.Caching.Info = "User explicitly disabled caching"
-			return updateDatasetStatus(r.client, datasetInstance, reqLogger)
+			return updateDatasetStatusAndReturn(r.client, datasetInstance, reqLogger)
 		}
 
 		// get the installed DLF caching plugins
@@ -166,7 +166,7 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 					//Default behavior: No cache.plugin label specified in the dataset
 					//thus pick the first plugin for the time being and requeue
 					datasetInstance.Annotations = pluginPods.Items[0].Labels
-					return updateDataset(r.client, datasetInstance, reqLogger)
+					return updateDatasetAndReturn(r.client, datasetInstance, reqLogger)
 				}
 
 				//User has specified the cache.plugin label
@@ -175,7 +175,7 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 						// Found the user specified plugin. Insert the proper annotations
 						// and requeue
 						datasetInstance.Annotations = pluginItems.Labels
-						return updateDataset(r.client, datasetInstance, reqLogger)
+						return updateDatasetAndReturn(r.client, datasetInstance, reqLogger)
 					}
 				}
 
@@ -184,7 +184,7 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 				datasetInstance.Status.Caching.Info = fmt.Sprintf(
 					"User specified plugin '%s' was not found. Falling back to disabled caching",
 					cachePluginLabel)
-				return updateDatasetStatus(r.client, datasetInstance, reqLogger)
+				return updateDatasetStatusAndReturn(r.client, datasetInstance, reqLogger)
 
 			}
 
@@ -195,12 +195,12 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 			datasetInstance.Status.Caching.Info = fmt.Sprintf(
 				"Caching is assigned to %s plugin",
 				cachingPluginName)
-			return updateDatasetStatus(r.client, datasetInstance, reqLogger)
+			return updateDatasetStatusAndReturn(r.client, datasetInstance, reqLogger)
 		}
 
 		datasetInstance.Status.Caching.Status = comv1alpha1.StatusDisabled
 		datasetInstance.Status.Caching.Info = "No DLF caching plugins are installed"
-		return updateDatasetStatus(r.client, datasetInstance, reqLogger)
+		return updateDatasetStatusAndReturn(r.client, datasetInstance, reqLogger)
 	}
 
 	// We need to create DatasetInternal when caching is disabled for this Dataset
@@ -294,7 +294,7 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 				// If PVC is not found yet, reconcile with some delay
 				if datasetInstance.Status.Provision.Status != comv1alpha1.StatusPending {
 					datasetInstance.Status.Provision.Status = comv1alpha1.StatusPending
-					return updateDatasetStatus(r.client, datasetInstance, reqLogger)
+					return updateDatasetStatusAndReturn(r.client, datasetInstance, reqLogger)
 				}
 
 				reqLogger.Info("PVC is not created yet")
@@ -321,7 +321,7 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 			}
 
 			if statusUpdated {
-				return updateDatasetStatus(r.client, datasetInstance, reqLogger)
+				return updateDatasetStatusAndReturn(r.client, datasetInstance, reqLogger)
 			}
 			// In the case the Dataset Status is not modified requeue with some delay
 			// to re-check the status
@@ -333,7 +333,7 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 			if datasetInstance.Status.Provision.Status != comv1alpha1.StatusOK {
 				datasetInstance.Status.Provision.Status = comv1alpha1.StatusOK
 				datasetInstance.Status.Provision.Info = ""
-				return updateDatasetStatus(r.client, datasetInstance, reqLogger)
+				return updateDatasetStatusAndReturn(r.client, datasetInstance, reqLogger)
 			}
 		}
 	}
@@ -360,7 +360,7 @@ func initializeDatasetStatus(d *comv1alpha1.Dataset) bool {
 	return modifiedDatasetStatus
 }
 
-func updateDatasetStatus(c client.Client, d *comv1alpha1.Dataset, logger logr.Logger) (reconcile.Result, error) {
+func updateDatasetStatusAndReturn(c client.Client, d *comv1alpha1.Dataset, logger logr.Logger) (reconcile.Result, error) {
 	err := c.Status().Update(context.TODO(), d)
 	if err != nil {
 		logger.Error(err, "Error updating dataset status")
@@ -368,7 +368,7 @@ func updateDatasetStatus(c client.Client, d *comv1alpha1.Dataset, logger logr.Lo
 	return reconcile.Result{}, err
 }
 
-func updateDataset(c client.Client, d *comv1alpha1.Dataset, logger logr.Logger) (reconcile.Result, error) {
+func updateDatasetAndReturn(c client.Client, d *comv1alpha1.Dataset, logger logr.Logger) (reconcile.Result, error) {
 	err := c.Update(context.TODO(), d)
 	if err != nil {
 		logger.Error(err, "Error updating dataset status")
@@ -406,13 +406,17 @@ func datasetHasCachingAnnotationsSet(d *comv1alpha1.Dataset) (string, bool) {
 	cachingPluginName := ""
 	datasetHasCachingAnnotations := true
 	for _, cachingLabel := range []string{"dlf-plugin-type", "dlf-plugin-name"} {
-		value, exists := d.Annotations[cachingLabel]
+		_, exists := d.Annotations[cachingLabel]
 		if !exists {
 			datasetHasCachingAnnotations = false
 			break
 		}
-		cachingPluginName = value
 	}
+
+	if datasetHasCachingAnnotations {
+		cachingPluginName = d.Annotations["dlf-plugin-name"]
+	}
+
 	return cachingPluginName, datasetHasCachingAnnotations
 }
 
