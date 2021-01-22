@@ -2,12 +2,13 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   # This name uniquely identifies the Deployment
-  name: minio
-  namespace: dlf
+  name: minio-noregion
+  labels:
+    app: minio-noregion
 spec:
   selector:
     matchLabels:
-      app: minio # has to match .spec.template.metadata.labels
+      app: minio-noregion # has to match .spec.template.metadata.labels
   strategy:
     # Specifies the strategy used to replace old Pods by new ones
     # Refer: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
@@ -16,12 +17,25 @@ spec:
     metadata:
       labels:
         # This label is used as a selector in Service definition
-        app: minio
+        app: minio-noregion
     spec:
       # Volumes used by this deployment
       volumes:
         - name: data
           emptyDir: {}
+        - name: dummy-data
+          configMap:
+            name: dummy-data
+      initContainers:
+        - name: populate-data
+          image: alpine
+          volumeMounts:
+            - mountPath: /from
+              name: dummy-data
+            - mountPath: /to
+              name: data
+          command: [ "/bin/sh" ]
+          args: [ "-c", "mkdir /to/bucket; cp /from/* /to/bucket" ]
       containers:
         - name: minio
           # Volume mounts for this container
@@ -30,7 +44,7 @@ spec:
             - name: data
               mountPath: "/data"
           # Pulls the lastest Minio image from Docker Hub
-          image: minio/minio:RELEASE.2020-05-01T22-19-14Z
+          image: minio/minio:RELEASE.2020-12-18T03-27-42Z
           args:
             - server
             - /data

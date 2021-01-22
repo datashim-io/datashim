@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alpine
+  labels:
+    app: alpine
+spec:
+  selector:
+    matchLabels:
+      app: alpine
+  template:
+    metadata:
+      labels:
+        app: alpine
+        dataset.0.id: "mydataset"
+        dataset.0.useas: "mount"
+    spec:
+      volumes:
+        - name: base-scripts
+          configMap:
+            name: base-scripts
+      containers:
+      - name: alpine
+        image: alpine
+        volumeMounts:
+          - mountPath: /opt
+            name: base-scripts
+        command: ["/bin/sh","-c"]
+        args: [ "cp /opt/*.sh /tmp; chmod +x /tmp/*.sh;
+                ./tmp/checkDirectory.sh /mnt/datasets/mydataset && \
+                ./tmp/checkFile.sh /mnt/datasets/mydataset/file1.txt && \
+                ./tmp/catFile.sh /mnt/datasets/mydataset/file1.txt;
+                ./tmp/wait.sh;
+                " ]

@@ -1,0 +1,27 @@
+apiVersion: v1
+data:
+  checkDirectory.sh: |
+    if [ -d "$1" ];
+    then
+    echo {\"test\":\"directory_exists\", \"value\": \"true\"}
+    else
+    echo {\"test\":\"directory_exists\", \"value\": \"false\"}
+    exit 1
+    fi
+  checkFile.sh: |
+    if [ -f "$1" ];
+    then
+    echo {\"test\":\"file_exists\", \"value\": \"true\"}
+    else
+    echo {\"test\":\"file_exists\", \"value\": \"false\"}
+    exit 1
+    fi
+  catFile.sh: |
+    export content=`cat $1`
+    echo {\"test\":\"file_content\", \"value\": \"$content\"}
+  wait.sh: |
+    mkfifo /tmp/waitforme;
+    read < /tmp/waitforme;
+kind: ConfigMap
+metadata:
+  name: base-scripts

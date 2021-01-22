@@ -8,6 +8,8 @@ verify_ssl = true
 [packages]
 mkdocs-material = "*"
 mkdocs-git-revision-date-localized-plugin = "*"
+kubetest = "*"
+pykorm = "*"
 
 [requires]
-python_version = "3.6"
+python_version = "3.7"
