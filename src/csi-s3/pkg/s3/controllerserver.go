@@ -136,17 +136,15 @@ func (cs *controllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVol
 	if err != nil {
 		return nil, err
 	}
-	if exists {
-		if(len(s3.cfg.ExistingBucket)==0) {
-			if err := s3.removeBucket(bucketName); err != nil {
-				glog.V(3).Infof("Failed to remove volume %s: %v", volumeID, err)
-				return nil, err
-			}
-		} else {
-			glog.V(4).Infof("Volume %s is on existing data so we won't be deleting the bucket", volumeID)
+	removeOnDelete := s3.cfg.RemoveOnDelete
+	glog.V(5).Info("Remove on delete value %s",fmt.Sprint(removeOnDelete))
+	if exists && removeOnDelete {
+		if err := s3.removeBucket(bucketName); err != nil {
+			glog.V(3).Infof("Failed to remove volume %s and bucket %s: %v", volumeID,bucketName, err)
+			return nil, err
 		}
 	} else {
-		glog.V(5).Infof("Bucket %s does not exist, ignoring request", bucketName)
+		glog.V(5).Infof("Bucket %s does not exist or not remove-on-delete flag, ignoring request", bucketName)
 	}
 
 	return &csi.DeleteVolumeResponse{}, nil
