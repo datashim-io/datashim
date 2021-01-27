@@ -141,9 +141,8 @@ func (r *ReconcileDatasetInternal) Reconcile(request reconcile.Request) (reconci
 		datasetType := instance.Spec.Local["type"]
 		if (datasetType == "COS") {
 			if !contains(instance.GetFinalizers(), datasetFinalizer) {
-				if err := r.addFinalizer(reqLogger, instance); err != nil {
-					return reconcile.Result{}, err
-				}
+				err := r.addFinalizer(reqLogger, instance)
+				return reconcile.Result{}, err
 			}
 		}
 	}
@@ -270,9 +269,9 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 	bucket := cr.Spec.Local["bucket"]
 	region := cr.Spec.Local["region"]
 
-	readonly := getBooleanStringForKeyInMap("readonly",cr.Spec.Local)
-	provision := getBooleanStringForKeyInMap("provision",cr.Spec.Local)
-	removeOnDelete := getBooleanStringForKeyInMap("remove-on-delete",cr.ObjectMeta.Labels)
+	readonly := getBooleanStringForKeyInMap("false","readonly",cr.Spec.Local)
+	provision := getBooleanStringForKeyInMap("false","provision",cr.Spec.Local)
+	removeOnDelete := getBooleanStringForKeyInMap("false","remove-on-delete",cr.ObjectMeta.Labels)
 
 	extract := "false"
 	if len(cr.Spec.Extract) > 0 {
@@ -881,8 +880,8 @@ func createPVCforObjectStorage(cr *comv1alpha1.DatasetInternal, rc *ReconcileDat
 
 }
 
-func getBooleanStringForKeyInMap(key string,mapString map[string]string) string {
-	toret := "false"
+func getBooleanStringForKeyInMap(defaultValue string, key string,mapString map[string]string) string {
+	toret := defaultValue
 	if provisionValueString, ok := mapString[key]; ok {
 		provisionBool, err := strconv.ParseBool(provisionValueString)
 		if err == nil {
@@ -909,7 +908,6 @@ func (r *ReconcileDatasetInternal) addFinalizer(reqLogger logr.Logger, m *comv1a
 	err := r.client.Update(context.TODO(), m)
 	if err != nil {
 		reqLogger.Error(err, "Failed to update Dataset with finalizer")
-		return err
 	}
-	return nil
+	return err
 }
