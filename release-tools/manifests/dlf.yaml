@@ -858,7 +858,7 @@ spec:
             - mountPath: /registration
               name: registration-dir
         - name: csi-s3
-          image: "quay.io/ibm-dlf/csi-s3:remove_bucket_on_delete-amd64"
+          image: "quay.io/ibm-dlf/csi-s3:latest-amd64"
           imagePullPolicy: Always
           args:
             - "--v=5"
@@ -956,7 +956,7 @@ spec:
       containers:
         - name: dataset-operator
           # Replace this with the built image name
-          image: "quay.io/ibm-dlf/dataset-operator:remove_bucket_on_delete-amd64"
+          image: "quay.io/ibm-dlf/dataset-operator:latest-amd64"
           command:
             - dataset-operator
           imagePullPolicy: Always

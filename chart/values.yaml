@@ -25,7 +25,7 @@ csi-s3-chart:
 # mounter: "goofys"
   csis3:
     image: "csi-s3"
-    tag: "remove_bucket_on_delete"
+    tag: "latest"
   sidecars: {} # in case you want to force override regardless of the csi-s3-chart/values.yaml
 
 csi-nfs-chart:
@@ -44,4 +44,4 @@ dataset-operator-chart:
     tag: "latest"
   datasetoperator:
     image: "dataset-operator"
-    tag: "remove_bucket_on_delete"
+    tag: "latest"
