@@ -6,7 +6,6 @@ require (
 	github.com/go-openapi/spec v0.19.5
 	github.com/kube-object-storage/lib-bucket-provisioner v0.0.0-20200107223247-51020689f1fb
 	github.com/operator-framework/operator-sdk v0.16.0
-	github.com/rook/rook v1.3.3
 	github.com/spf13/pflag v1.0.5
 	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/api v0.17.2
