@@ -58,8 +58,8 @@ func (goofys *goofysMounter) Mount(source string, target string) error {
 	args := []string{
 		fmt.Sprintf("--endpoint=%s", goofys.endpoint),
 		fmt.Sprintf("--profile=%s", goofys.volumeID),
-		"--type-cache-ttl","1s",
-		"--stat-cache-ttl","1s",
+		//"--type-cache-ttl","1s",
+		//"--stat-cache-ttl","1s",
 		"--dir-mode","0777",
 		"--file-mode","0777",
 		"--http-timeout","5m",

@@ -25,7 +25,7 @@ csi-s3-chart:
 # mounter: "goofys"
   csis3:
     image: "csi-s3"
-    tag: "latest"
+    tag: "goofys-cache"
   sidecars: {} # in case you want to force override regardless of the csi-s3-chart/values.yaml
 
 csi-nfs-chart:
