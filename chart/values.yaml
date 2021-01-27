@@ -3,6 +3,7 @@ global:
   baseRepo: "quay.io/ibm-dlf"
   arch: "amd64"
   type: "k8s"
+  namespaceYaml: false
 
   sidecars:
     kubeletPath: "/var/lib/kubelet"
@@ -24,7 +25,7 @@ csi-s3-chart:
 # mounter: "goofys"
   csis3:
     image: "csi-s3"
-    tag: "latest"
+    tag: "remove_bucket_on_delete"
   sidecars: {} # in case you want to force override regardless of the csi-s3-chart/values.yaml
 
 csi-nfs-chart:
@@ -43,4 +44,4 @@ dataset-operator-chart:
     tag: "latest"
   datasetoperator:
     image: "dataset-operator"
-    tag: "latest"
+    tag: "remove_bucket_on_delete"

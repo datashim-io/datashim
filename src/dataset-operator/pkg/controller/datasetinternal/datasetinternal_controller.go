@@ -2,6 +2,7 @@ package datasetinternal
 
 import (
 	"context"
+	"github.com/go-logr/logr"
 	"github.com/google/uuid"
 	"strconv"
 
@@ -23,6 +24,7 @@ import (
 )
 
 var log = logf.Log.WithName("controller_datasetinternal")
+var datasetFinalizer = "dataset-finalizer"
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -129,12 +131,63 @@ func (r *ReconcileDatasetInternal) Reconcile(request reconcile.Request) (reconci
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
 			reqLogger.Info("Dataset is not found")
-			err = nil
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
+
+	if instance.Spec.Local != nil {
+		datasetType := instance.Spec.Local["type"]
+		if (datasetType == "COS") {
+			if !contains(instance.GetFinalizers(), datasetFinalizer) {
+				err := r.addFinalizer(reqLogger, instance)
+				return reconcile.Result{}, err
+			}
+		}
+	}
+
+	isDatasetMarkedToBeDeleted := instance.GetDeletionTimestamp() != nil
+	if isDatasetMarkedToBeDeleted {
+		if contains(instance.GetFinalizers(),datasetFinalizer) {
+			// Run finalization logic for memcachedFinalizer. If the
+			// finalization logic fails, don't remove the finalizer so
+			// that we can retry during the next reconciliation.
+			reqLogger.Info("Finalizer logic here!!")
+			foundPVC := &corev1.PersistentVolumeClaim{}
+			err := r.client.Get(context.TODO(), request.NamespacedName, foundPVC)
+			if err == nil  {
+				reqLogger.Info("COS-related PVC still exists, deleting...")
+				r.client.Delete(context.TODO(), foundPVC)
+				return reconcile.Result{Requeue: true},nil
+			} else if !errors.IsNotFound(err){
+				reqLogger.Info("COS-related PVC error")
+				reqLogger.Error(err,"COS-related PVC unexpected error")
+				return reconcile.Result{}, err
+			}
+
+			found := &corev1.Secret{}
+			err = r.client.Get(context.TODO(), request.NamespacedName, found)
+			if err == nil  {
+				reqLogger.Info("COS-related secret still exists, deleting...")
+				r.client.Delete(context.TODO(), found)
+				return reconcile.Result{Requeue: true},nil
+			} else if !errors.IsNotFound(err){
+				reqLogger.Info("COS-related secret error")
+				reqLogger.Error(err,"COS-related secret unexpected error")
+				return reconcile.Result{}, err
+			}
+			// Remove memcachedFinalizer. Once all finalizers have been
+			// removed, the object will be deleted.
+			controllerutil.RemoveFinalizer(instance, datasetFinalizer)
+			err = r.client.Update(context.TODO(), instance)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+		return reconcile.Result{}, nil
+	}
+
 
 	reqLogger.Info("All good, proceed")
 
@@ -166,7 +219,7 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 	authProvided := false
 
 	var secretName, secretNamespace, accessKeyID, secretAccessKey string
-	var ok bool = false
+	var ok = false
 
 	if secretName, ok = cr.Spec.Local["secret-name"]; ok {
 		if secretNamespace, ok = cr.Spec.Local["secret-namespace"]; !ok {
@@ -215,21 +268,11 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 	endpoint := cr.Spec.Local["endpoint"]
 	bucket := cr.Spec.Local["bucket"]
 	region := cr.Spec.Local["region"]
-	readonly := "false"
 
-	if readonlyValueString, ok := cr.Spec.Local["readonly"]; ok {
-		readonly = readonlyValueString
-	}
+	readonly := getBooleanStringForKeyInMap("false","readonly",cr.Spec.Local)
+	provision := getBooleanStringForKeyInMap("false","provision",cr.Spec.Local)
+	removeOnDelete := getBooleanStringForKeyInMap("false","remove-on-delete",cr.ObjectMeta.Labels)
 
-	provision := "false"
-
-	if provisionValueString, ok := cr.Spec.Local["provision"]; ok {
-		provisionBool, err := strconv.ParseBool(provisionValueString)
-		if err == nil {
-			provision = strconv.FormatBool(provisionBool)
-		}
-	}
-  
 	extract := "false"
 	if len(cr.Spec.Extract) > 0 {
 		extract = cr.Spec.Extract
@@ -244,6 +287,7 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 		"readonly":        readonly,
 		"extract":         extract,
 		"provision":       provision,
+		"remove-on-delete":removeOnDelete,
 	}
 
 	labels := map[string]string{
@@ -270,23 +314,6 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 		StringData: stringData,
 	}
 
-	if err := controllerutil.SetControllerReference(cr, secretObj, rc.scheme); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	found := &corev1.Secret{}
-	err := rc.client.Get(context.TODO(), types.NamespacedName{Name: secretObj.Name, Namespace: secretObj.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
-		processLocalDatasetLogger.Info("Creating new secrets", "Secret.Namespace", secretObj.Namespace, "Secret.Name", secretObj.Name)
-		err = rc.client.Create(context.TODO(), secretObj)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-		// Secrets created successfully - don't requeue
-	} else if err != nil {
-		return reconcile.Result{}, err
-	}
-
 	storageClassName := "csi-s3"
 
 	newPVC := &corev1.PersistentVolumeClaim{
@@ -306,12 +333,8 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 		},
 	}
 
-	if err := controllerutil.SetControllerReference(cr, newPVC, rc.scheme); err != nil {
-		return reconcile.Result{}, err
-	}
-
 	foundPVC := &corev1.PersistentVolumeClaim{}
-	err = rc.client.Get(context.TODO(), types.NamespacedName{Name: newPVC.Name, Namespace: newPVC.Namespace}, foundPVC)
+	err := rc.client.Get(context.TODO(), types.NamespacedName{Name: newPVC.Name, Namespace: newPVC.Namespace}, foundPVC)
 	if err != nil && errors.IsNotFound(err) {
 		processLocalDatasetLogger.Info("Creating new pvc", "PVC.Namespace", newPVC.Namespace, "PVC.Name", newPVC.Name)
 		err = rc.client.Create(context.TODO(), newPVC)
@@ -322,6 +345,21 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
+
+	found := &corev1.Secret{}
+	err = rc.client.Get(context.TODO(), types.NamespacedName{Name: secretObj.Name, Namespace: secretObj.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		processLocalDatasetLogger.Info("Creating new secrets", "Secret.Namespace", secretObj.Namespace, "Secret.Name", secretObj.Name)
+		errCreation := rc.client.Create(context.TODO(), secretObj)
+		if errCreation != nil {
+			return reconcile.Result{}, errCreation
+		}
+		// Secrets created successfully - don't requeue
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	processLocalDatasetLogger.Info("All good and we shouldnt reconcile!")
 
 	return reconcile.Result{}, nil
 }
@@ -840,4 +878,36 @@ func createPVCforObjectStorage(cr *comv1alpha1.DatasetInternal, rc *ReconcileDat
 
 	return result, err
 
+}
+
+func getBooleanStringForKeyInMap(defaultValue string, key string,mapString map[string]string) string {
+	toret := defaultValue
+	if provisionValueString, ok := mapString[key]; ok {
+		provisionBool, err := strconv.ParseBool(provisionValueString)
+		if err == nil {
+			toret = strconv.FormatBool(provisionBool)
+		}
+	}
+	return toret
+}
+
+func contains(list []string, s string) bool {
+	for _, v := range list {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *ReconcileDatasetInternal) addFinalizer(reqLogger logr.Logger, m *comv1alpha1.DatasetInternal) error {
+	reqLogger.Info("Adding Finalizer for the Dataset")
+	controllerutil.AddFinalizer(m, datasetFinalizer)
+
+	// Update CR
+	err := r.client.Update(context.TODO(), m)
+	if err != nil {
+		reqLogger.Error(err, "Failed to update Dataset with finalizer")
+	}
+	return err
 }

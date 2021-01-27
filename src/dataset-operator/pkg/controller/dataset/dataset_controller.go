@@ -219,6 +219,7 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      datasetInstance.ObjectMeta.Name,
 					Namespace: datasetInstance.ObjectMeta.Namespace,
+					Labels: datasetInstance.ObjectMeta.Labels,
 				},
 				Spec: datasetInstance.Spec,
 			}
