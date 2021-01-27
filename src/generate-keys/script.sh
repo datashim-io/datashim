@@ -29,8 +29,32 @@ openssl req -nodes -new -x509 -keyout /tmp/dlf-keys/ca.key -out /tmp/dlf-keys/ca
 # Generate the private key for the webhook server
 openssl genrsa -out /tmp/dlf-keys/webhook-server-tls.key 2048
 # Generate a Certificate Signing Request (CSR) for the private key, and sign it with the private key of the CA.
-openssl req -new -key /tmp/dlf-keys/webhook-server-tls.key -subj "/CN=webhook-server.$DATASET_OPERATOR_NAMESPACE.svc" \
-    | openssl x509 -req -CA /tmp/dlf-keys/ca.crt -CAkey /tmp/dlf-keys/ca.key -CAcreateserial -out /tmp/dlf-keys/webhook-server-tls.crt
+#openssl req -new -key /tmp/dlf-keys/webhook-server-tls.key -subj "/CN=webhook-server.$DATASET_OPERATOR_NAMESPACE.svc" \
+#    | openssl x509 -req -CA /tmp/dlf-keys/ca.crt -CAkey /tmp/dlf-keys/ca.key -CAcreateserial -out /tmp/dlf-keys/webhook-server-tls.crt
+
+openssl genrsa -out /tmp/dlf-keys/webhook-server-tls.key 2048
+cat >/tmp/dlf-keys/csr.conf <<EOF
+[req]
+default_bits = 2048
+prompt = no
+default_md = sha256
+req_extensions = req_ext
+distinguished_name = dn
+[dn]
+CN = webhook-server.$DATASET_OPERATOR_NAMESPACE.svc
+[req_ext]
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = webhook-server.$DATASET_OPERATOR_NAMESPACE.svc
+[v3_ext]
+authorityKeyIdentifier=keyid,issuer:always
+basicConstraints=CA:FALSE
+keyUsage=keyEncipherment,dataEncipherment
+extendedKeyUsage=serverAuth,clientAuth
+subjectAltName=@alt_names
+EOF
+openssl req -new -key /tmp/dlf-keys/webhook-server-tls.key -config /tmp/dlf-keys/csr.conf | openssl x509 -req -CA /tmp/dlf-keys/ca.crt -CAkey /tmp/dlf-keys/ca.key -set_serial 01 -days 3650 -extensions v3_ext -extfile /tmp/dlf-keys/csr.conf -out /tmp/dlf-keys/webhook-server-tls.crt
+rm /tmp/dlf-keys/csr.conf
 
 export CA_PEM_B64="$(openssl base64 -A < "/tmp/dlf-keys/ca.crt")"
 
