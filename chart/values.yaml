@@ -44,4 +44,4 @@ dataset-operator-chart:
     tag: "latest"
   datasetoperator:
     image: "dataset-operator"
-    tag: "latest"
+    tag: "label-edit"
