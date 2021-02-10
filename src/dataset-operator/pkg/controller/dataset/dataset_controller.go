@@ -74,16 +74,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// TODO(user): Modify this to be the types you create that are owned by the primary resource
-	// Watch for changes to secondary resource Pods and requeue the owner Dataset
-	err = c.Watch(&source.Kind{Type: &comv1alpha1.DatasetInternal{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &comv1alpha1.Dataset{},
-	})
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -219,7 +209,7 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      datasetInstance.ObjectMeta.Name,
 					Namespace: datasetInstance.ObjectMeta.Namespace,
-					Labels: datasetInstance.ObjectMeta.Labels,
+					Labels:    datasetInstance.ObjectMeta.Labels,
 				},
 				Spec: datasetInstance.Spec,
 			}
@@ -339,10 +329,55 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 	}
 
+	datasetInternalInstance := &comv1alpha1.DatasetInternal{}
+	err = r.client.Get(context.TODO(), request.NamespacedName, datasetInternalInstance)
+	if err == nil {
+		reqLogger.Info("Dataset Internal Instance exists, check if different EDITABLE labels and update")
+		errForDatasetInternalUpdate := checkIfEditableLabelsChangedAndUpdate(r.client, reqLogger, datasetInstance, datasetInternalInstance)
+		if errForDatasetInternalUpdate != nil {
+			return reconcile.Result{}, errForDatasetInternalUpdate
+		}
+	}
 	// everything OK don't requeue
 	// TODO maybe requeue with some delay if we
 	// need to monitor statuses
 	return reconcile.Result{}, nil
+}
+
+func checkIfEditableLabelsChangedAndUpdate(c client.Client, reqLogger logr.Logger, dataset *comv1alpha1.Dataset, datasetInternal *comv1alpha1.DatasetInternal) error {
+	editableLabels := []string{"remove-on-delete"}
+	datasetLabels := dataset.ObjectMeta.Labels
+	datasetInternalLabels := datasetInternal.ObjectMeta.Labels
+	if datasetInternalLabels == nil {
+		datasetInternalLabels = map[string]string{}
+	}
+	shouldUpdateOrDelete := false
+	for _, label := range editableLabels {
+		if _, labelExistsInDataset := datasetLabels[label]; labelExistsInDataset {
+			if _, labelExistsInDatasetInternal := datasetInternalLabels[label]; labelExistsInDatasetInternal {
+				reqLogger.Info("Interested label " + label + " changed")
+				shouldUpdateOrDelete = true
+				datasetInternalLabels[label] = datasetLabels[label]
+			} else {
+				reqLogger.Info("Interested label " + label + " added")
+				shouldUpdateOrDelete = true
+				datasetInternalLabels[label] = datasetLabels[label]
+			}
+		}
+		if _, labelExistsInDatasetInternal := datasetInternalLabels[label]; labelExistsInDatasetInternal {
+			if _, labelExistsInDataset := datasetLabels[label]; !labelExistsInDataset {
+				reqLogger.Info("Interested label " + label + " deleted")
+				shouldUpdateOrDelete = true
+				delete(datasetInternalLabels, label)
+			}
+		}
+	}
+	if shouldUpdateOrDelete {
+		datasetInternal.ObjectMeta.Labels = datasetInternalLabels
+		err := c.Update(context.TODO(), datasetInternal)
+		return err
+	}
+	return nil
 }
 
 // initializeDataset initializing the Status of Dataset and

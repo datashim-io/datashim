@@ -2,6 +2,7 @@ package datasetinternal
 
 import (
 	"context"
+	b64 "encoding/base64"
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
 	"strconv"
@@ -68,32 +69,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// TODO(user): Modify this to be the types you create that are owned by the primary resource
-	// Watch for changes to secondary resource Pods and requeue the owner Dataset
-	err = c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &comv1alpha1.DatasetInternal{},
-	})
-	if err != nil {
-		return err
-	}
-
-	err = c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &comv1alpha1.DatasetInternal{},
-	})
-	if err != nil {
-		return err
-	}
-
-	err = c.Watch(&source.Kind{Type: &corev1.PersistentVolumeClaim{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &comv1alpha1.DatasetInternal{},
-	})
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -117,7 +92,7 @@ type ReconcileDatasetInternal struct {
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileDatasetInternal) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling Dataset")
+	reqLogger.Info("Reconciling DatasetInternal")
 
 	result := reconcile.Result{}
 	var err error = nil
@@ -139,7 +114,7 @@ func (r *ReconcileDatasetInternal) Reconcile(request reconcile.Request) (reconci
 
 	if instance.Spec.Local != nil {
 		datasetType := instance.Spec.Local["type"]
-		if (datasetType == "COS") {
+		if datasetType == "COS" {
 			if !contains(instance.GetFinalizers(), datasetFinalizer) {
 				err := r.addFinalizer(reqLogger, instance)
 				return reconcile.Result{}, err
@@ -149,32 +124,32 @@ func (r *ReconcileDatasetInternal) Reconcile(request reconcile.Request) (reconci
 
 	isDatasetMarkedToBeDeleted := instance.GetDeletionTimestamp() != nil
 	if isDatasetMarkedToBeDeleted {
-		if contains(instance.GetFinalizers(),datasetFinalizer) {
+		if contains(instance.GetFinalizers(), datasetFinalizer) {
 			// Run finalization logic for memcachedFinalizer. If the
 			// finalization logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.
 			reqLogger.Info("Finalizer logic here!!")
 			foundPVC := &corev1.PersistentVolumeClaim{}
 			err := r.client.Get(context.TODO(), request.NamespacedName, foundPVC)
-			if err == nil  {
+			if err == nil {
 				reqLogger.Info("COS-related PVC still exists, deleting...")
 				r.client.Delete(context.TODO(), foundPVC)
-				return reconcile.Result{Requeue: true},nil
-			} else if !errors.IsNotFound(err){
+				return reconcile.Result{Requeue: true}, nil
+			} else if !errors.IsNotFound(err) {
 				reqLogger.Info("COS-related PVC error")
-				reqLogger.Error(err,"COS-related PVC unexpected error")
+				reqLogger.Error(err, "COS-related PVC unexpected error")
 				return reconcile.Result{}, err
 			}
 
 			found := &corev1.Secret{}
 			err = r.client.Get(context.TODO(), request.NamespacedName, found)
-			if err == nil  {
+			if err == nil {
 				reqLogger.Info("COS-related secret still exists, deleting...")
 				r.client.Delete(context.TODO(), found)
-				return reconcile.Result{Requeue: true},nil
-			} else if !errors.IsNotFound(err){
+				return reconcile.Result{Requeue: true}, nil
+			} else if !errors.IsNotFound(err) {
 				reqLogger.Info("COS-related secret error")
-				reqLogger.Error(err,"COS-related secret unexpected error")
+				reqLogger.Error(err, "COS-related secret unexpected error")
 				return reconcile.Result{}, err
 			}
 			// Remove memcachedFinalizer. Once all finalizers have been
@@ -187,7 +162,6 @@ func (r *ReconcileDatasetInternal) Reconcile(request reconcile.Request) (reconci
 		}
 		return reconcile.Result{}, nil
 	}
-
 
 	reqLogger.Info("All good, proceed")
 
@@ -269,9 +243,9 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 	bucket := cr.Spec.Local["bucket"]
 	region := cr.Spec.Local["region"]
 
-	readonly := getBooleanStringForKeyInMap("false","readonly",cr.Spec.Local)
-	provision := getBooleanStringForKeyInMap("false","provision",cr.Spec.Local)
-	removeOnDelete := getBooleanStringForKeyInMap("false","remove-on-delete",cr.ObjectMeta.Labels)
+	readonly := getBooleanStringForKeyInMap(processLocalDatasetLogger, "false", "readonly", cr.Spec.Local)
+	provision := getBooleanStringForKeyInMap(processLocalDatasetLogger, "false", "provision", cr.Spec.Local)
+	removeOnDelete := getBooleanStringForKeyInMap(processLocalDatasetLogger, "false", "remove-on-delete", cr.ObjectMeta.Labels)
 
 	extract := "false"
 	if len(cr.Spec.Extract) > 0 {
@@ -279,15 +253,15 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 	}
 
 	stringData := map[string]string{
-		"accessKeyID":     accessKeyID,
-		"secretAccessKey": secretAccessKey,
-		"endpoint":        endpoint,
-		"bucket":          bucket,
-		"region":          region,
-		"readonly":        readonly,
-		"extract":         extract,
-		"provision":       provision,
-		"remove-on-delete":removeOnDelete,
+		"accessKeyID":      accessKeyID,
+		"secretAccessKey":  secretAccessKey,
+		"endpoint":         endpoint,
+		"bucket":           bucket,
+		"region":           region,
+		"readonly":         readonly,
+		"extract":          extract,
+		"provision":        provision,
+		"remove-on-delete": removeOnDelete,
 	}
 
 	labels := map[string]string{
@@ -341,13 +315,13 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 		if err != nil {
 			return reconcile.Result{}, err
 		}
-		// Secrets created successfully - don't requeue
+		// PVC created successfully - don't requeue
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	found := &corev1.Secret{}
-	err = rc.client.Get(context.TODO(), types.NamespacedName{Name: secretObj.Name, Namespace: secretObj.Namespace}, found)
+	foundSecret := &corev1.Secret{}
+	err = rc.client.Get(context.TODO(), types.NamespacedName{Name: secretObj.Name, Namespace: secretObj.Namespace}, foundSecret)
 	if err != nil && errors.IsNotFound(err) {
 		processLocalDatasetLogger.Info("Creating new secrets", "Secret.Namespace", secretObj.Namespace, "Secret.Name", secretObj.Name)
 		errCreation := rc.client.Create(context.TODO(), secretObj)
@@ -357,11 +331,41 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 		// Secrets created successfully - don't requeue
 	} else if err != nil {
 		return reconcile.Result{}, err
+	} else {
+		processLocalDatasetLogger.Info("Secrets exist already!")
+		errorSecretUpdate := checkIfEditableValueChangeAndUpdate(rc.client, processLocalDatasetLogger, foundSecret, secretObj)
+		if errorSecretUpdate != nil {
+			return reconcile.Result{}, errorSecretUpdate
+		}
 	}
 
 	processLocalDatasetLogger.Info("All good and we shouldnt reconcile!")
 
 	return reconcile.Result{}, nil
+}
+
+func checkIfEditableValueChangeAndUpdate(c client.Client, logger logr.Logger, existingSecret *corev1.Secret, updatedSecret *corev1.Secret) error {
+	editableLabels := []string{"remove-on-delete"}
+	existingSecretData := existingSecret.Data
+	updatedSecretData := updatedSecret.StringData
+	shouldUpdate := false
+	for _, label := range editableLabels {
+		valueOfExistingByteArray, _ := b64.StdEncoding.DecodeString(b64.StdEncoding.EncodeToString(existingSecretData[label]))
+		valueOfExisting := string(valueOfExistingByteArray)
+		if valueOfExisting != updatedSecretData[label] {
+			logger.Info("Value " + label + " updated")
+			shouldUpdate = true
+			if existingSecret.StringData == nil {
+				existingSecret.StringData = map[string]string{}
+			}
+			existingSecret.StringData[label] = updatedSecretData[label]
+		}
+	}
+	if shouldUpdate {
+		err := c.Update(context.TODO(), existingSecret)
+		return err
+	}
+	return nil
 }
 
 func processLocalDatasetNFS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatasetInternal) (reconcile.Result, error) {
@@ -370,7 +374,7 @@ func processLocalDatasetNFS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 
 	foundPVC := &corev1.PersistentVolumeClaim{}
 	err := rc.client.Get(context.TODO(), types.NamespacedName{Name: cr.ObjectMeta.Name, Namespace: cr.ObjectMeta.Namespace}, foundPVC)
-	if(err == nil){
+	if err == nil {
 		processLocalDatasetLogger.Info("NFS Dataset has been provisioned, skipping...")
 		return reconcile.Result{}, nil
 	}
@@ -391,10 +395,10 @@ func processLocalDatasetNFS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 
 	storageClassName := "csi-nfs"
 	csiDriverName := "csi-nfsplugin"
-	csiVolumeHandle := cr.ObjectMeta.Name+"-"+uuidForPVCString[:6]
+	csiVolumeHandle := cr.ObjectMeta.Name + "-" + uuidForPVCString[:6]
 	csiVolumeAttributes := map[string]string{
-		"server": server,
-		"share":  share,
+		"server":       server,
+		"share":        share,
 		"createDirPVC": createDirPVC,
 	}
 	pvSource := &corev1.CSIPersistentVolumeSource{
@@ -880,12 +884,14 @@ func createPVCforObjectStorage(cr *comv1alpha1.DatasetInternal, rc *ReconcileDat
 
 }
 
-func getBooleanStringForKeyInMap(defaultValue string, key string,mapString map[string]string) string {
+func getBooleanStringForKeyInMap(reqLogger logr.Logger, defaultValue string, key string, mapString map[string]string) string {
 	toret := defaultValue
-	if provisionValueString, ok := mapString[key]; ok {
-		provisionBool, err := strconv.ParseBool(provisionValueString)
+	if valueString, ok := mapString[key]; ok {
+		valueBool, err := strconv.ParseBool(valueString)
 		if err == nil {
-			toret = strconv.FormatBool(provisionBool)
+			toret = strconv.FormatBool(valueBool)
+		} else {
+			reqLogger.Info("Value set to be " + valueString + " rejected since it has to be true/false, using default " + defaultValue)
 		}
 	}
 	return toret
