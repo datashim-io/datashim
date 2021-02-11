@@ -33,7 +33,7 @@ spec:
             storage: 4Gi
   cephVersion:
     #image: ceph/ceph:v15.2
-    image: quay.io/ibm-dlf/ceph-daemon:pullrequest-amd64
+    image: quay.io/ibm-dlf/ceph-daemon:g3b029ab85d-amd64
     allowUnsupported: true
   skipUpgradeChecks: false
   continueUpgradeAfterChecksEvenIfNotHealthy: false

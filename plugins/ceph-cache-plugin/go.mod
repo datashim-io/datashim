@@ -3,14 +3,14 @@ module ceph-cache-plugin
 go 1.13
 
 require (
-	github.com/IBM/dataset-lifecycle-framework/src/dataset-operator v0.0.0-20200608144651-28bcf38edd7e
+	github.com/IBM/dataset-lifecycle-framework/src/dataset-operator v0.0.0-20210211155337-73ae2088ed27
 	github.com/google/go-cmp v0.4.0 // indirect
 	github.com/operator-framework/operator-sdk v0.16.0
 	github.com/rook/rook v1.3.3
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975 // indirect
 	k8s.io/api v0.17.2
-	k8s.io/apimachinery v0.17.2
+	k8s.io/apimachinery v0.17.3
 	k8s.io/client-go v12.0.0+incompatible
 	sigs.k8s.io/controller-runtime v0.5.1
 )
