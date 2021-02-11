@@ -1,0 +1,154 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: csi-lvm-reviver
+  namespace: csi-lvm
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: csi-lvm-reviver-psp
+  namespace: csi-lvm
+spec:
+  allowPrivilegeEscalation: true
+  privileged: true
+  fsGroup:
+    rule: RunAsAny
+  runAsUser:
+    rule: RunAsAny
+  seLinux:
+    rule: RunAsAny
+  supplementalGroups:
+    rule: RunAsAny
+  volumes:
+  - '*'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: csi-lvm-reviver-psp
+  namespace: csi-lvm
+rules:
+- apiGroups:
+  - extensions
+  resources:
+  - podsecuritypolicies
+  resourceNames:
+  - csi-lvm-reviver-psp
+  verbs:
+  - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: csi-lvm-reviver
+  namespace: csi-lvm
+rules:
+- apiGroups: [""]
+  resources: ["persistentvolumes"]
+  verbs: ["*"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: csi-lvm-reviver-psp
+  namespace: csi-lvm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: csi-lvm-reviver-psp
+subjects:
+- apiGroup: ""
+  kind: ServiceAccount
+  name: csi-lvm-reviver
+  namespace: csi-lvm
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: csi-lvm-reviver
+  namespace: csi-lvm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: csi-lvm-reviver
+subjects:
+- kind: ServiceAccount
+  name: csi-lvm-reviver
+  namespace: csi-lvm
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: csi-lvm-reviver
+  namespace: csi-lvm
+spec:
+  selector:
+    matchLabels:
+      app: csi-lvm-reviver
+  template:
+    metadata:
+      labels:
+        app: csi-lvm-reviver
+    spec:
+      nodeSelector:
+        use-csi-lvm: "true"
+      serviceAccountName: csi-lvm-reviver
+      containers:
+      - name: csi-lvm-reviver
+        image: metalstack/csi-lvm-provisioner:v0.6.2
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          privileged: true
+        env:
+          - name: CSI_LVM_MOUNTPOINT
+            value: "/tmp/csi-lvm"
+        command:
+        - /csi-lvm-provisioner
+        args:
+        - revivelvs
+        volumeMounts:
+          - mountPath: /tmp/csi-lvm
+            name: data
+            mountPropagation: Bidirectional
+          - mountPath: /dev
+            name: devices
+          - mountPath: /lib/modules
+            name: modules
+          - mountPath: /etc/lvm/backup
+            name: lvmbackup
+            mountPropagation: Bidirectional
+          - mountPath: /etc/lvm/cache
+            name: lvmcache
+            mountPropagation: Bidirectional
+          - mountPath: /run/lock/lvm
+            name: lvmlock
+            mountPropagation: Bidirectional
+      volumes:
+        - hostPath:
+            path: /tmp/csi-lvm
+            type: DirectoryOrCreate
+          name: data
+        - hostPath:
+            path: /dev
+            type: DirectoryOrCreate
+          name: devices
+        - hostPath:
+            path: /lib/modules
+            type: DirectoryOrCreate
+          name: modules
+        - hostPath:
+            path: /etc/lvm/backup
+            type: DirectoryOrCreate
+          name: lvmbackup
+        - hostPath:
+            path: /etc/lvm/cache
+            type: DirectoryOrCreate
+          name: lvmcache
+        - hostPath:
+            path: /run/lock/lvm
+            type: DirectoryOrCreate
+          name: lvmlock

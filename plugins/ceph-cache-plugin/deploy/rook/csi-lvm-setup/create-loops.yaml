@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: create-loops
+  namespace: csi-lvm
+  labels:
+    app: create-loops
+spec:
+  selector:
+    matchLabels:
+      name: create-loops
+  template:
+    metadata:
+      labels:
+        name: create-loops
+    spec:
+      nodeSelector:
+        use-csi-lvm: "true"
+      containers:
+        - name: create-loops
+          command: ["/opt/entry.sh"]
+          image: quay.io/ibm-dlf/create-loops
+          env:
+            - name: GIGA_SPACE
+              value: "30"
+          volumeMounts:
+            - mountPath: /dev
+              name: dev
+          securityContext:
+            privileged: true
+          imagePullPolicy: Always
+      terminationGracePeriodSeconds: 100
+      volumes:
+        - name: dev
+          hostPath:
+            path: /dev
