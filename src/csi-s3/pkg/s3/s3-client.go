@@ -49,6 +49,8 @@ func newS3ClientFromSecrets(secrets map[string]string) (*s3Client, error) {
 	readonly, _ = strconv.ParseBool(secrets["readonly"])
 	provision := false
 	provision, _ = strconv.ParseBool(secrets["provision"])
+	removeOnDelete := false
+	removeOnDelete, _ = strconv.ParseBool(secrets["remove-on-delete"])
 	return newS3Client(&Config{
 		AccessKeyID:     secrets["accessKeyID"],
 		SecretAccessKey: secrets["secretAccessKey"],
@@ -57,6 +59,7 @@ func newS3ClientFromSecrets(secrets map[string]string) (*s3Client, error) {
 		ExistingBucket:  secrets["bucket"],
 		Readonly:		 readonly,
 		Provision:       provision,
+		RemoveOnDelete:  removeOnDelete,
 		// Mounter is set in the volume preferences, not secrets
 		Mounter: "",
 	})

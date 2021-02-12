@@ -1,0 +1,87 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: csi-lvm
+provisioner: metal-stack.io/csi-lvm
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Delete
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: csi-lvm-controller
+  namespace: csi-lvm
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: csi-lvm-controller
+rules:
+- apiGroups: [""]
+  resources: ["nodes", "persistentvolumeclaims"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["endpoints", "persistentvolumes", "pods"]
+  verbs: ["*"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["storageclasses"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: csi-lvm-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: csi-lvm-controller
+subjects:
+- kind: ServiceAccount
+  name: csi-lvm-controller
+  namespace: csi-lvm
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: csi-lvm-controller
+  namespace: csi-lvm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csi-lvm-controller
+  template:
+    metadata:
+      labels:
+        app: csi-lvm-controller
+    spec:
+      nodeSelector:
+        use-csi-lvm: "true"
+      serviceAccountName: csi-lvm-controller
+      containers:
+      - name: csi-lvm-controller
+        image: metalstack/csi-lvm-controller:v0.6.2
+        imagePullPolicy: IfNotPresent
+        command:
+        - /csi-lvm-controller
+        args:
+        - start
+        env:
+        - name: CSI_LVM_PROVISIONER_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: CSI_LVM_PULL_POLICY
+          value: "IfNotPresent"
+        - name: CSI_LVM_PROVISIONER_IMAGE
+          value: "metalstack/csi-lvm-provisioner:v0.6.2"
+        - name: CSI_LVM_DEVICE_PATTERN
+          # IMPORTANT: you cannot specify a wildcard (*) at any position in the devices grok.
+          # value: "/dev/nvme[0-9]n[0-9]"
+          # value: "/dev/sd[abcd]"
+          value: "/dev/loop111"
+        - name: CSI_LVM_DEFAULT_LVM_TYPE
+          value: "linear"

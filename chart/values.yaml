@@ -3,6 +3,7 @@ global:
   baseRepo: "quay.io/ibm-dlf"
   arch: "amd64"
   type: "k8s"
+  namespaceYaml: false
 
   sidecars:
     kubeletPath: "/var/lib/kubelet"
@@ -43,4 +44,4 @@ dataset-operator-chart:
     tag: "latest"
   datasetoperator:
     image: "dataset-operator"
-    tag: "latest"
+    tag: "label-edit"

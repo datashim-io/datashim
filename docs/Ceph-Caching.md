@@ -1,26 +1,25 @@
-**The instructions currently work only for the branch https://github.com/IBM/dataset-lifecycle-framework/tree/fixed-caching**
-
-# Minikube installation
-
-First we need to have a working cluster.
-
-`minikube start --memory='10G' --cpus=8 --disk-size='15g' --driver=docker`
-
 # Rook/Ceph Installation
+## Method 1 (Recommended)
 
-We need to have ceph installed. Inside `plugins/ceph-cache-plugin/deploy/rook` directory execute:
+Inside `plugins/ceph-cache-plugin/deploy/rook` directory execute:
 ``` bash
 kubectl create -f common.yaml
-```
-Inspect the file `keys-installation.sh` and make sure you replace YOUR_REGISTRY,YOUR_EMAIL,YOUR_PASSWORD with the correct values for your docker registry and execute:
-``` bash
-./keys-installation.sh
-```
-Inspect the file operator.yaml and replace the value `YOUR_REGISTRY` and execute:
-``` bash
 kubectl create -f operator.yaml
 ```
-Inspect the file cluster.yaml and replace the value `YOUR_REGISTRY` and execute:
+Inspect the file cluster.yaml and setup according to the nodes and the dedicated ceph-wise disk devices, the value of `storage.nodes` e.g.
+```yaml
+storage:
+    useAllNodes: false
+    useAllDevices: false
+    nodes:
+      - name: "minikube"
+        devices: 
+          - name: "sdb"
+            config:
+              storeType: bluestore
+              osdsPerDevice: "1"
+```
+Afterward, execute:
 ``` bash
 kubectl create -f cluster.yaml
 ```
@@ -36,6 +35,41 @@ You need also to delete the paths in defined in `dataDirHostPath` and directorie
 
 Now we can proceed with installing DLF.
 
+## Method 2 (Testing)
+
+If you are after maximum performance we strongly advice to set up your ceph cluster according to the method above. However, for testing purposes and/or lacking of disk devices we describe a method to test this inside minikube and provide a script `plugins/ceph-cache-plugin/deploy/rook/setup_ceph_cluster.sh` that installs rook with csi-lvm storage class. 
+
+
+### Minikube installation
+
+First we need to have a working cluster.
+
+`minikube start --memory='6G' --cpus=4 --disk-size='40g' --driver=virtualbox -p rooktest`
+
+**NOTE:** run ```./minikube/fix_minikube_losetup.py``` to bypass the [current issue](https://github.com/kubernetes/minikube/issues/8284) of minikube with loset.
+
+**NOTE2:** if you change the disk-size of the minikube command make sure to tune accordingly the following parameters
+
+
+### CSI-LVM setup
+
+Before invoking the script you should tune according to your needs the following attributes
+
+| Attribute | File | Description |
+|---|---|---|
+GIGA_SPACE | `plugins/ceph-cache-plugin/deploy/rook/csi-lvm-setup/create-loops.yaml` | Size of the loop device that csi-lvm will create on each node |
+`spec.mon.volumeClaimTemplate.spec.resources.requests.storage` | `plugins/ceph-cache-plugin/deploy/rook/cluster-on-pvc.yaml` | Storage Size of mon ceph service |Size of the loop device that csi-lvm will create on each node |
+`spec.storage.storageClassDeviceSets.volumeClaimTemplates.spec.resources.requests.storage` | `plugins/ceph-cache-plugin/deploy/rook/cluster-on-pvc.yaml` | Storage size of CEPH osds |
+`spec.storage.storageClassDeviceSets.count` | `plugins/ceph-cache-plugin/deploy/rook/cluster-on-pvc.yaml` | Total number of CEPH osds |
+
+The command line arguments of the script are the names of the nodes that the csi-lvm should create loop devices on and the corresponding CEPH services will run on, e.g.
+
+```bash
+cd plugins/ceph-cache-plugin/deploy/rook && \
+./setup_ceph_cluster.sh nodename1 ...
+```
+
+Keep in mind that the script will uninstall any previous installations of csi-lvm and rook-ceph which made through the script. If no command line arguments are passed to the script this will result in uninstalling everything.
 # DLF Installation
 
 Go into the root of this directory and execute:

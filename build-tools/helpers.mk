@@ -11,7 +11,7 @@ NODE_DRIVER_REGISTRAR_IMAGE := $(DOCKER_REGISTRY)/$(BASE_NODE_DRIVER_REGISTRAR_I
 NODE_DRIVER_REGISTRAR_IMAGE := $(NODE_DRIVER_REGISTRAR_IMAGE):$(NODE_DRIVER_REGISTRAR_TAG)
 
 DATASET_OPERATOR_IMAGE := dataset-operator
-DATASET_OPERATOR_TAG := latest
+DATASET_OPERATOR_TAG := label-edit
 DATASET_OPERATOR_IMAGE := $(DOCKER_REGISTRY)/$(DATASET_OPERATOR_IMAGE)
 DATASET_OPERATOR_IMAGE := $(DATASET_OPERATOR_IMAGE):$(DATASET_OPERATOR_TAG)
 
@@ -43,12 +43,14 @@ define install_sidecar
 	cd ./_tmp/$(3) ;\
 	git checkout $(2)
 	cp ./Dockerfile ./_tmp/$(3)/Dockerfile-$(3).installer
+	if [ -f go.mod ] ;\
+	then \
 	printf "\nRUN mkdir /tmp-code\
 	\nCOPY go.mod /tmp-code/go.mod\
 	\nCOPY go.sum /tmp-code/go.sum\
-	\nRUN cd /tmp-code && go mod download\
-	\nCOPY . /$(3)\
-	\nRUN cd /$(3) && make build" | tee -a ./_tmp/$(3)/Dockerfile-$(3).installer ;\
+	\nRUN cd /tmp-code && go mod download" | tee -a ./_tmp/$(3)/Dockerfile-$(3).installer ;\
+	fi
+	printf "\nCOPY . /$(3) \nRUN cd /$(3) && make build" | tee -a ./_tmp/$(3)/Dockerfile-$(3).installer ;\
 	docker build --build-arg=ARCH=$(ARCH) -t $(3)-installer -f ./_tmp/$(3)/Dockerfile-$(3).installer ./_tmp/$(3) ;\
 	mkdir -p ./_tmp/$(3)/bin ;\
 	docker run --rm -v $$(pwd)/_tmp/$(3)/bin:/tmp-bin $(3)-installer sh -c "cp -r /$(3)/bin/* /tmp-bin" ;\
