@@ -1,0 +1,38 @@
+kind: SecurityContextConstraints
+apiVersion: security.openshift.io/v1
+metadata:
+  name: csi-lvm
+allowPrivilegedContainer: true
+allowHostNetwork: true
+allowHostDirVolumePlugin: true
+priority: 0
+allowedCapabilities: []
+allowHostPorts: true
+allowHostPID: true # remove this once we drop support for Nautilus
+allowHostIPC: true
+readOnlyRootFilesystem: false
+requiredDropCapabilities: []
+defaultAddCapabilities: []
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: MustRunAs
+fsGroup:
+  type: MustRunAs
+supplementalGroups:
+  type: RunAsAny
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - flexVolume
+  - hostPath
+  - persistentVolumeClaim
+  - projected
+  - secret
+users:
+  # A user needs to be added for each rook service account.
+  # This assumes running in the default sample "rook-ceph" namespace.
+  # If other namespaces or service accounts are configured, they need to be updated here.
+  - system:serviceaccount:csi-lvm:csi-lvm-controller
+  - system:serviceaccount:csi-lvm:default
