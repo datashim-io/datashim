@@ -57,7 +57,7 @@ remove_csi_lvm () {
   # remove csi lvm yaml and namespace
   kubectl delete -f ./csi-lvm-setup/reviver.yaml > /dev/null
   kubectl delete -f ./csi-lvm-setup/controller.yaml > /dev/null
-  kubectl delete -f ./csi-lvm-setup/create-loops.yaml > /dev/null
+#  kubectl delete -f ./csi-lvm-setup/create-loops.yaml > /dev/null
   kubectl delete namespace/csi-lvm > /dev/null
 
   # wait for all the pods of csi-lvm to terminate
@@ -108,7 +108,7 @@ install_csi_lvm_rook () {
 
   # install csi-lvm yamls
   kubectl create namespace csi-lvm --dry-run=client -o yaml | kubectl apply -f -
-  kubectl create -f ./csi-lvm-setup/create-loops.yaml > /dev/null
+#  kubectl create -f ./csi-lvm-setup/create-loops.yaml > /dev/null
   kubectl create -f  ./csi-lvm-setup/controller.yaml > /dev/null
   kubectl create -f  ./csi-lvm-setup/reviver.yaml > /dev/null
 
@@ -122,7 +122,7 @@ install_csi_lvm_rook () {
 install_rook_cluster () {
   #install yamls
   kubectl create -f common.yaml > /dev/null
-  kubectl create -f operator.yaml > /dev/null
+  kubectl create -f operator-oc.yaml > /dev/null
   kubectl create -f cluster-on-pvc.yaml > /dev/null
 }
 

@@ -53,7 +53,7 @@ spec:
     storageClassDeviceSets:
       - name: set1
         # The number of OSDs to create from this device set
-        count: 2
+        count: 3
         # IMPORTANT: If volumes specified by the storageClassName are not portable across nodes
         # this needs to be set to false. For example, if using the local storage provisioner
         # this should be false.
@@ -68,59 +68,59 @@ spec:
         # across nodes as much as possible. Unfortunately the pod anti-affinity breaks down
         # as soon as you have more than one OSD per node. The topology spread constraints will
         # give us an even spread on K8s 1.18 or newer.
-        placement:
-          nodeAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-                - matchExpressions:
-                    - key: use-csi-lvm
-                      operator: In
-                      values:
-                        - "true"
-          topologySpreadConstraints:
-          - maxSkew: 1
-            topologyKey: kubernetes.io/hostname
-            whenUnsatisfiable: ScheduleAnyway
-            labelSelector:
-              matchExpressions:
-              - key: app
-                operator: In
-                values:
-                - rook-ceph-osd
-        preparePlacement:
-          nodeAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-                - matchExpressions:
-                    - key: use-csi-lvm
-                      operator: In
-                      values:
-                        - "true"
-          podAntiAffinity:
-            preferredDuringSchedulingIgnoredDuringExecution:
-              - weight: 100
-                podAffinityTerm:
-                  labelSelector:
-                    matchExpressions:
-                      - key: app
-                        operator: In
-                        values:
-                          - rook-ceph-osd
-                      - key: app
-                        operator: In
-                        values:
-                          - rook-ceph-osd-prepare
-                  topologyKey: kubernetes.io/hostname
-          topologySpreadConstraints:
-            - maxSkew: 1
-              topologyKey: topology.kubernetes.io/zone
-              whenUnsatisfiable: ScheduleAnyway
-              labelSelector:
-                matchExpressions:
-                  - key: app
-                    operator: In
-                    values:
-                      - rook-ceph-osd-prepare
+#        placement:
+#          nodeAffinity:
+#            requiredDuringSchedulingIgnoredDuringExecution:
+#              nodeSelectorTerms:
+#                - matchExpressions:
+#                    - key: use-csi-lvm
+#                      operator: In
+#                      values:
+#                        - "true"
+#          topologySpreadConstraints:
+#          - maxSkew: 1
+#            topologyKey: kubernetes.io/hostname
+#            whenUnsatisfiable: ScheduleAnyway
+#            labelSelector:
+#              matchExpressions:
+#              - key: app
+#                operator: In
+#                values:
+#                - rook-ceph-osd
+#        preparePlacement:
+#          nodeAffinity:
+#            requiredDuringSchedulingIgnoredDuringExecution:
+#              nodeSelectorTerms:
+#                - matchExpressions:
+#                    - key: use-csi-lvm
+#                      operator: In
+#                      values:
+#                        - "true"
+#          podAntiAffinity:
+#            preferredDuringSchedulingIgnoredDuringExecution:
+#              - weight: 100
+#                podAffinityTerm:
+#                  labelSelector:
+#                    matchExpressions:
+#                      - key: app
+#                        operator: In
+#                        values:
+#                          - rook-ceph-osd
+#                      - key: app
+#                        operator: In
+#                        values:
+#                          - rook-ceph-osd-prepare
+#                  topologyKey: kubernetes.io/hostname
+#          topologySpreadConstraints:
+#            - maxSkew: 1
+#              topologyKey: topology.kubernetes.io/zone
+#              whenUnsatisfiable: ScheduleAnyway
+#              labelSelector:
+#                matchExpressions:
+#                  - key: app
+#                    operator: In
+#                    values:
+#                      - rook-ceph-osd-prepare
         resources:
         # These are the OSD daemon limits. For OSD prepare limits, see the separate section below for "prepareosd" resources
         #   limits:
@@ -138,7 +138,7 @@ spec:
             spec:
               resources:
                 requests:
-                  storage: 10Gi
+                  storage: 40Gi
               # IMPORTANT: Change the storage class depending on your environment (e.g. local-storage, gp2)
               storageClassName: csi-lvm
               volumeMode: Block
