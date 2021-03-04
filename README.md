@@ -1,4 +1,4 @@
-# Dataset Lifecycle Framework
+# Datashim
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/IBM/dataset-lifecycle-framework)](https://goreportcard.com/report/github.com/IBM/dataset-lifecycle-framework)
 
