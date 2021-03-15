@@ -144,6 +144,11 @@ spec:
       #          args:
       #            - --csi-address=/csi/csi.sock
       #            - --health-port=9898
+      tolerations:
+      - key: "nvidia.com/gpu"
+        operator: "Equal"
+        value: "present"
+        effect: "NoSchedule"
       volumes:
         - hostPath:
             path: {{ $csiS3Properties.sidecars.kubeletPath }}/plugins/csi-s3
