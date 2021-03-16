@@ -4,7 +4,7 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"fmt"
-	comv1alpha1 "github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/apis/com/v1alpha1"
+	comv1alpha1 "github.com/datashim-io/datashim/src/dataset-operator/pkg/apis/com/v1alpha1"
 	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
