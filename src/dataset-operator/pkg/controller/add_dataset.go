@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/controller/dataset"
+	"github.com/datashim-io/datashim/src/dataset-operator/pkg/controller/dataset"
 )
 
 func init() {

@@ -1,4 +1,4 @@
-module github.com/IBM/dataset-lifecycle-framework/src/dataset-operator
+module github.com/datashim-io/datashim/src/dataset-operator
 
 require (
 	git.apache.org/thrift.git v0.13.0 // indirect
