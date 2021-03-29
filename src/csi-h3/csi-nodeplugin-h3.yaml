@@ -1,0 +1,81 @@
+# This YAML file contains driver-registrar & csi driver nodeplugin API objects
+# that are necessary to run CSI nodeplugin for H3
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: csi-nodeplugin-h3
+  namespace: csi-h3
+spec:
+  selector:
+    matchLabels:
+      app: csi-nodeplugin-h3
+  template:
+    metadata:
+      labels:
+        app: csi-nodeplugin-h3
+    spec:
+      serviceAccountName: csi-nodeplugin-h3
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: node-driver-registrar
+          image: quay.io/k8scsi/csi-node-driver-registrar:v1.1.0
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "rm -rf /registration/csi-h3 /registration/csi-h3-reg.sock"]
+          args:
+            - --v=5
+            - --csi-address=/plugin/csi.sock
+            - --kubelet-registration-path=/var/lib/kubelet/plugins/csi-h3/csi.sock
+          env:
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /plugin
+            - name: registration-dir
+              mountPath: /registration
+        - name: h3
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+          image: carvicsforth/csi-h3:v1.2.0
+          args:
+            - "--nodeid=$(NODE_ID)"
+            - "--endpoint=$(CSI_ENDPOINT)"
+          env:
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: CSI_ENDPOINT
+              value: unix://plugin/csi.sock
+          # imagePullPolicy: "Always"
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "mount -t fuse.h3fuse | while read -r mount; do umount $(echo $mount | awk '{print $3}') ; done"]
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /plugin
+            - name: pods-mount-dir
+              mountPath: /var/lib/kubelet/pods
+              mountPropagation: "Bidirectional"
+      volumes:
+        - name: plugin-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/csi-h3
+            type: DirectoryOrCreate
+        - name: pods-mount-dir
+          hostPath:
+            path: /var/lib/kubelet/pods
+            type: Directory
+        - hostPath:
+            path: /var/lib/kubelet/plugins_registry
+            type: DirectoryOrCreate
+          name: registration-dir

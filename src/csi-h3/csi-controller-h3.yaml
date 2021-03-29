@@ -1,0 +1,64 @@
+# This YAML file contains attacher & csi driver API objects that are necessary
+# to run external CSI attacher for H3
+
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: csi-controller-h3
+  namespace: csi-h3
+spec:
+  serviceName: "csi-controller-h3"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csi-controller-h3
+  template:
+    metadata:
+      labels:
+        app: csi-controller-h3
+    spec:
+      serviceAccountName: csi-controller-h3
+      containers:
+        - name: csi-attacher
+          image: quay.io/k8scsi/csi-attacher:v1.1.1
+          args:
+            - "--v=5"
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+          # imagePullPolicy: "Always"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+        - name: csi-cluster-driver-registrar
+          image: quay.io/k8scsi/csi-cluster-driver-registrar:v1.0.1
+          args:
+            - "--v=5"
+            - "--pod-info-mount-version=\"v1\""
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+        - name: h3
+          image: carvicsforth/csi-h3:v1.2.0
+          args :
+            - "--nodeid=$(NODE_ID)"
+            - "--endpoint=$(CSI_ENDPOINT)"
+          env:
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: CSI_ENDPOINT
+              value: unix://plugin/csi.sock
+          # imagePullPolicy: "Always"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /plugin
+      volumes:
+        - name: socket-dir
+          emptyDir:
