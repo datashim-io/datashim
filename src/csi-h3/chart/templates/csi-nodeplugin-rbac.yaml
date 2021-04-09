@@ -1,14 +1,19 @@
 # This YAML defines all API objects to create RBAC roles for CSI node plugin
+
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: csi-nodeplugin-h3
-  namespace: csi-h3
+  labels:
+  {{- include "common.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: csi-nodeplugin-h3
+  labels:
+  {{- include "common.labels" . | nindent 4 }}
 rules:
   - apiGroups: [""]
     resources: ["persistentvolumes"]
@@ -30,10 +35,13 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: csi-nodeplugin-h3
+  labels:
+  {{- include "common.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
 subjects:
   - kind: ServiceAccount
     name: csi-nodeplugin-h3
-    namespace: csi-h3
+    namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
   name: csi-nodeplugin-h3

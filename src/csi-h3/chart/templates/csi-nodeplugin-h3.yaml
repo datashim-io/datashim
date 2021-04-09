@@ -1,10 +1,14 @@
 # This YAML file contains driver-registrar & csi driver nodeplugin API objects
 # that are necessary to run CSI nodeplugin for H3
+
+{{- $csiH3Properties := merge .Values $.Values.global}}
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
   name: csi-nodeplugin-h3
-  namespace: csi-h3
+  labels:
+  {{- include "common.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
 spec:
   selector:
     matchLabels:
@@ -12,14 +16,21 @@ spec:
   template:
     metadata:
       labels:
+        {{- include "common.labels" . | nindent 8 }}
         app: csi-nodeplugin-h3
     spec:
+      {{- if or (.Values.dockerRegistrySecret) (.Values.global.dockerRegistrySecret) }}
+      imagePullSecrets:
+        - name: {{ .Values.dockerRegistrySecret | default .Values.global.dockerRegistrySecret }}
+      {{- end}}
       serviceAccountName: csi-nodeplugin-h3
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: node-driver-registrar
-          image: quay.io/k8scsi/csi-node-driver-registrar:v1.1.0
+          {{- with $csiH3Properties.sidecars}}
+          image: "{{ .baseRepo }}/{{ .images.nodeDriverRegistrar.image }}:{{ .images.nodeDriverRegistrar.tag }}"
+          {{- end}}
           lifecycle:
             preStop:
               exec:
@@ -27,7 +38,7 @@ spec:
           args:
             - --v=5
             - --csi-address=/plugin/csi.sock
-            - --kubelet-registration-path=/var/lib/kubelet/plugins/csi-h3/csi.sock
+            - --kubelet-registration-path={{ $csiH3Properties.sidecars.kubeletPath }}/plugins/csi-h3/csi.sock
           env:
             - name: KUBE_NODE_NAME
               valueFrom:
@@ -44,7 +55,7 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: carvicsforth/csi-h3:v1.2.0
+          image: "{{ $csiH3Properties.baseRepo }}/{{ $csiH3Properties.csih3.image }}:{{ $csiH3Properties.csih3.tag }}"
           args:
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
@@ -64,18 +75,18 @@ spec:
             - name: plugin-dir
               mountPath: /plugin
             - name: pods-mount-dir
-              mountPath: /var/lib/kubelet/pods
+              mountPath: {{ $csiH3Properties.sidecars.kubeletPath }}/pods
               mountPropagation: "Bidirectional"
       volumes:
         - name: plugin-dir
           hostPath:
-            path: /var/lib/kubelet/plugins/csi-h3
+            path: {{ $csiH3Properties.sidecars.kubeletPath }}/plugins/csi-h3
             type: DirectoryOrCreate
         - name: pods-mount-dir
           hostPath:
-            path: /var/lib/kubelet/pods
+            path: {{ $csiH3Properties.sidecars.kubeletPath }}/pods
             type: Directory
         - hostPath:
-            path: /var/lib/kubelet/plugins_registry
+            path: {{ $csiH3Properties.sidecars.kubeletPath }}/plugins_registry
             type: DirectoryOrCreate
           name: registration-dir

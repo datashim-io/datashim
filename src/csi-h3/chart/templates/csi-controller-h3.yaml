@@ -1,11 +1,14 @@
 # This YAML file contains attacher & csi driver API objects that are necessary
 # to run external CSI attacher for H3
 
+{{- $csiH3Properties := merge .Values $.Values.global}}
 kind: StatefulSet
 apiVersion: apps/v1
 metadata:
   name: csi-controller-h3
-  namespace: csi-h3
+  labels:
+  {{- include "common.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
 spec:
   serviceName: "csi-controller-h3"
   replicas: 1
@@ -15,12 +18,19 @@ spec:
   template:
     metadata:
       labels:
+        {{- include "common.labels" . | nindent 8 }}
         app: csi-controller-h3
     spec:
       serviceAccountName: csi-controller-h3
+      {{- if or (.Values.dockerRegistrySecret) (.Values.global.dockerRegistrySecret) }}
+      imagePullSecrets:
+        - name: {{ .Values.dockerRegistrySecret | default .Values.global.dockerRegistrySecret }}
+      {{- end}}
       containers:
         - name: csi-attacher
-          image: quay.io/k8scsi/csi-attacher:v1.1.1
+          {{- with $csiH3Properties.sidecars}}
+          image: "{{ .baseRepo }}/{{ .images.externalAttacher.image }}:{{ .images.externalAttacher.tag }}"
+          {{- end}}
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"
@@ -32,7 +42,9 @@ spec:
             - name: socket-dir
               mountPath: /csi
         - name: csi-cluster-driver-registrar
-          image: quay.io/k8scsi/csi-cluster-driver-registrar:v1.0.1
+          {{- with $csiH3Properties.sidecars}}
+          image: "{{ .baseRepo }}/{{ .images.clusterDriverRegistrar.image }}:{{ .images.clusterDriverRegistrar.tag }}"
+          {{- end}}
           args:
             - "--v=5"
             - "--pod-info-mount-version=\"v1\""
@@ -44,7 +56,7 @@ spec:
             - name: socket-dir
               mountPath: /csi
         - name: h3
-          image: carvicsforth/csi-h3:v1.2.0
+          image: "{{ $csiH3Properties.baseRepo }}/{{ $csiH3Properties.csih3.image }}:{{ $csiH3Properties.csih3.tag }}"
           args :
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"

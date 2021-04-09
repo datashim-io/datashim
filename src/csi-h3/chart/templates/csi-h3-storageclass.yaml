@@ -1,0 +1,7 @@
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: h3
+  labels:
+  {{- include "common.labels" . | nindent 4 }}
+provisioner: kubernetes.io/no-provisioner
