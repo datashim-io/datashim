@@ -48,11 +48,11 @@ csi-h3-chart:
   sidecars: {} # in case you want to force override regardless of the csi-s3-chart/values.yaml
 
 dataset-operator-chart:
-# baseRepo: "anotherrepo"
+  baseRepo: "quay.io/datashim"
 # dockerRegistrySecret: "anothersecret"
   generatekeys:
     image: "generate-keys"
     tag: "latest"
   datasetoperator:
     image: "dataset-operator"
-    tag: "label-edit"
+    tag: "h3"
