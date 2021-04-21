@@ -1,6 +1,6 @@
-site_name: Dataset Lifecycle Framework
-repo_url: https://github.com/IBM/dataset-lifecycle-framework
-repo_name: IBM/dataset-lifecycle-framework
+site_name: Datashim
+repo_url: https://github.com/datashim-io/datashim
+repo_name: datashim-io/datashim
 theme:
   name: material
   features:
