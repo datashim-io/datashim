@@ -1,6 +1,6 @@
-# Dataset Lifecycle Framework
+# Datashim
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/IBM/dataset-lifecycle-framework)](https://goreportcard.com/report/github.com/IBM/dataset-lifecycle-framework)
+[![Go Report Card](https://goreportcard.com/badge/github.com/IBM/dataset-lifecycle-framework)](https://goreportcard.com/report/github.com/datashim-io/datashim)
 
 >Our Framework introduces the **Dataset** CRD which is a pointer to existing S3 and NFS data sources. It includes the
 >necessary logic to map these Datasets into Persistent Volume Claims and ConfigMaps which users can reference in their
