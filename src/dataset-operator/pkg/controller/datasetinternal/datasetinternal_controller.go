@@ -3,9 +3,10 @@ package datasetinternal
 import (
 	"context"
 	b64 "encoding/base64"
+	"strconv"
+
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
-	"strconv"
 
 	comv1alpha1 "github.com/datashim-io/datashim/src/dataset-operator/pkg/apis/com/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -42,6 +43,7 @@ var datasetLocalProcessTable = map[string]func(*comv1alpha1.DatasetInternal,
 	"COS":  processLocalDatasetCOS,
 	"NFS":  processLocalDatasetNFS,
 	"HOST": processLocalDatasetHOST,
+	"H3":   processLocalDatasetH3,
 }
 
 // Add creates a new Dataset Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -185,6 +187,152 @@ func (r *ReconcileDatasetInternal) Reconcile(request reconcile.Request) (reconci
 	}
 
 	return result, err
+}
+
+func processLocalDatasetH3(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatasetInternal) (reconcile.Result, error) {
+	processLocalDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processLocalDatasetH3")
+	processLocalDatasetLogger.Info("Dataset type H3")
+
+	// hostpathType := corev1.HostPathDirectory
+	permissions := corev1.ReadWriteMany
+	// path := ""
+	storageUri := ""
+	storageClassName := "h3"
+	/* the 'path' field is mandatory and must always contain a non empty string.
+	 * I am assuming the validity of its value is checked sometime later when
+	 * the PVC is bound to a pod.
+	 */
+	if storageUri, _ = cr.Spec.Local["storageUri"]; len(storageUri) == 0 {
+		err := errors.NewBadRequest("storageUri missing or not valid")
+		processLocalDatasetLogger.Error(err, "storageUri missing or not valid")
+		return reconcile.Result{}, err
+	}
+
+	/* We support the following permission schemes:
+	 * - ReadOnly
+	 * - ReadWrite
+	 * NOTE: As of today creating a read-only PV and PVC does not make it
+	 * read-only at POD runtime. AccessMode is only used at PVC-PV binding time
+	 * to make sure it is a valid binding but it is not transferred to the POD.
+	 * We'll have to handle this while mutating the PODs.
+	 */
+	if perm, exists := cr.Spec.Local["permissions"]; exists {
+		switch perm {
+		case "ReadOnly":
+			permissions = corev1.ReadOnlyMany
+		case "", "ReadWrite":
+			permissions = corev1.ReadWriteMany
+		default:
+			err := errors.NewBadRequest("permissions not supported")
+			processLocalDatasetLogger.Error(err, "permissions '%s' not supported", perm)
+			return reconcile.Result{}, err
+		}
+	}
+
+	// /* We support the following types:
+	//  * - Directory: path must exist at dataset creation time (Default value)
+	//  * - CreateNew: path is created if not existing
+	//  */
+	// if hostpath_type_string, exists := cr.Spec.Local["hostPathType"]; exists {
+	// 	switch hostpath_type_string {
+	// 	case "CreateNew":
+	// 		hostpathType = corev1.HostPathDirectoryOrCreate
+	// 	case "", "Directory":
+	// 		hostpathType = corev1.HostPathDirectory
+	// 	default:
+	// 		err := errors.NewBadRequest("H3 type not supported")
+	// 		processLocalDatasetLogger.Error(err, "H3 type %s not supported", hostpath_type_string)
+	// 		return reconcile.Result{}, err
+	// 	}
+	// }
+	labels := map[string]string{
+		"dataset": cr.Name,
+	}
+
+	uuidForPVC, _ := uuid.NewUUID()
+	uuidForPVCString := uuidForPVC.String()
+
+	csiDriverName := "csi-h3"
+	csiVolumeHandle := cr.ObjectMeta.Name + "-" + uuidForPVCString[:6]
+	csiVolumeAttributes := map[string]string{
+		"storageUri": cr.Spec.Local["storageUri"],
+		"bucket":     cr.Spec.Local["bucket"],
+	}
+	pvSource := &corev1.CSIPersistentVolumeSource{
+		Driver:           csiDriverName,
+		VolumeHandle:     csiVolumeHandle,
+		VolumeAttributes: csiVolumeAttributes,
+	}
+
+	newPV := &corev1.PersistentVolume{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name,
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.PersistentVolumeSpec{
+			StorageClassName: storageClassName,
+			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany},
+			Capacity: corev1.ResourceList{
+				corev1.ResourceStorage: resource.MustParse("1Pi"),
+			},
+			PersistentVolumeSource: corev1.PersistentVolumeSource{
+				CSI: pvSource,
+			},
+		},
+	}
+	// pv done
+
+	if err := controllerutil.SetControllerReference(cr, newPV, rc.scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	foundPV := &corev1.PersistentVolume{}
+	err := rc.client.Get(context.TODO(), types.NamespacedName{Name: newPV.Name, Namespace: newPV.Namespace}, foundPV)
+	if err != nil && errors.IsNotFound(err) {
+		processLocalDatasetLogger.Info("Creating new PV", "PV.Namespace", newPV.Namespace, "PV.Name", newPV.Name)
+		err = rc.client.Create(context.TODO(), newPV)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+	labelSelector := metav1.LabelSelector{MatchLabels: map[string]string{"name": cr.Name}}
+	newPVC := &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name,
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			AccessModes:      []corev1.PersistentVolumeAccessMode{permissions},
+			VolumeName:       cr.Name,
+			StorageClassName: &storageClassName,
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceStorage: resource.MustParse("1Pi"),
+				},
+			},
+			Selector: &labelSelector,
+		},
+	}
+
+	if err := controllerutil.SetControllerReference(cr, newPVC, rc.scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	foundPVC := &corev1.PersistentVolumeClaim{}
+	err = rc.client.Get(context.TODO(), types.NamespacedName{Name: newPVC.Name, Namespace: newPVC.Namespace}, foundPVC)
+	if err != nil && errors.IsNotFound(err) {
+		processLocalDatasetLogger.Info("Creating new pvc", "PVC.Namespace", newPVC.Namespace, "PVC.Name", newPVC.Name)
+		err = rc.client.Create(context.TODO(), newPVC)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+	return reconcile.Result{}, nil
+
 }
 
 func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatasetInternal) (reconcile.Result, error) {
