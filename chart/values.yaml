@@ -31,12 +31,13 @@ csi-nfs-chart:
   sidecars: {} # in case you want to force override regardless of the csi-nfs-chart/values.yaml
 
 csi-s3-chart:
+  baseRepo: "quay.io/datashim"
 # baseRepo: "anotherrepo"
 # dockerRegistrySecret: "anothersecret"
 # mounter: "goofys"
   csis3:
     image: "csi-s3"
-    tag: "latest"
+    tag: "debug"
   sidecars: {} # in case you want to force override regardless of the csi-s3-chart/values.yaml
 
 csi-h3-chart:

@@ -1087,7 +1087,7 @@ spec:
             - mountPath: /registration
               name: registration-dir
         - name: csi-s3
-          image: "quay.io/ibm-dlf/csi-s3:latest-amd64"
+          image: "quay.io/datashim/csi-s3:debug-amd64"
           imagePullPolicy: Always
           args:
             - "--v=5"

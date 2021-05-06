@@ -2,6 +2,7 @@ package s3
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"time"
 
@@ -55,10 +56,22 @@ func fuseMount(path string, command string, args []string) error {
 	cmd := exec.Command(command, args...)
 	glog.V(3).Infof("Mounting fuse with command: %s and args: %s", command, args)
 
-	out, err := cmd.CombinedOutput()
+	f, err := os.OpenFile("logs.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		return fmt.Errorf("Error fuseMount command: %s\nargs: %s\noutput: %s", command, args, out)
+		fmt.Printf("error opening file: %v", err)
 	}
+	defer f.Close()
+	// On this line you're going to redirect the output to a file
+	cmd.Stdout = f
+	cmd.Stderr = f
+	if err := cmd.Start(); err != nil {
+		fmt.Fprintln(os.Stderr, "Command failed.", err)
+		os.Exit(1)
+	}
+	//out, err := cmd.CombinedOutput()
+	//if err != nil {
+	//	return fmt.Errorf("Error fuseMount command: %s\nargs: %s\noutput: %s", command, args, out)
+	//}
 
 	return waitForMount(path, 10*time.Second)
 }
