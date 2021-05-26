@@ -38,7 +38,7 @@ test:
 	docker run --rm --privileged -v $(PWD):$(PROJECT_DIR) --device /dev/fuse $(TEST_IMAGE_TAG)
 container:
 #	docker build -t $(IMAGE_TAG) -f cmd/s3driver/Dockerfile .
-	docker build -t $(FULL_IMAGE_TAG) --build-arg VERSION=$(VERSION) --build-arg ARCH=$(ARCH) -f cmd/s3driver/Dockerfile.full .
+	docker build --network=host -t $(FULL_IMAGE_TAG) --build-arg VERSION=$(VERSION) --build-arg ARCH=$(ARCH) -f cmd/s3driver/Dockerfile.full .
 push: container
 	docker push $(IMAGE_TAG)
 	docker push $(FULL_IMAGE_TAG)

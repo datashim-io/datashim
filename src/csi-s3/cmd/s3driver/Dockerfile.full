@@ -49,7 +49,7 @@ WORKDIR /csi-s3
 RUN mkdir -p /_output
 RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o /_output/s3driver /csi-s3/cmd/s3driver
 
-FROM debian:stretch as s3backer
+FROM debian as s3backer
 ARG S3BACKER_VERSION=1.5.0
 
 RUN apt-get update && apt-get install -y \
@@ -76,7 +76,7 @@ RUN ./autogen.sh && \
   make && \
   make install
 
-FROM debian:stretch
+FROM debian
 LABEL maintainers="Cyrill Troxler <cyrilltroxler@gmail.com>"
 LABEL description="csi-s3 image"
 COPY --from=s3backer /usr/bin/s3backer /usr/bin/s3backer
@@ -84,7 +84,7 @@ COPY --from=s3backer /usr/bin/s3backer /usr/bin/s3backer
 # s3fs and some other dependencies
 RUN apt-get update -y && apt-get upgrade -y && apt-get install -y \
 libfuse2 gcc sqlite3 libsqlite3-dev \
-psmisc procps libcurl3 xfsprogs curl unzip \
+psmisc procps libcurl4 xfsprogs curl unzip \
 libfuse-dev fuse libssl-dev git autotools-dev automake libc6-dev build-essential libcurl4-openssl-dev libxml2-dev pkg-config && \
 git clone https://github.com/s3fs-fuse/s3fs-fuse.git && cd s3fs-fuse && \
 #git checkout v1.86 && \

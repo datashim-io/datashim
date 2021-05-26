@@ -1,6 +1,6 @@
 global:
   dockerRegistrySecret: "" # leave empty if public repo
-  baseRepo: "quay.io/ibm-dlf"
+  baseRepo: "quay.io/datashim"
   arch: "amd64"
   type: "k8s"
   namespaceYaml: false
@@ -55,4 +55,4 @@ dataset-operator-chart:
     tag: "latest"
   datasetoperator:
     image: "dataset-operator"
-    tag: "h3"
+    tag: "latest"

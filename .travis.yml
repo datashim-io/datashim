@@ -1,0 +1,31 @@
+services:
+  - docker
+env:
+  - DOCKER_REGISTRY=quay.io/datashim
+
+matrix:
+  include:
+    - stage: build_arm64
+      services:
+        - docker
+      os: linux
+      arch: arm64
+      # trigger build foo
+      install: echo "no install"
+      script: cd build-tools; ./build_components.sh; ./build_csi_plugins.sh; ./build_sidecars.sh;
+    - stage: build_amd64
+      services:
+        - docker
+      os: linux
+      arch: amd64
+      # trigger build foo
+      install: echo "no install"
+      script: cd build-tools; ./build_components.sh; ./build_csi_plugins.sh; ./build_sidecars.sh;
+    - stage: build_ppc64le
+      services:
+        - docker
+      os: linux
+      arch: ppc64le
+      # trigger build foo
+      install: echo "no install"
+      script: cd build-tools; ./build_components.sh; ./build_csi_plugins.sh; ./build_sidecars.sh;
