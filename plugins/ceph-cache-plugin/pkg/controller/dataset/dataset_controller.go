@@ -22,7 +22,7 @@ import (
 
 var log = logf.Log.WithName("controller_dataset")
 
-var reqLogger = log.WithValues("global","logger")
+var reqLogger = log.WithValues("global", "logger")
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -99,7 +99,7 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-            return reconcile.Result{}, nil
+			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
@@ -138,81 +138,80 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 	reqLogger.Info("Dataset internal not ready yet, we should provision")
 
 	clusterList := &cephv1.CephClusterList{}
-	err = populateListOfObjects(r.client,clusterList,[]client.ListOption{
-			client.InNamespace(os.Getenv("ROOK_NAMESPACE")),
+	err = populateListOfObjects(r.client, clusterList, []client.ListOption{
+		client.InNamespace(os.Getenv("ROOK_NAMESPACE")),
 	})
-	if(err!=nil){
-		errAdd := addErrorToDataset(r.client,"cannot lookup ceph clusters", datasetInstance)
-		if(errAdd != nil){
+	if err != nil {
+		errAdd := addErrorToDataset(r.client, "cannot lookup ceph clusters", datasetInstance)
+		if errAdd != nil {
 			return reconcile.Result{}, errAdd
 		}
 		return reconcile.Result{}, err
-	} else if(len(clusterList.Items)==0) {
-		errAdd := addErrorToDataset(r.client,"no ceph clusters available", datasetInstance)
-		if(errAdd != nil){
+	} else if len(clusterList.Items) == 0 {
+		errAdd := addErrorToDataset(r.client, "no ceph clusters available", datasetInstance)
+		if errAdd != nil {
 			return reconcile.Result{}, errAdd
 		}
 		return reconcile.Result{}, errors.NewBadRequest("no ceph clusters available")
 	}
 
-
 	configMapForRados := &corev1.ConfigMap{}
-	err = getExactlyOneObject(r.client,configMapForRados,"rook-ceph-rgw-"+request.Name+"-custom",os.Getenv("ROOK_NAMESPACE"))
-	if(errors.IsNotFound(err)){
+	err = getExactlyOneObject(r.client, configMapForRados, "rook-ceph-rgw-"+request.Name+"-custom", os.Getenv("ROOK_NAMESPACE"))
+	if errors.IsNotFound(err) {
 		reqLogger.Info("errors.IsNotFound(err) object store")
-		errCreation := createCustomConfigMapForRados(r.client,datasetInstance)
-		if(errCreation!=nil){
+		errCreation := createCustomConfigMapForRados(r.client, datasetInstance)
+		if errCreation != nil {
 			return reconcile.Result{}, errCreation
 		}
-		return reconcile.Result{Requeue: true},nil
-	} else if(err!=nil) {
+		return reconcile.Result{Requeue: true}, nil
+	} else if err != nil {
 		reqLogger.Info("Generic error for getting ceph object store, shouldn't happen")
 		return reconcile.Result{}, err
-	} else{
+	} else {
 		reqLogger.Info("Found one, but lets check if they belog to the same dataset")
-		sameObj := isSameCephObject(configMapForRados.Labels,datasetInstance)
-		if(sameObj==false){
+		sameObj := isSameCephObject(configMapForRados.Labels, datasetInstance)
+		if sameObj == false {
 			return reconcile.Result{}, errors.NewBadRequest("rgw exists, but belongs to different dataset")
 		}
 		reqLogger.Info("Found the correct rgw, all good")
 	}
 
 	cephObjectStore := &cephv1.CephObjectStore{}
-	err = getExactlyOneObject(r.client,cephObjectStore,request.Name,os.Getenv("ROOK_NAMESPACE"))
-	if(errors.IsNotFound(err)){
+	err = getExactlyOneObject(r.client, cephObjectStore, request.Name, os.Getenv("ROOK_NAMESPACE"))
+	if errors.IsNotFound(err) {
 		reqLogger.Info("errors.IsNotFound(err) object store")
-		errCreation := createCephObjectStore(r.client,datasetInstance)
-		if(errCreation!=nil){
+		errCreation := createCephObjectStore(r.client, datasetInstance)
+		if errCreation != nil {
 			return reconcile.Result{}, errCreation
 		}
-		return reconcile.Result{Requeue: true},nil
-	} else if(err!=nil) {
+		return reconcile.Result{Requeue: true}, nil
+	} else if err != nil {
 		reqLogger.Info("Generic error for getting ceph object store, shouldn't happen")
 		return reconcile.Result{}, err
-	} else{
+	} else {
 		reqLogger.Info("Found one, but lets check if they belog to the same dataset")
-		sameObj := isSameCephObject(cephObjectStore.Labels,datasetInstance)
-		if(sameObj==false){
+		sameObj := isSameCephObject(cephObjectStore.Labels, datasetInstance)
+		if sameObj == false {
 			return reconcile.Result{}, errors.NewBadRequest("rgw exists, but belongs to different dataset")
 		}
-		if(cephObjectStore.Status==nil){
+		if cephObjectStore.Status == nil {
 			reqLogger.Info("Rgw not ready, requeing")
 			return reconcile.Result{Requeue: true}, nil
 		}
-		if(cephObjectStore.Status!=nil && cephObjectStore.Status.Phase!="Connected"){
+		if cephObjectStore.Status != nil && cephObjectStore.Status.Phase != "Connected" {
 			reqLogger.Info("Rgw not ready, requeing")
 			return reconcile.Result{Requeue: true}, nil
 		}
 		rgwPods := &corev1.PodList{}
-		err = populateListOfObjects(r.client,rgwPods,[]client.ListOption{
+		err = populateListOfObjects(r.client, rgwPods, []client.ListOption{
 			client.InNamespace(os.Getenv("ROOK_NAMESPACE")),
-			client.MatchingLabels{"app":"rook-ceph-rgw","rgw": request.Name},
+			client.MatchingLabels{"app": "rook-ceph-rgw", "rgw": request.Name},
 		})
-		if(err!=nil){
+		if err != nil {
 			reqLogger.Info("Error getting list of pods for rgw")
 			return reconcile.Result{}, err
 		} else {
-			if(len(rgwPods.Items)==0){
+			if len(rgwPods.Items) == 0 {
 				reqLogger.Info("Rgw pod not ready, requeing")
 				return reconcile.Result{Requeue: true}, nil
 			}
@@ -221,21 +220,21 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 
 	cephObjectStoreUser := &cephv1.CephObjectStoreUser{}
-	err = getExactlyOneObject(r.client,cephObjectStoreUser,request.Name,os.Getenv("ROOK_NAMESPACE"))
-	if(errors.IsNotFound(err)){
+	err = getExactlyOneObject(r.client, cephObjectStoreUser, request.Name, os.Getenv("ROOK_NAMESPACE"))
+	if errors.IsNotFound(err) {
 		reqLogger.Info("errors.IsNotFound(err) object store")
-		errCreation := createCephObjectStoreUser(r.client,datasetInstance)
-		if(errCreation!=nil){
+		errCreation := createCephObjectStoreUser(r.client, datasetInstance)
+		if errCreation != nil {
 			return reconcile.Result{}, errCreation
 		}
-		return reconcile.Result{Requeue: true},nil
-	} else if(err!=nil) {
+		return reconcile.Result{Requeue: true}, nil
+	} else if err != nil {
 		reqLogger.Info("Generic error for getting ceph object storeUser, shouldn't happen")
 		return reconcile.Result{}, err
 	} else {
 		reqLogger.Info("Found one, but lets check if they belog to the same dataset")
-		sameObj := isSameCephObject(cephObjectStoreUser.Labels,datasetInstance)
-		if(sameObj==false){
+		sameObj := isSameCephObject(cephObjectStoreUser.Labels, datasetInstance)
+		if sameObj == false {
 			return reconcile.Result{}, errors.NewBadRequest("rgw exists, but belongs to different dataset")
 		}
 		reqLogger.Info("Found the correct rgw, all good")
@@ -243,12 +242,12 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 
 	associatedCephUserSecrets := &corev1.Secret{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{
-		Name: "rook-ceph-object-user-"+datasetInstance.ObjectMeta.Name+"-"+datasetInstance.ObjectMeta.Name,
+		Name:      "rook-ceph-object-user-" + datasetInstance.ObjectMeta.Name + "-" + datasetInstance.ObjectMeta.Name,
 		Namespace: os.Getenv("ROOK_NAMESPACE")},
 		associatedCephUserSecrets)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("ceph user secrets not created yet, requeing")
-		return reconcile.Result{Requeue: true},nil
+		return reconcile.Result{Requeue: true}, nil
 		// Secrets created successfully - don't requeue
 	} else if err != nil {
 		return reconcile.Result{}, err
@@ -263,18 +262,18 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 
 	associatedRgwService := &corev1.Service{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{
-		Name: "rook-ceph-rgw-"+datasetInstance.ObjectMeta.Name,
+		Name:      "rook-ceph-rgw-" + datasetInstance.ObjectMeta.Name,
 		Namespace: os.Getenv("ROOK_NAMESPACE")}, associatedRgwService)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("RGW service not found, requing")
-		return reconcile.Result{Requeue: true},nil
+		return reconcile.Result{Requeue: true}, nil
 		// Secrets created successfully - don't requeue
 	} else if err != nil {
 		return reconcile.Result{}, err
 	} else {
-		if(len(associatedRgwService.OwnerReferences)>0 && associatedRgwService.OwnerReferences[0].UID!=cephObjectStore.UID){
+		if len(associatedRgwService.OwnerReferences) > 0 && associatedRgwService.OwnerReferences[0].UID != cephObjectStore.UID {
 			reqLogger.Info("RgwService with different parent, requing")
-			return reconcile.Result{Requeue: true},nil
+			return reconcile.Result{Requeue: true}, nil
 		}
 	}
 
@@ -282,23 +281,28 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 	SecretKey := associatedCephUserSecrets.Data["SecretKey"]
 	InternalEndpoint := associatedRgwService.Spec.ClusterIP
 
+	internalDatasetLabels := make(map[string]string)
+	for key, value := range datasetInstance.ObjectMeta.Labels {
+		internalDatasetLabels[key] = value
+	}
+	internalDatasetLabels["dlf-plugin-type"] = "caching"
+	internalDatasetLabels["dlf-plugin-name"] = "ceph-cache-plugin"
+
 	internalDataset := &comv1alpha1.DatasetInternal{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:  datasetInstance.ObjectMeta.Name,
+			Name:      datasetInstance.ObjectMeta.Name,
 			Namespace: datasetInstance.ObjectMeta.Namespace,
-			Labels: map[string]string{
-				"dlf-plugin-type": "caching",
-				"dlf-plugin-name": "ceph-cache-plugin",
-			},
+			Labels:    internalDatasetLabels,
 		},
 		Spec: comv1alpha1.DatasetSpec{
 			Local: map[string]string{
-				"type": "COS",
+				"type":            "COS",
 				"accessKeyID":     string(AccessKey),
 				"secretAccessKey": string(SecretKey),
-				"endpoint":        "http://"+InternalEndpoint,
+				"endpoint":        "http://" + InternalEndpoint,
 				"bucket":          datasetInstance.Spec.Local["bucket"],
-				"provision": 	   "true", //TODO fix this in S3Mirror radosgw
+				"provision":       datasetInstance.Spec.Local["provision"],
+				"region":          datasetInstance.Spec.Local["region"],
 			},
 		},
 	}
@@ -322,32 +326,32 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 	return reconcile.Result{}, nil
 }
 
-func populateListOfObjects(c client.Client, listToFill interface{}, options []client.ListOption) error{
+func populateListOfObjects(c client.Client, listToFill interface{}, options []client.ListOption) error {
 
 	listToFillCast, ok := listToFill.(runtime.Object)
 	if !ok {
 		return errors.NewBadRequest("populateListOfObjects wrong interface passed")
 	}
-	err := c.List(context.TODO(),listToFillCast,options...)
-	if(err!=nil){
+	err := c.List(context.TODO(), listToFillCast, options...)
+	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func getExactlyOneObject(c client.Client,instance runtime.Object, name string, namespace string) error{
-	err := c.Get(context.TODO(),types.NamespacedName{
+func getExactlyOneObject(c client.Client, instance runtime.Object, name string, namespace string) error {
+	err := c.Get(context.TODO(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
-	},instance)
+	}, instance)
 	return err
 }
 
-func addErrorToDataset(c client.Client,errorString string,dataset *comv1alpha1.Dataset) error {
+func addErrorToDataset(c client.Client, errorString string, dataset *comv1alpha1.Dataset) error {
 	dataset.Status.Caching.Info = errorString
 	log.WithName("errorToDataset").Info(errorString)
-	err := c.Status().Update(context.TODO(),dataset)
-	if(err!=nil){
+	err := c.Status().Update(context.TODO(), dataset)
+	if err != nil {
 		return err
 	}
 	return nil
