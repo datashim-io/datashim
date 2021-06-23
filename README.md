@@ -1,4 +1,4 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/IBM/dataset-lifecycle-framework)](https://goreportcard.com/report/github.com/datashim-io/datashim)
+[![Go Report Card](https://goreportcard.com/report/github.com/datashim-io/datashim)](https://goreportcard.com/report/github.com/datashim-io/datashim)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4821/badge)](https://bestpractices.coreinfrastructure.org/projects/4821)
 # Datashim
 <img src="./docs/pictures/lfaidata-project-badge-incubation-color.png" alt="drawing" width="200"/>
@@ -11,7 +11,7 @@
 ![DLF](./docs/pictures/dlf.png)
 
 A Kubernetes Framework to provide easy access to S3 and NFS **Datasets** within pods. Orchestrates the provisioning of
-**Persistent Volume Claims** and **ConfigMaps** needed for each **Dataset**. Find more details in our [FAQ](https://ibm.github.io/dataset-lifecycle-framework/FAQ/)
+**Persistent Volume Claims** and **ConfigMaps** needed for each **Dataset**. Find more details in our [FAQ](https://datashim-io.github.io/datashim/FAQ/)
 
 ## Quickstart
 
@@ -19,19 +19,19 @@ In order to quickly deploy DLF, based on your environment execute **one** of the
 
 - **Kubernetes/Minikube**
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/IBM/dataset-lifecycle-framework/master/release-tools/manifests/dlf.yaml
+kubectl apply -f https://raw.githubusercontent.com/datashim-io/datashim/master/release-tools/manifests/dlf.yaml
 ```
 - **Kubernetes on IBM Cloud**
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/IBM/dataset-lifecycle-framework/master/release-tools/manifests/dlf-ibm-k8s.yaml
+kubectl apply -f https://raw.githubusercontent.com/datashim-io/datashim/master/release-tools/manifests/dlf-ibm-k8s.yaml
 ```
 - **Openshift**
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/IBM/dataset-lifecycle-framework/master/release-tools/manifests/dlf-oc.yaml
+kubectl apply -f https://raw.githubusercontent.com/datashim-io/datashim/master/release-tools/manifests/dlf-oc.yaml
 ```
 - **Openshift on IBM Cloud**
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/IBM/dataset-lifecycle-framework/master/release-tools/manifests/dlf-ibm-oc.yaml
+kubectl apply -f https://raw.githubusercontent.com/datashim-io/datashim/master/release-tools/manifests/dlf-ibm-oc.yaml
 ```
 
 Wait for all the pods to be ready :)
@@ -41,10 +41,11 @@ kubectl wait --for=condition=ready pods -l app.kubernetes.io/name=dlf -n dlf
 
 As an **optional** step, label the namespace(or namespaces) you want in order have the pods labelling functionality (see below).
 ```bash
-kubectl label namespace default monitor-pods-datasets=enabled
+kubectl label namespace default monitor-pods-
+s=enabled
 ```
 
-_In case don't have an existing S3 Bucket follow our wiki to [deploy an Object Store](https://github.com/IBM/dataset-lifecycle-framework/wiki/Deployment-and-Usage-of-S3-Object-Stores)
+_In case don't have an existing S3 Bucket follow our wiki to [deploy an Object Store](https://github.com/datashim-io/datashim/wiki/Deployment-and-Usage-of-S3-Object-Stores)
 and populate it with data._
 
 We will create now a Dataset named `example-dataset` pointing to your S3 bucket.
@@ -89,11 +90,11 @@ Feel free to explore our [examples](./examples)
 
 ## FAQ
 
-Have a look on our wiki for [Frequently Asked Questions](https://github.com/IBM/dataset-lifecycle-framework/wiki/FAQ)
+Have a look on our wiki for [Frequently Asked Questions](https://datashim-io.github.io/datashim/FAQ)
 
 ## Roadmap
 
-Have a look on our wiki for [Roadmap](https://github.com/IBM/dataset-lifecycle-framework/wiki/Roadmap)
+Have a look on our wiki for [Roadmap](https://datashim-io.github.io/datashim/Roadmap)
 
 ## Contact
 
