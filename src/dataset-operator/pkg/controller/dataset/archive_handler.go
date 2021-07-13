@@ -30,6 +30,7 @@ func getPodDataDownload(dataset *comv1alpha1.Dataset, operatorNamespace string) 
 		command = []string{
 			"/bin/sh", "-c",
 			"wget " + fileUrl + " -P" + " /tmp && " +
+			"aws s3api create-bucket --bucket "+ podId +" --endpoint-url $ENDPOINT && "+
 			"aws s3 cp /tmp/" + fileName +" s3://"+podId+" --endpoint-url $ENDPOINT && "+
 			"rm -rf  /tmp/" + fileName,
 		}
