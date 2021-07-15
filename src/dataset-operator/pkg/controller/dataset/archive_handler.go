@@ -23,6 +23,7 @@ func getPodDataDownload(dataset *comv1alpha1.Dataset, operatorNamespace string) 
 		"wget " + fileUrl + " -P" + " /tmp && " +
 		"tar -xf /tmp/" + fileName + " -C /data/" + podId +" && "+
 		"rm -rf /tmp/" + fileName + " && "+
+		"aws s3api create-bucket --bucket "+ podId +" --endpoint-url $ENDPOINT && "+
 		"aws s3 cp /data/" + podId +" s3://"+podId+" --recursive --endpoint-url $ENDPOINT && "+
 		"rm -rf /data",
 	}
@@ -30,6 +31,7 @@ func getPodDataDownload(dataset *comv1alpha1.Dataset, operatorNamespace string) 
 		command = []string{
 			"/bin/sh", "-c",
 			"wget " + fileUrl + " -P" + " /tmp && " +
+			"aws s3api create-bucket --bucket "+ podId +" --endpoint-url $ENDPOINT && "+
 			"aws s3 cp /tmp/" + fileName +" s3://"+podId+" --endpoint-url $ENDPOINT && "+
 			"rm -rf  /tmp/" + fileName,
 		}
