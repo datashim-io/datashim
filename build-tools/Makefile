@@ -2,7 +2,7 @@ DOCKER_REGISTRY ?= quay.io/ibm-dlf
 
 ARCH ?=
 
-#used only when building the plugins, dummy change
+#used only when building the plugins
 
 EXTERNAL_ATTACHER_TAG ?= v3.0.0-rc1
 EXTERNAL_PROVISIONER_TAG ?= v2.0.0-rc2
