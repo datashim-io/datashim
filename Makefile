@@ -1,7 +1,5 @@
 DATASET_OPERATOR_NAMESPACE=dlf
 
-foo:
-	@echo ${DOCKER_REGISTRY}
 manifests:
 	helm template --set global.namespaceYaml="true" --namespace=$(DATASET_OPERATOR_NAMESPACE) --name-template=default chart/ > release-tools/manifests/dlf.yaml
 	helm template --set global.namespaceYaml="true" --set global.sidecars.kubeletPath="/var/data/kubelet" --namespace=$(DATASET_OPERATOR_NAMESPACE) --name-template=default chart/ > release-tools/manifests/dlf-ibm-k8s.yaml

@@ -24,17 +24,17 @@ build-csi-plugins:
 	$(call install_local,csi-driver-nfs,$(CSI_NFS_IMAGE))
 
 push-sidecars:
-	@docker login -u="datashim+myrobot" -p="$DOCKER_TOKEN" quay.io
+	@docker login -u="datashim+myrobot" -p=${DOCKER_TOKEN} quay.io ;\
 	docker push $(EXTERNAL_PROVISIONER_IMAGE)-$(ARCH) ;\
 	docker push $(EXTERNAL_ATTACHER_IMAGE)-$(ARCH) ;\
 	docker push $(NODE_DRIVER_REGISTRAR_IMAGE)-$(ARCH)
 
 push-components:
-	@docker login -u="datashim+myrobot" -p="$DOCKER_TOKEN" quay.io
+	@docker login -u="datashim+myrobot" -p=${DOCKER_TOKEN} quay.io ;\
 	docker push $(DATASET_OPERATOR_IMAGE)-$(ARCH) ;\
 	docker push $(GENERAGE_KEYS_IMAGE)-$(ARCH)
 
 push-csi-plugins:
-	@docker login -u="datashim+myrobot" -p="$DOCKER_TOKEN" quay.io
+	@docker login -u="datashim+myrobot" -p=${DOCKER_TOKEN} quay.io ;\
 	docker push $(CSI_S3_IMAGE)-$(ARCH) ;\
 	docker push $(CSI_NFS_IMAGE)-$(ARCH)
