@@ -1,20 +1,20 @@
 # Prerequisites
 
-* We will work with the branch [archive](https://github.com/IBM/dataset-lifecycle-framework/tree/archive)
+* We will work with the branch [master](https://github.com/datashim-io/datashim/tree/master)
 * You have kubectl utility installed and your account has admin rights to install service accounts etc
 * For demo purposes you can use minikube.
+* Install Datashim using one of the [quickstart environments](/README.md#quickstart)
 
 # Installation
 ``` bash
-git clone https://github.com/IBM/dataset-lifecycle-framework.git
-cd dataset-lifecycle-framework
-git checkout archive
+git clone https://github.com/datashim-io/datashim.git
+cd datashim
 ```
+
 After you check out the project and the correct branch, proceed with the installation of minio.
 
 _If you already have a cloud object store, you can skip this step._
 ``` bash
-make deployment
 kubectl apply -n dlf -f examples/minio/
 ```
 The above will install on the components in the `dlf` namespace.
