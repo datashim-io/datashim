@@ -41,8 +41,7 @@ kubectl wait --for=condition=ready pods -l app.kubernetes.io/name=dlf -n dlf
 
 As an **optional** step, label the namespace(or namespaces) you want in order have the pods labelling functionality (see below).
 ```bash
-kubectl label namespace default monitor-pods-
-s=enabled
+kubectl label namespace default monitor-pods-datasets=enabled
 ```
 
 _In case don't have an existing S3 Bucket follow our wiki to [deploy an Object Store](https://github.com/datashim-io/datashim/wiki/Deployment-and-Usage-of-S3-Object-Stores)
