@@ -272,7 +272,7 @@ spec:
       serviceAccountName: rook-ceph-system
       containers:
         - name: rook-ceph-operator
-          image: quay.io/ibm-dlf/rook:v1.5-amd64
+          image: quay.io/datashim/rook:v1.5-gd7ffecc99d-amd64 
           args: ["ceph", "operator"]
           volumeMounts:
             - mountPath: /var/lib/rook
