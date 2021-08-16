@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"os"
+	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"strconv"
 	"time"
@@ -25,6 +26,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+)
+
+const (
+	NameInvalidCharacters = "Name must consist of lower case alphanumeric characters or '-', and must start and " +
+		"end with an alphanumeric character (e.g. 'example-dataset',  or '123-dataset')"
 )
 
 var log = logf.Log.WithName("controller_dataset")
@@ -119,6 +125,16 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 
 	// Make sure that the Status of the Dataset is initialised
 	if initializeDatasetStatus(datasetInstance) {
+
+		// dataset.Name must consist of lower case alphanumeric characters or '-', and must start and end with an
+		// alphanumeric character
+		reg := regexp.MustCompile(`[a-z0-9]([-a-z0-9]*[a-z0-9])?`)
+		if len(reg.ReplaceAllString(datasetInstance.Name, "")) > 0 {
+			datasetInstance.Status.Provision.Status = comv1alpha1.StatusFail
+			datasetInstance.Status.Provision.Info = NameInvalidCharacters
+			datasetInstance.Status.Caching.Status = comv1alpha1.StatusFail
+		}
+
 		return updateDatasetStatusAndReturn(r.client, datasetInstance, reqLogger)
 	}
 
@@ -277,7 +293,9 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 	// TODO for now for every Dataset kind we create a PVC, so the following is OK
 	// However, we should make this check for PVC status only if the Dataset kind
 	// is coupled with a PVC
-	if datasetInstance.Status.Provision.Status != comv1alpha1.StatusOK {
+	if datasetInstance.Status.Provision.Status != comv1alpha1.StatusFail &&
+		datasetInstance.Status.Provision.Status != comv1alpha1.StatusOK {
+
 		foundPVC := &v1.PersistentVolumeClaim{}
 		err = r.client.Get(context.TODO(), request.NamespacedName, foundPVC)
 		if err != nil {
