@@ -19,19 +19,19 @@ In order to quickly deploy DLF, based on your environment execute **one** of the
 
 - **Kubernetes/Minikube**
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/datashim-io/datashim/master/release-tools/manifests/dlf.yaml
+kubectl apply -f https://raw.githubusercontent.com/datashim-io/datashim/release-0.1.0/release-tools/manifests/dlf.yaml
 ```
 - **Kubernetes on IBM Cloud**
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/datashim-io/datashim/master/release-tools/manifests/dlf-ibm-k8s.yaml
+kubectl apply -f https://raw.githubusercontent.com/datashim-io/datashim/release-0.1.0/release-tools/manifests/dlf-ibm-k8s.yaml
 ```
 - **Openshift**
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/datashim-io/datashim/master/release-tools/manifests/dlf-oc.yaml
+kubectl apply -f https://raw.githubusercontent.com/datashim-io/datashim/release-0.1.0/release-tools/manifests/dlf-oc.yaml
 ```
 - **Openshift on IBM Cloud**
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/datashim-io/datashim/master/release-tools/manifests/dlf-ibm-oc.yaml
+kubectl apply -f https://raw.githubusercontent.com/datashim-io/datashim/release-0.1.0/release-tools/manifests/dlf-ibm-oc.yaml
 ```
 
 Wait for all the pods to be ready :)
