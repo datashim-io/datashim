@@ -1023,7 +1023,7 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: "quay.io/datashim/csi-nfs:latest-amd64"
+          image: "quay.io/datashim/csi-nfs:0.1.0-amd64"
           args :
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
@@ -1099,7 +1099,7 @@ spec:
             - mountPath: /registration
               name: registration-dir
         - name: csi-s3
-          image: "quay.io/datashim/csi-s3:latest-amd64"
+          image: "quay.io/datashim/csi-s3:0.1.0-amd64"
           imagePullPolicy: Always
           args:
             - "--v=5"
@@ -1189,7 +1189,7 @@ spec:
       serviceAccountName: dataset-operator
       initContainers:
         - name: generate-keys
-          image: "quay.io/datashim/generate-keys:latest-amd64"
+          image: "quay.io/datashim/generate-keys:0.1.0-amd64"
           imagePullPolicy: Always
           env:
             - name: DATASET_OPERATOR_NAMESPACE
@@ -1197,7 +1197,7 @@ spec:
       containers:
         - name: dataset-operator
           # Replace this with the built image name
-          image: "quay.io/datashim/dataset-operator:latest-amd64"
+          image: "quay.io/datashim/dataset-operator:0.1.0-amd64"
           command:
             - dataset-operator
           imagePullPolicy: Always
@@ -1329,7 +1329,7 @@ spec:
             - name: socket-dir
               mountPath: /csi
         - name: nfs
-          image: "quay.io/datashim/csi-nfs:latest-amd64"
+          image: "quay.io/datashim/csi-nfs:0.1.0-amd64"
           args :
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"

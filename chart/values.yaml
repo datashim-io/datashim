@@ -27,7 +27,7 @@ csi-nfs-chart:
 # dockerRegistrySecret: "anothersecret"
   csinfs:
     image: "csi-nfs"
-    tag: "latest"
+    tag: "0.1.0"
   sidecars: {} # in case you want to force override regardless of the csi-nfs-chart/values.yaml
 
 csi-s3-chart:
@@ -36,7 +36,7 @@ csi-s3-chart:
 # mounter: "goofys"
   csis3:
     image: "csi-s3"
-    tag: "latest"
+    tag: "0.1.0"
   sidecars: {} # in case you want to force override regardless of the csi-s3-chart/values.yaml
 
 csi-h3-chart:
@@ -52,7 +52,7 @@ dataset-operator-chart:
 # dockerRegistrySecret: "anothersecret"
   generatekeys:
     image: "generate-keys"
-    tag: "latest"
+    tag: "0.1.0"
   datasetoperator:
     image: "dataset-operator"
-    tag: "latest"
+    tag: "0.1.0"
