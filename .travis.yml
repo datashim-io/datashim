@@ -2,6 +2,15 @@ services:
   - docker
 env:
   - DOCKER_REGISTRY=quay.io/datashim
+  - COMMON_IMAGE_TAG=${TRAVIS_TAG}
+
+stages:
+  - name: build_arm64
+    if: branch =~ /^release-/ AND type != pull_request AND tag IS present
+  - name: build_amd64
+    if: branch =~ /^release-/ AND type != pull_request AND tag IS present
+  - name: build_ppc64le
+    if: branch =~ /^release-/ AND type != pull_request AND tag IS present
 
 matrix:
   include:
