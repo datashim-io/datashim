@@ -2,14 +2,17 @@ package dataset
 
 import (
 	"context"
-	comv1alpha1 "github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/apis/com/v1alpha1"
+	"os"
+
+	errors2 "errors"
+
+	comv1alpha1 "github.com/datashim-io/datashim/src/dataset-operator/pkg/apis/com/v1alpha1"
 	cephv1 "github.com/rook/rook/pkg/apis/ceph.rook.io/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -129,8 +132,22 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 	existingDatasetInternal := &comv1alpha1.DatasetInternal{}
 	err = r.client.Get(context.TODO(), request.NamespacedName, existingDatasetInternal)
 	if err == nil {
-		reqLogger.Info("Dataset internal exists, no need to reque")
-		return reconcile.Result{}, nil
+		reqLogger.Info("DatasetInternal exists, checking caching placements")
+		needToUpdateStatus, err := updateCachingPlacements(r.client, request, datasetInstance, existingDatasetInternal)
+		if err == nil {
+			if needToUpdateStatus {
+				reqLogger.Info("Setting DatasetInternal caching placements")
+				err = r.client.Status().Update(context.TODO(), existingDatasetInternal)
+				if err != nil {
+					reqLogger.Error(err, "DatasetInternal status update error")
+				}
+			} else {
+				reqLogger.Info("DatasetInternal caching placements already set, no need to reque")
+			}
+		} else {
+			reqLogger.Error(err, "updateCachingPlacements error")
+		}
+		return reconcile.Result{}, err
 	} else if !errors.IsNotFound(err) {
 		//Shouldn't happen
 		return reconcile.Result{}, err
@@ -324,6 +341,76 @@ func (r *ReconcileDataset) Reconcile(request reconcile.Request) (reconcile.Resul
 	reqLogger.Info("We should stop requeuing!")
 
 	return reconcile.Result{}, nil
+}
+
+// updateCachingPlacements checks if the dataset uses ceph-caching plugin and if caching placements
+// of the datasetinternal status are set. If no action is needed it returns false, nill.
+// Otherwise it returns true, nill and the caller has to issue a client status update of the datasetinternal.
+// In the context of placements, updateCachingPlacements will weight the node that rgw runs on with NodeWeightRGW and
+// any node that hosts one or more osds with NodeWeightOSD.
+func updateCachingPlacements(rc client.Client, request reconcile.Request,
+	datasetInstance *comv1alpha1.Dataset, datasetInternalInstance *comv1alpha1.DatasetInternal) (bool, error) {
+
+	needsToWriteStatus := datasetInstance.Annotations["dlf-plugin-name"] == "ceph-cache-plugin" &&
+		(len(datasetInternalInstance.Status.Caching.Placements.Gateways) == 0 ||
+			len(datasetInternalInstance.Status.Caching.Placements.DataLocations) == 0)
+
+	if needsToWriteStatus {
+		//TODO assumptions:
+		// * There must be at least one RGW and one OSD running pods
+		// * all OSDs are coupled to a RGW
+
+		// Query for the RGW pods aka Gateways
+		gateWays := &datasetInternalInstance.Status.Caching.Placements.Gateways
+		rgwPods := &corev1.PodList{}
+		err := populateListOfObjects(rc, rgwPods, []client.ListOption{
+			client.InNamespace(os.Getenv("ROOK_NAMESPACE")),
+			client.MatchingLabels{"app": "rook-ceph-rgw", "rgw": request.Name},
+		})
+		if err != nil {
+			reqLogger.Info("Error getting list of pods for rgw")
+			return needsToWriteStatus, err
+		}
+		if len(rgwPods.Items) == 0 {
+			errMessage := "error rgw pod not found"
+			reqLogger.Info(errMessage)
+			err = errors2.New(errMessage)
+			return needsToWriteStatus, err
+		}
+		for _, rgwPod := range rgwPods.Items {
+			(*gateWays) = append(*gateWays, comv1alpha1.CachingPlacementInfo{
+				Key:   "kubernetes.io/hostname",
+				Value: rgwPod.Spec.NodeName,
+			})
+		}
+
+		// Query for the OSD pods aka DataLocations
+		dataLocations := &datasetInternalInstance.Status.Caching.Placements.DataLocations
+		osdPods := &corev1.PodList{}
+		err = populateListOfObjects(rc, osdPods, []client.ListOption{
+			client.InNamespace(os.Getenv("ROOK_NAMESPACE")),
+			client.MatchingLabels{"app": "rook-ceph-osd"},
+		})
+		if err != nil {
+			reqLogger.Info("Error getting list of ceph osds")
+			return needsToWriteStatus, err
+		}
+		if len(osdPods.Items) == 0 {
+			errMessage := "error osd pods not found"
+			reqLogger.Info(errMessage)
+			err = errors2.New(errMessage)
+			return needsToWriteStatus, err
+		}
+
+		for _, osdPod := range osdPods.Items {
+			(*dataLocations) = append(*dataLocations, comv1alpha1.CachingPlacementInfo{
+				Key:   "kubernetes.io/hostname",
+				Value: osdPod.Spec.NodeName,
+			})
+		}
+	}
+
+	return needsToWriteStatus, nil
 }
 
 func populateListOfObjects(c client.Client, listToFill interface{}, options []client.ListOption) error {
