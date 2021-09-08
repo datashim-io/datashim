@@ -16,7 +16,7 @@ import (
 	"ceph-cache-plugin/pkg/controller"
 	"ceph-cache-plugin/version"
 
-	comv1alpha1 "github.com/IBM/dataset-lifecycle-framework/src/dataset-operator/pkg/apis"
+	comv1alpha1 "github.com/datashim-io/datashim/src/dataset-operator/pkg/apis"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
 	"github.com/operator-framework/operator-sdk/pkg/leader"

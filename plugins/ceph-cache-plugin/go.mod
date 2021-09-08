@@ -3,7 +3,8 @@ module ceph-cache-plugin
 go 1.13
 
 require (
-	github.com/IBM/dataset-lifecycle-framework/src/dataset-operator v0.0.0-20210211155337-73ae2088ed27
+	github.com/datashim-io/datashim/src/dataset-operator v0.0.0-20210908120130-2e6da462306e
+	github.com/go-logr/logr v0.1.0
 	github.com/google/go-cmp v0.4.0 // indirect
 	github.com/operator-framework/operator-sdk v0.16.0
 	github.com/rook/rook v1.3.3
