@@ -103,7 +103,7 @@ matrix:
       install: echo "no install"
       script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
 
-    - stage: build_lates_amd64
+    - stage: build_latest_amd64
       services:
         - docker
       os: linux
