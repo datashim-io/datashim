@@ -8,10 +8,10 @@ K8S_FILES += $(shell find ./deploy -maxdepth 1 -name '*.yaml')
 K8S_FILES += $(shell find ./deploy/crds -maxdepth 1 -name '*crd.yaml')
 
 PULL_IMAGE ?= false
-IMAGE_NAME ?= quay.io/ibm-dlf/ceph-cache-plugin
+IMAGE_NAME ?= quay.io/datashim/ceph-cache-plugin
 NAMESPACE ?= dlf
-
-IMAGE_NAME := $(IMAGE_NAME)-$(call get_arch)
+COMMON_IMAGE_TAG ?= latest
+IMAGE_NAME := $(IMAGE_NAME):$(COMMON_IMAGE_TAG)-$(call get_arch)
 
 MAKE_ENV += IMAGE_NAME
 MAKE_ENV += NAMESPACE
@@ -38,7 +38,7 @@ build-load-container: build-container
 deployment:
 	@for file in $(K8S_FILES); do \
 		echo creating $$file ;\
-		$(SHELL_EXPORT) envsubst < $$file | kubectl apply -n $(NAMESPACE) -f - ;\
+		$(SHELL_EXPORT) envsubst < $$file ;\
 	done
 
 undeployment:
