@@ -2,16 +2,31 @@ services:
   - docker
 
 stages:
-  - name: build_arm64
+  - name: build_release_arm64
     if: type != pull_request AND tag IS present
-  - name: build_amd64
+  - name: build_release_amd64
     if: type != pull_request AND tag IS present
-  - name: build_ppc64le
+  - name: build_release_ppc64le
     if: type != pull_request AND tag IS present
+    
+  - name: build_pr_arm64
+    if: type = pull_request
+  - name: build_pr_amd64
+    if: type = pull_request
+  - name: build_pr_ppc64le
+    if: type = pull_request
+
+  - name: build_latest_arm64
+    if: type != pull_request AND branch = master
+  - name: build_latest_amd64
+    if: type != pull_request AND branch = master
+  - name: build_latest_ppc64le
+    if: type != pull_request AND branch = master
 
 matrix:
   include:
-    - stage: build_arm64
+    # release stages
+    - stage: build_release_arm64
       services:
         - docker
       os: linux
@@ -19,10 +34,10 @@ matrix:
       env: 
         - COMMON_IMAGE_TAG=${TRAVIS_TAG}
         - DOCKER_REGISTRY=quay.io/datashim
-      # trigger build foo
       install: echo "no install"
       script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
-    - stage: build_amd64
+
+    - stage: build_release_amd64
       services:
         - docker
       os: linux
@@ -31,10 +46,10 @@ matrix:
       env: 
         - COMMON_IMAGE_TAG=${TRAVIS_TAG}
         - DOCKER_REGISTRY=quay.io/datashim
-      # trigger build foo
       install: echo "no install"
       script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
-    - stage: build_ppc64le
+
+    - stage: build_release_ppc64le
       services:
         - docker
       os: linux
@@ -42,6 +57,69 @@ matrix:
       env: 
         - COMMON_IMAGE_TAG=${TRAVIS_TAG}
         - DOCKER_REGISTRY=quay.io/datashim
-      # trigger build foo
+      install: echo "no install"
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+
+    # pull request stages
+    - stage: build_pr_arm64
+      services:
+        - docker
+      os: linux
+      arch: arm64
+      env: 
+        - COMMON_IMAGE_TAG="pr_${TRAVIS_COMMIT}"
+      install: echo "no install"
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+
+    - stage: build_pr_amd64
+      services:
+        - docker
+      os: linux
+      arch: amd64
+      dist: bionic
+      env: 
+        - COMMON_IMAGE_TAG="pr_${TRAVIS_COMMIT}"
+      install: echo "no install"
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+
+    - stage: build_pr_ppc64le
+      services:
+        - docker
+      os: linux
+      arch: ppc64le
+      env: 
+        - COMMON_IMAGE_TAG="pr_${TRAVIS_COMMIT}"
+      install: echo "no install"
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+
+    # master branch stages
+    - stage: build_latest_arm64
+      services:
+        - docker
+      os: linux
+      arch: arm64
+      env: 
+        - DOCKER_REGISTRY=quay.io/datashim
+      install: echo "no install"
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+
+    - stage: build_lates_amd64
+      services:
+        - docker
+      os: linux
+      arch: amd64
+      dist: bionic
+      env: 
+        - DOCKER_REGISTRY=quay.io/datashim
+      install: echo "no install"
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+
+    - stage: build_latest_ppc64le
+      services:
+        - docker
+      os: linux
+      arch: ppc64le
+      env: 
+        - DOCKER_REGISTRY=quay.io/datashim
       install: echo "no install"
       script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
