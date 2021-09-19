@@ -2,3 +2,4 @@
 #baseRepo: ""
 #dockerRegistrySecret: ""
 generatekeys: {}
+installCrds: true
