@@ -57,7 +57,6 @@ func (goofys *goofysMounter) Mount(source string, target string) error {
 	}
 	args := []string{
 		fmt.Sprintf("--endpoint=%s", goofys.endpoint),
-		fmt.Sprintf("--profile=%s", goofys.volumeID),
 		"--type-cache-ttl","1s",
 		"--stat-cache-ttl","1s",
 		"--dir-mode","0777",
@@ -65,6 +64,9 @@ func (goofys *goofysMounter) Mount(source string, target string) error {
 		"--http-timeout","5m",
 		//fmt.Sprintf("--cheap=%s", os.Getenv("cheap")),
 		"-o", "allow_other",
+	}
+	if goofys.accessKeyID != "" && goofys.secretAccessKey != "" {
+		args = append(args, fmt.Sprintf("--profile=%s", goofys.volumeID))
 	}
 	if goofys.region != "" {
 		args = append(args, "--region", goofys.region)
