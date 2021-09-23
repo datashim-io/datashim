@@ -43,9 +43,9 @@ orchestration and bring contributions on:
 for credentials of the different types of datasources 
 
 ## **Is anyone actually interested in the framework?**
-* **European Bioinformatics Institute** ( https://www.ebi.ac.uk/ ) are running a POC with DLF and Kubeflow on their cloud infrastructure
+* **European Bioinformatics Institute** ( https://www.ebi.ac.uk/ ) are running a POC with Datashim and Kubeflow on their cloud infrastructure
   * [David Yu Yuan](https://github.com/davidyuyuan) actually reached out to us after a CNCF presentation
-* People from **Open Data Hub** ( https://opendatahub.io/ ) are interested in integrating DLF in ODH
+* People from **Open Data Hub** ( https://opendatahub.io/ ) are interested in integrating Datashim in ODH
   * See relevant issue ( https://github.com/IBM/dataset-lifecycle-framework/issues/40 )
 * **Pachyderm's proposal** is actually very close to the Dataset spec we are supporting.
-  * DLF is forked in their repo and is under evaluation in their repo https://github.com/pachyderm/kfdata
+  * Datashim is forked in their repo and is under evaluation in their repo https://github.com/pachyderm/kfdata
