@@ -1,6 +1,22 @@
 # override from the root values.yaml
 # just for reference, you can emit
-sidecars: {}
+sidecars: 
+  kubeletPath: "/var/lib/kubelet"
+  baseRepo: "quay.io/k8scsi"
+  images:
+    externalAttacher:
+      image: "csi-attacher"
+      tag: "v2.2.0"
+    nodeDriverRegistrar:
+      image: "csi-node-driver-registrar"
+      tag: "v1.2.0"
+    externalProvisioner:
+      image: "csi-provisioner"
+      tag: "v2.0.2"
+    clusterDriverRegistrar:
+      image: "csi-cluster-driver-registrar"
+      tag: "v1.0.1"
+
 csih3: {}
-# baseRepo: "anotherrepo"
+# baseRepo: "quay.io/k8scsi"
 # dockerRegistrySecret: "anothersecret"
