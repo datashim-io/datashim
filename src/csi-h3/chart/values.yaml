@@ -4,3 +4,12 @@ sidecars: {}
 csih3: {}
 # baseRepo: "anotherrepo"
 # dockerRegistrySecret: "anothersecret"
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+plugin:
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}

@@ -5,3 +5,13 @@ csis3: {}
 # baseRepo: "anotherrepo"
 # dockerRegistrySecret: "anothersecret"
 mounter: "goofys"
+
+attacher:
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+plugin:
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
