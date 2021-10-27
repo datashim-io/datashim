@@ -35,6 +35,7 @@ func Mutate(body []byte) ([]byte, error) {
 	responseBody := []byte{}
 	ar := admReview.Request
 	resp := v1beta1.AdmissionResponse{}
+	admReview.Response = &resp
 
 	if ar != nil {
 
@@ -43,11 +44,25 @@ func Mutate(body []byte) ([]byte, error) {
 			return nil, fmt.Errorf("unable unmarshal pod json object %v", err)
 		}
 
+		// Record the names of already mounted PVCs. Cross-check them with those referenced in
+		// a label. We only want to inject PVCs whose name is not in the mountedPVCs map.
+		mountedPVCs := make(map[string]int)
+		for _, v := range pod.Spec.Volumes {
+			if v.PersistentVolumeClaim != nil {
+				mountedPVCs[v.PersistentVolumeClaim.ClaimName] = 1
+			}
+		}
+
 		datasetInfo := map[string]map[string]string{}
 
 		for k, v := range pod.Labels {
 			log.Printf("key[%s] value[%s]\n", k, v)
 			if strings.HasPrefix(k, prefixLabels) {
+				if _, found := mountedPVCs[v]; found {
+					// The dataset is already mounted as a PVC no need to add it again
+					continue
+				}
+
 				datasetNameArray := strings.Split(k, ".")
 				datasetId := strings.Join([]string{datasetNameArray[0], datasetNameArray[1]}, ".")
 				if _, ok := datasetInfo[datasetId]; ok == false {
@@ -56,6 +71,17 @@ func Mutate(body []byte) ([]byte, error) {
 					datasetInfo[datasetId][datasetNameArray[2]] = v
 				}
 			}
+		}
+
+		if len(datasetInfo) == 0 {
+			log.Printf("Pod %s/%s does not need to be mutated - skipping\n", pod.Namespace, pod.Name)
+			resp.Allowed = true
+			resp.UID = ar.UID
+			responseBody, err = json.Marshal(admReview)
+			if err != nil {
+				return nil, err
+			}
+			return responseBody, nil
 		}
 		// set response options
 		resp.Allowed = true
