@@ -2,5 +2,5 @@
 # just for reference, you can emit
 sidecars: {}
 csih3: {}
-# baseRepo: "anotherrepo"
+# baseRepo: "quay.io/k8scsi"
 # dockerRegistrySecret: "anothersecret"
