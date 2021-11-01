@@ -1,12 +1,12 @@
 DOCKER_REGISTRY ?= quay.io/ibm-dlf
 
-ARCH ?=
+ARCH ?= 
 
 #used only when building the plugins
 
-EXTERNAL_ATTACHER_TAG ?= v3.0.0-rc1
-EXTERNAL_PROVISIONER_TAG ?= v2.0.0-rc2
-NODE_DRIVER_REGISTRAR_TAG ?= v1.3.0
+EXTERNAL_ATTACHER_TAG ?= v3.3.0
+EXTERNAL_PROVISIONER_TAG ?= v2.2.2
+NODE_DRIVER_REGISTRAR_TAG ?= v2.3.0
 
 include helpers.mk
 

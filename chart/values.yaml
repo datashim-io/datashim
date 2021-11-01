@@ -7,20 +7,17 @@ global:
 
   sidecars:
     kubeletPath: "/var/lib/kubelet"
-    baseRepo: "quay.io/k8scsi"
+    baseRepo: "k8s.gcr.io/sig-storage"
     images:
       externalAttacher:
         image: "csi-attacher"
-        tag: "v2.2.0"
+        tag: "v3.3.0"
       nodeDriverRegistrar:
         image: "csi-node-driver-registrar"
-        tag: "v1.2.0"
-      clusterDriverRegistrar:
-        image: "csi-cluster-driver-registrar"
-        tag: "v1.0.1"
+        tag: "v2.3.0"
       externalProvisioner:
         image: "csi-provisioner"
-        tag: "v2.0.2"
+        tag: "v2.2.2"
 
 csi-nfs-chart:
 # baseRepo: "anotherrepo"
@@ -45,8 +42,7 @@ csi-h3-chart:
   csih3:
     image: "csi-h3"
     tag: "v1.2.0"
-  sidecars: {} # in case you want to force override regardless of the csi-s3-chart/values.yaml
-
+  sidecars: {} 
 dataset-operator-chart:
   baseRepo: "quay.io/datashim"
 # dockerRegistrySecret: "anothersecret"
