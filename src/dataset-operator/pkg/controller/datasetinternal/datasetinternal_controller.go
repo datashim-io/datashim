@@ -339,16 +339,29 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 	processLocalDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processLocalDataset")
 
 	authProvided := false
+	secretOK := false
 
 	var secretName, secretNamespace, accessKeyID, secretAccessKey string
 	var ok = false
 
 	if secretName, ok = cr.Spec.Local["secret-name"]; ok {
-		if secretNamespace, ok = cr.Spec.Local["secret-namespace"]; !ok {
-			processLocalDatasetLogger.Info("Warning: Secret namespace not provided, using the dataset namespace", "Dataset.Name", cr.Name)
-			secretNamespace = cr.Namespace
-		}
 
+		//16/12 - We will limit secrets to the same namespace as the dataset to fix #146
+		if secretNamespace, ok = cr.Spec.Local["secret-namespace"]; ok {
+			if secretNamespace == cr.ObjectMeta.Namespace {
+				processLocalDatasetLogger.Info("Error: secret namespace is same as dataset namespace, allowed", "Dataset.Name", cr.ObjectMeta.Name)
+				secretOK = true
+			} else {
+				processLocalDatasetLogger.Info("Error: secret namespace is different from dataset namespace, not allowed", "Dataset.Name", cr.ObjectMeta.Name)
+			}
+		} else {
+			processLocalDatasetLogger.Info("No secret namespace provided - using dataset namespace for secret", "Dataset Name", cr.ObjectMeta.Name, "Namespace", cr.ObjectMeta.Namespace)
+			secretNamespace = cr.ObjectMeta.Namespace
+			secretOK = true
+		}
+	}
+
+	if secretOK {
 		// Check if the secret is present
 		cosSecret := &corev1.Secret{}
 		err := rc.client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: secretNamespace}, cosSecret)
