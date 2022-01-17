@@ -8,6 +8,7 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // +k8s:openapi-gen=true
+
 type CachingPlacementInfo struct {
 	Key   string `json:"key,omitempty"`
 	Value string `json:"value,omitempty"`
@@ -20,12 +21,14 @@ type CachingPlacement struct {
 }
 
 // +k8s:openapi-gen=true
+
 type DatasetInternalStatusCaching struct {
 	Placements CachingPlacement `json:"placements,omitempty"`
 }
 
 // DatasetInternalStatus defines the observed state of DatasetInternal
 // +k8s:openapi-gen=true
+
 type DatasetInternalStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
@@ -38,6 +41,9 @@ type DatasetInternalStatus struct {
 // DatasetInternal is the Schema for the datasetinternals API
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=datasetinternals,scope=Namespaced
+// +genclient
+// +genclient:onlyVerbs=get,watch,list,create
+// +groupName=com.ibm.ie.hpsys
 type DatasetInternal struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -47,7 +53,6 @@ type DatasetInternal struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
 // DatasetInternalList contains a list of DatasetInternal
 type DatasetInternalList struct {
 	metav1.TypeMeta `json:",inline"`
