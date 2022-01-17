@@ -95,6 +95,13 @@ Have a look on our wiki for [Frequently Asked Questions](https://datashim-io.git
 
 Have a look on our wiki for [Roadmap](https://datashim-io.github.io/datashim/Roadmap)
 
+## References
+
+1. P. Koutsovasilis, S. Venugopal, Y. Gkoufas and C. Pinto,  "A Holistic Approach to Data Access for Cloud-Native Analytics and Machine Learning," in 2021 IEEE 14th International Conference on Cloud Computing (CLOUD), Chicago, IL, USA, 2021 pp. 654-659 [doi](https://10.1109/CLOUD53861.2021.00084)[bibtex](https://www.computer.org/csdl/api/v1/citation/bibtex/proceedings/1ymIXmTZpgQ/006000a654) - Please cite this paper when referring to Datashim
+2. Y. Gkoufas, D.Y. Yuan, C.Pinto, P. Koutsovasilis, S. Venugopal, "Datashim and Its Applications in Bioinformatics", Proceedings of International Conference on High Performance Computing, Lecture Notes in Computer Science, vol 12761, pp. 416-427, Springer, Cham.[doi](https://doi.org/10.1007/978-3-030-90539-2_28)
+3. C. Pinto, et. al, "Data Convergence for High-Performance Cloud", HPC, Big Data, and AI Convergence Towards Exascale: Challenge and Vision, CRC Press, 2022. [doi](https://doi.org/10.1201/9781003176664)
+
+
 ## Contact
 
 Reach out to us via email:
