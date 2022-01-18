@@ -6,12 +6,4 @@ csis3: {}
 # dockerRegistrySecret: "anothersecret"
 mounter: "goofys"
 
-attacher:
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
-
-plugin:
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
+tolerations: []

@@ -62,15 +62,7 @@ spec:
             path: {{ $csiS3Properties.sidecars.kubeletPath }}/plugins/csi-s3
             type: DirectoryOrCreate
           name: socket-dir
-      
-      {{- with .Values.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
