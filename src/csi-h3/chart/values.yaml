@@ -4,3 +4,5 @@ sidecars: {}
 csih3: {}
 # baseRepo: "quay.io/k8scsi"
 # dockerRegistrySecret: "anothersecret"
+
+tolerations: []

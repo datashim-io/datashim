@@ -161,3 +161,8 @@ spec:
             path: /dev
             type: Directory
           name: dev-dir
+
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

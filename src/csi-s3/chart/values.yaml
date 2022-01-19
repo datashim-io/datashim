@@ -5,3 +5,5 @@ csis3: {}
 # baseRepo: "anotherrepo"
 # dockerRegistrySecret: "anothersecret"
 mounter: "goofys"
+
+tolerations: []

@@ -4,3 +4,5 @@ sidecars: {}
 csinfs: {}
 # baseRepo: "anotherrepo"
 # dockerRegistrySecret: "anothersecret"
+
+tolerations: []

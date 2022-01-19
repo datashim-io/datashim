@@ -84,3 +84,7 @@ spec:
             path: {{ $csiNFSProperties.sidecars.kubeletPath }}/plugins_registry
             type: Directory
           name: registration-dir
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

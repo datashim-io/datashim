@@ -2,3 +2,7 @@
 #baseRepo: ""
 #dockerRegistrySecret: ""
 generatekeys: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
