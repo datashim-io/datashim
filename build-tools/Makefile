@@ -1,6 +1,6 @@
 DOCKER_REGISTRY ?= quay.io/ibm-dlf
 
-ARCH ?= amd64
+ARCH ?= 
 
 #used only when building the plugins
 
