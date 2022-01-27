@@ -9,6 +9,7 @@ import (
 
 // DatasetSpec defines the desired state of Dataset
 // +k8s:openapi-gen=true
+// +groupName=com.ibm.ie.hpsys
 type DatasetSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
@@ -34,6 +35,7 @@ const (
 
 // DatasetStatusCondition defines sub-Status conditions
 // +k8s:openapi-gen=true
+
 type DatasetStatusCondition struct {
 	Status string `json:"status,omitempty"`
 	Info   string `json:"info,omitempty"`
@@ -41,6 +43,7 @@ type DatasetStatusCondition struct {
 
 // DatasetStatus defines the observed state of Dataset
 // +k8s:openapi-gen=true
+
 type DatasetStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
@@ -54,6 +57,9 @@ type DatasetStatus struct {
 // Dataset is the Schema for the datasets API
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
+// +genclient
+// +genclient:noStatus
+// +groupName=com.ibm.ie.hpsys
 type Dataset struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -63,7 +69,6 @@ type Dataset struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
 // DatasetList contains a list of Dataset
 type DatasetList struct {
 	metav1.TypeMeta `json:",inline"`
