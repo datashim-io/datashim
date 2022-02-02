@@ -1,3 +1,3 @@
 [submodule "examples/scheduling/src/sigs.k8s.io/scheduler-plugins"]
 	path = examples/scheduling/src/sigs.k8s.io/scheduler-plugins
-	url = https://github.com/kubernetes-sigs/scheduler-plugins.git
+	url = https://github.com/srikumar003/scheduler-plugins.git
