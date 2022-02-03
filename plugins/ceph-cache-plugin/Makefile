@@ -38,7 +38,7 @@ build-load-container: build-container
 deployment:
 	@for file in $(K8S_FILES); do \
 		echo creating $$file ;\
-		$(SHELL_EXPORT) envsubst < $$file ;\
+		$(SHELL_EXPORT) envsubst < $$file | kubectl apply -n $(NAMESPACE) -f - ;\
 	done
 
 undeployment:
