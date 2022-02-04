@@ -105,6 +105,11 @@ func Mutate(body []byte) ([]byte, error) {
 		}
 
 		containers := pod.Spec.Containers
+		// Adding InitContainers to the list of containers that will have mounts mutated
+		if len(pod.Spec.InitContainers) != 0 {
+			log.Printf("Init containers in pod")
+			containers = append(containers, pod.Spec.InitContainers...)
+		}
 		for container_idx, container := range containers {
 			mounts := container.VolumeMounts
 			mount_names := []string{}
