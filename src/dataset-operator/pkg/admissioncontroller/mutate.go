@@ -104,91 +104,41 @@ func Mutate(body []byte) ([]byte, error) {
 
 		}
 
-		containers := pod.Spec.Containers
-		// Adding InitContainers to the list of containers that will have mounts mutated
-		if len(pod.Spec.InitContainers) != 0 {
-			log.Printf("Init containers in pod")
-			containers = append(containers, pod.Spec.InitContainers...)
-		}
-		for container_idx, container := range containers {
-			mounts := container.VolumeMounts
-			mount_names := []string{}
-			for _, mount := range mounts {
-				mount_name := mount.Name
-				mount_names = append(mount_names, mount_name)
-			}
-			mount_idx := len(mounts)
+		init_containers := pod.Spec.InitContainers
+		main_containers := pod.Spec.Containers
 
-			for _, dataset_tomount := range datasets_tomount {
-				//TODO: Check if the dataset reference exists in the API server
-				exists, _ := in_array(dataset_tomount, mount_names)
-				if exists == false {
-					patch := map[string]interface{}{
-						"op":   "add",
-						"path": "/spec/containers/" + fmt.Sprint(container_idx) + "/volumeMounts/" + fmt.Sprint(mount_idx),
-						"value": map[string]interface{}{
-							"name":      dataset_tomount,
-							"mountPath": "/mnt/datasets/" + dataset_tomount,
-						},
-					}
-					p = append(p, patch)
-					mount_idx += 1
-				}
-			}
+		log.Printf("There are %d init containers and %d main containers", len(init_containers), len(main_containers))
 
-			var values []interface{}
-			for _, config_toinject := range configs_toinject {
-				//TODO: Check if the configmap reference exists in the API server
+		if len(datasets_tomount) > 0 {
+			log.Print("Adding Volumes to Init Containers")
+			patch_init := patchContainersWithDatasetVolumes(datasets_tomount, init_containers, true)
+			p = append(p, patch_init...)
 
-				configmap_ref := map[string]interface{}{
-					"prefix": config_toinject + "_",
-					"configMapRef": map[string]interface{}{
-						"name": config_toinject,
-					},
-				}
-				// We also have to inject the companion secret. We are using the convention followed
-				// in the controller where the names of the configmap and the secret are the same.
-				secret_ref := map[string]interface{}{
-					"prefix": config_toinject + "_",
-					"secretRef": map[string]interface{}{
-						"name": config_toinject,
-					},
-				}
-
-				values = append(values, configmap_ref)
-				values = append(values, secret_ref)
-			}
-
-			if container.EnvFrom == nil || len(container.EnvFrom) == 0 {
-				// In this case, the envFrom path does not exist in the PodSpec. We are creating
-				// (initialising) this path with an array of configMapRef (RFC 6902)
-				log.Printf("there ")
-				patch := map[string]interface{}{
-					"op":    "add",
-					"path":  "/spec/containers/" + fmt.Sprint(container_idx) + "/envFrom",
-					"value": values,
-				}
-				p = append(p, patch)
-			} else {
-				// In this case, the envFrom path does exist in the PodSpec. So, we just append to
-				// the existing array (Notice the path value)
-				for _, val := range values {
-					patch := map[string]interface{}{
-						"op":    "add",
-						"path":  "/spec/containers/" + fmt.Sprint(container_idx) + "/envFrom/-",
-						"value": val,
-					}
-					p = append(p, patch)
-				}
-			}
-
+			log.Print("Adding Volumes to App Containers")
+			patch_main := patchContainersWithDatasetVolumes(datasets_tomount, main_containers, false)
+			p = append(p, patch_main...)
 		}
 
+		if len(configs_toinject) > 0 {
+			log.Print("Adding config maps to Init Containers")
+			config_patch_init := patchContainersWithDatasetMaps(configs_toinject, init_containers, true)
+			p = append(p, config_patch_init...)
+
+			log.Print("Adding config maps to App Containers")
+			config_patch_main := patchContainersWithDatasetMaps(configs_toinject, main_containers, false)
+			p = append(p, config_patch_main...)
+		}
+
+		log.Printf("Patch \n%v", p)
 		resp.Patch, err = json.Marshal(p)
 
 		// Success, of course ;)
-		resp.Result = &metav1.Status{
-			Status: "Success",
+		if err != nil {
+			return nil, err
+		} else {
+			resp.Result = &metav1.Status{
+				Status: "Success",
+			}
 		}
 
 		admReview.Response = &resp
@@ -202,6 +152,106 @@ func Mutate(body []byte) ([]byte, error) {
 
 	log.Printf("resp: %s\n", string(responseBody))
 	return responseBody, nil
+}
+
+func patchContainersWithDatasetVolumes(datasets []string, containers []corev1.Container, init bool) (patch []map[string]interface{}) {
+
+	p := []map[string]interface{}{}
+	container_typ := "containers"
+	if init {
+		container_typ = "initContainers"
+	}
+
+	for container_idx, container := range containers {
+		mounts := container.VolumeMounts
+		mount_names := []string{}
+		for _, mount := range mounts {
+			mount_name := mount.Name
+			mount_names = append(mount_names, mount_name)
+		}
+		mount_idx := len(mounts)
+
+		for _, dataset_tomount := range datasets {
+			//TODO: Check if the dataset reference exists in the API server
+			exists, _ := in_array(dataset_tomount, mount_names)
+			if !exists {
+				patch := map[string]interface{}{
+					"op":   "add",
+					"path": "/spec/" + container_typ + "/" + fmt.Sprint(container_idx) + "/volumeMounts/" + fmt.Sprint(mount_idx),
+					"value": map[string]interface{}{
+						"name":      dataset_tomount,
+						"mountPath": "/mnt/datasets/" + dataset_tomount,
+					},
+				}
+				p = append(p, patch)
+				mount_idx += 1
+			}
+		}
+	}
+
+	return p
+
+}
+
+func patchContainersWithDatasetMaps(datasets []string, containers []corev1.Container, init bool) (patch []map[string]interface{}) {
+
+	p := []map[string]interface{}{}
+
+	container_typ := "containers"
+	if init {
+		container_typ = "initContainers"
+	}
+
+	for container_idx, container := range containers {
+		var values []interface{}
+		for _, config_toinject := range datasets {
+			//TODO: Check if the configmap reference exists in the API server
+
+			configmap_ref := map[string]interface{}{
+				"prefix": config_toinject + "_",
+				"configMapRef": map[string]interface{}{
+					"name": config_toinject,
+				},
+			}
+			// We also have to inject the companion secret. We are using the convention followed
+			// in the controller where the names of the configmap and the secret are the same.
+			secret_ref := map[string]interface{}{
+				"prefix": config_toinject + "_",
+				"secretRef": map[string]interface{}{
+					"name": config_toinject,
+				},
+			}
+
+			values = append(values, configmap_ref)
+			values = append(values, secret_ref)
+		}
+
+		if container.EnvFrom == nil || len(container.EnvFrom) == 0 {
+			// In this case, the envFrom path does not exist in the PodSpec. We are creating
+			// (initialising) this path with an array of configMapRef (RFC 6902)
+			log.Printf("there ")
+			patch := map[string]interface{}{
+				"op":    "add",
+				"path":  "/spec/" + container_typ + "/" + fmt.Sprint(container_idx) + "/envFrom",
+				"value": values,
+			}
+			p = append(p, patch)
+		} else {
+			// In this case, the envFrom path does exist in the PodSpec. So, we just append to
+			// the existing array (Notice the path value)
+			for _, val := range values {
+				patch := map[string]interface{}{
+					"op":    "add",
+					"path":  "/spec/" + container_typ + "/" + fmt.Sprint(container_idx) + "/envFrom/-",
+					"value": val,
+				}
+				p = append(p, patch)
+			}
+		}
+
+	}
+
+	return p
 }
 
 func in_array(val interface{}, array interface{}) (exists bool, index int) {
