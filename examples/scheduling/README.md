@@ -66,7 +66,7 @@ Next, we install Datashim
 
 `$ cd $DATASHIM_HOME && make deployment`
 
-Next, we have to install our object storage cache based on Ceph. Follow [this guide] (https://github.com/datashim-io/datashim/blob/master/docs/Ceph-Caching.md#rookceph-installation) to install Rook-Ceph. Due to [this issue](https://github.com/datashim-io/datashim/issues/143), we'll have to generate and load the plugin operator image into minikube like so:
+Next, we have to install our object storage cache based on Ceph. Follow [this guide](https://github.com/datashim-io/datashim/blob/master/docs/Ceph-Caching.md#rookceph-installation) to install Rook-Ceph. Due to [this issue](https://github.com/datashim-io/datashim/issues/143), we'll have to generate and load the plugin operator image into minikube like so:
 
 ```
 $ cd $DATASHIM_HOME/plugins/ceph-cache-plugin
