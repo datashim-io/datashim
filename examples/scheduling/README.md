@@ -71,7 +71,7 @@ Next, we have to install our object storage cache based on Ceph. Follow [this gu
 ```
 $ cd $DATASHIM_HOME/plugins/ceph-cache-plugin
 $ make build-container
-$ minikube load image quay.io/datashim/ceph-cache-plugin:latest-amd64
+$ minikube image load quay.io/datashim/ceph-cache-plugin:latest-amd64
 ```
 Open `$DATASHIM_HOME/plugins/ceph-cache-plugin/deploy/operator.yaml` and change line 24 `imagePullPolicy: Always` to `imagePullPolicy: IfNotPresent`. Then, in the `ceph-cache-plugin` directory, execute
 
@@ -86,8 +86,8 @@ $ make deployment
 ```
 $ docker tag localhost:5000/scheduler-plugins/kube-scheduler:latest datashim-test/kube-scheduler:cacheaware
 $ docker tag localhost:5000/scheduler-plugins/controller:latest datashim-test/controller:cacheaware
-$ minikube load image datashim-test/kube-scheduler:cacheaware
-$ minikube load image datashim-test/controller:cacheaware
+$ minikube image load datashim-test/kube-scheduler:cacheaware
+$ minikube image load datashim-test/controller:cacheaware
 ```
 
 Next, we install the scheduler using Helm
