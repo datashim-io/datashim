@@ -229,7 +229,6 @@ func patchContainersWithDatasetMaps(datasets []string, containers []corev1.Conta
 		if container.EnvFrom == nil || len(container.EnvFrom) == 0 {
 			// In this case, the envFrom path does not exist in the PodSpec. We are creating
 			// (initialising) this path with an array of configMapRef (RFC 6902)
-			log.Printf("there ")
 			patch := map[string]interface{}{
 				"op":    "add",
 				"path":  "/spec/" + container_typ + "/" + fmt.Sprint(container_idx) + "/envFrom",
