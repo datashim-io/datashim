@@ -48,9 +48,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	if len(volumeID) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "Volume ID missing in request")
 	}
-	if len(stagingTargetPath) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "Staging Target path missing in request")
-	}
+
 	if len(targetPath) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "Target path missing in request")
 	}
@@ -71,18 +69,46 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	// TODO: Implement readOnly & mountFlags
 	readOnly := req.GetReadonly()
 	// TODO: check if attrib is correct with context.
-	attrib := req.GetVolumeContext()
+	volContext := req.GetVolumeContext()
 	mountFlags := req.GetVolumeCapability().GetMount().GetMountFlags()
 
 	glog.V(4).Infof("target %v\ndevice %v\nreadonly %v\nvolumeId %v\nattributes %v\nmountflags %v\n",
-		targetPath, deviceID, readOnly, volumeID, attrib, mountFlags)
+		targetPath, deviceID, readOnly, volumeID, volContext, mountFlags)
+
+	//Check if it's an ephemeral storage request
+	ephemeralVolume := volContext["csi.storage.k8s.io/ephemeral"] == "true" || volContext["csi.storage.k8s.io/ephemeral"] == ""
+
+	if ephemeralVolume {
+
+		glog.V(4).Infof("Creating an ephemeral volume %s", volumeID)
+
+		_, err := createVolume(volumeID, req.GetSecrets())
+
+		if err != nil {
+			glog.V(1).Infof("Could not create Volume for vol. ID %s ", volumeID)
+			return nil, fmt.Errorf("Ephemeral volume creation for vol. ID failed")
+		} else {
+			glog.V(4).Infof("Successfully created ephemeral Volume for vol ID %s", volumeID)
+		}
+
+		// srikumarv - except for the s3backer, none of the mounters actually use stagingTargetPath
+		// but we'll set a value for stagingTargetPath so it does not foul up on the definition of
+		// the mount method (stagingTargetPath is probably already nil string, this just ensures
+		// that this value is present)
+		stagingTargetPath = ""
+	} else {
+
+		if len(stagingTargetPath) == 0 {
+			return nil, status.Error(codes.InvalidArgument, "Staging Target path missing in request")
+		}
+	}
 
 	s3, err := newS3ClientFromSecrets(req.GetSecrets())
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize S3 client: %s", err)
 	}
 
-	if(len(s3.cfg.ExistingBucket)!=0) {
+	if len(s3.cfg.ExistingBucket) != 0 {
 		bucketName = s3.cfg.ExistingBucket
 	}
 
@@ -90,10 +116,10 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	//if err != nil {
 	//	return nil, err
 	//}
-	volContext := req.GetVolumeContext()
+	//volContext := req.GetVolumeContext()
 
 	b := &bucket{
-		Name:          bucketName,
+		Name:    bucketName,
 		Mounter: volContext[mounterTypeKey],
 	}
 
@@ -159,11 +185,11 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize S3 client: %s", err)
 	}
-	if(len(s3.cfg.ExistingBucket)!=0) {
+	if len(s3.cfg.ExistingBucket) != 0 {
 		bucketName = s3.cfg.ExistingBucket
 	}
 	b := &bucket{
-		Name:          bucketName,
+		Name: bucketName,
 	}
 	//b, err := s3.getBucket(bucketName)
 	//if err != nil {

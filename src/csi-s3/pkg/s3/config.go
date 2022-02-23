@@ -9,6 +9,6 @@ type Config struct {
 	Mounter         string
 	ExistingBucket  string
 	RemoveOnDelete  bool
-	Readonly		bool
+	Readonly        bool
 	Provision       bool
 }

@@ -70,7 +70,7 @@ func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize S3 client: %s", err)
 	}
-	if(len(s3.cfg.ExistingBucket)!=0) {
+	if len(s3.cfg.ExistingBucket) != 0 {
 		bucketName = s3.cfg.ExistingBucket
 	}
 	exists, err := s3.bucketExists(bucketName)
@@ -129,7 +129,7 @@ func (cs *controllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVol
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize S3 client: %s", err)
 	}
-	if(len(s3.cfg.ExistingBucket)!=0) {
+	if len(s3.cfg.ExistingBucket) != 0 {
 		bucketName = s3.cfg.ExistingBucket
 	}
 	exists, err := s3.bucketExists(bucketName)
@@ -137,10 +137,10 @@ func (cs *controllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVol
 		return nil, err
 	}
 	removeOnDelete := s3.cfg.RemoveOnDelete
-	glog.V(5).Info("Remove on delete value %s",fmt.Sprint(removeOnDelete))
+	glog.V(5).Info("Remove on delete value %s", fmt.Sprint(removeOnDelete))
 	if exists && removeOnDelete {
 		if err := s3.removeBucket(bucketName); err != nil {
-			glog.V(3).Infof("Failed to remove volume %s and bucket %s: %v", volumeID,bucketName, err)
+			glog.V(3).Infof("Failed to remove volume %s and bucket %s: %v", volumeID, bucketName, err)
 			return nil, err
 		}
 	} else {
@@ -197,6 +197,55 @@ func (cs *controllerServer) ValidateVolumeCapabilities(ctx context.Context, req 
 
 func (cs *controllerServer) ControllerExpandVolume(ctx context.Context, req *csi.ControllerExpandVolumeRequest) (*csi.ControllerExpandVolumeResponse, error) {
 	return &csi.ControllerExpandVolumeResponse{}, status.Error(codes.Unimplemented, "ControllerExpandVolume is not implemented")
+}
+
+func createVolume(volumeID string, secrets map[string]string) (*s3Volume, error) {
+	glog.V(4).Infof("Got a request to create volume %s", volumeID)
+
+	volID := sanitizeVolumeID(volumeID)
+	bucketName := volID
+
+	s3, err := newS3ClientFromSecrets(secrets)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize S3 client: %s", err)
+	}
+
+	if len(s3.cfg.ExistingBucket) != 0 {
+		bucketName = s3.cfg.ExistingBucket
+	}
+
+	exists, err := s3.bucketExists(bucketName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if bucket %s exists: %v", bucketName, err)
+	}
+
+	if exists == false {
+		if s3.cfg.Provision {
+			if err = s3.createBucket(bucketName); err != nil {
+				return nil, fmt.Errorf("failed to create volume %s: %v", volumeID, err)
+			}
+		} else {
+			return nil, fmt.Errorf("s3 bucket: %s does not exist", bucketName)
+		}
+	}
+	//b := &bucket{
+	//	Name:          bucketName,
+	//	Mounter:       mounter,
+	//}
+
+	//TODO check for readonly
+
+	//if err := s3.setBucket(b); err != nil {
+	//	return nil, fmt.Errorf("Error setting bucket metadata: %v", err)
+	//}
+
+	glog.V(4).Infof("create volume %s", volumeID)
+	s3Vol := s3Volume{}
+	s3Vol.VolName = volumeID
+	s3Vol.VolID = volumeID
+
+	return &s3Vol, nil
 }
 
 func sanitizeVolumeID(volumeID string) string {
