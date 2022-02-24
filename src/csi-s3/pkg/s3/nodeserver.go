@@ -78,38 +78,48 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	//Check if it's an ephemeral storage request
 	ephemeralVolume := volContext["csi.storage.k8s.io/ephemeral"] == "true" || volContext["csi.storage.k8s.io/ephemeral"] == ""
 
+	var s3args map[string]string
 	if ephemeralVolume {
 
 		glog.V(4).Infof("Creating an ephemeral volume %s", volumeID)
 
-		_, err := createVolume(volumeID, req.GetSecrets())
+		s3args = volContext
+		s3Vol, err := createVolume(volumeID, s3args)
 
-		if err != nil {
+		if err != nil || s3Vol == nil {
 			glog.V(1).Infof("Could not create Volume for vol. ID %s ", volumeID)
-			return nil, fmt.Errorf("Ephemeral volume creation for vol. ID failed")
+			return nil, fmt.Errorf("Ephemeral volume creation for vol. ID failed - %v", err)
 		} else {
 			glog.V(4).Infof("Successfully created ephemeral Volume for vol ID %s", volumeID)
 		}
+
+		//Copy back the bucketname in case we used the volumeID as the name of a bucket that was
+		//provisioned on-demand
+		s3args["bucket"] = s3Vol.Bucket
 
 		// srikumarv - except for the s3backer, none of the mounters actually use stagingTargetPath
 		// but we'll set a value for stagingTargetPath so it does not foul up on the definition of
 		// the mount method (stagingTargetPath is probably already nil string, this just ensures
 		// that this value is present)
 		stagingTargetPath = ""
+
 	} else {
 
 		if len(stagingTargetPath) == 0 {
 			return nil, status.Error(codes.InvalidArgument, "Staging Target path missing in request")
 		}
+		s3args = req.GetSecrets()
 	}
 
-	s3, err := newS3ClientFromSecrets(req.GetSecrets())
+	s3, err := newS3ClientFromSecrets(s3args)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize S3 client: %s", err)
 	}
 
-	if len(s3.cfg.ExistingBucket) != 0 {
-		bucketName = s3.cfg.ExistingBucket
+	if len(s3.cfg.Bucket) != 0 {
+		bucketName = s3.cfg.Bucket
+	} else {
+		return nil, status.Error(codes.InvalidArgument, "Bucket name not provided for mounting")
 	}
 
 	//b, err := s3.getBucket(bucketName)
@@ -185,8 +195,8 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize S3 client: %s", err)
 	}
-	if len(s3.cfg.ExistingBucket) != 0 {
-		bucketName = s3.cfg.ExistingBucket
+	if len(s3.cfg.Bucket) != 0 {
+		bucketName = s3.cfg.Bucket
 	}
 	b := &bucket{
 		Name: bucketName,

@@ -19,8 +19,8 @@ type s3Client struct {
 }
 
 type bucket struct {
-	Name          string
-	Mounter       string
+	Name    string
+	Mounter string
 }
 
 func newS3Client(cfg *Config) (*s3Client, error) {
@@ -45,19 +45,16 @@ func newS3Client(cfg *Config) (*s3Client, error) {
 }
 
 func newS3ClientFromSecrets(secrets map[string]string) (*s3Client, error) {
-	readonly := false
-	readonly, _ = strconv.ParseBool(secrets["readonly"])
-	provision := false
-	provision, _ = strconv.ParseBool(secrets["provision"])
-	removeOnDelete := false
-	removeOnDelete, _ = strconv.ParseBool(secrets["remove-on-delete"])
+	readonly, _ := strconv.ParseBool(secrets["readonly"])
+	provision, _ := strconv.ParseBool(secrets["provision"])
+	removeOnDelete, _ := strconv.ParseBool(secrets["remove-on-delete"])
 	return newS3Client(&Config{
 		AccessKeyID:     secrets["accessKeyID"],
 		SecretAccessKey: secrets["secretAccessKey"],
 		Region:          secrets["region"],
 		Endpoint:        secrets["endpoint"],
-		ExistingBucket:  secrets["bucket"],
-		Readonly:		 readonly,
+		Bucket:          secrets["bucket"],
+		Readonly:        readonly,
 		Provision:       provision,
 		RemoveOnDelete:  removeOnDelete,
 		// Mounter is set in the volume preferences, not secrets
@@ -131,7 +128,7 @@ func (client *s3Client) emptyBucket(bucketName string) error {
 //}
 
 //TODO is it not used at all?
-func (client *s3Client) metadataExist(bucketName string) (bool) {
+func (client *s3Client) metadataExist(bucketName string) bool {
 	opts := minio.GetObjectOptions{}
 	_, err := client.minio.GetObject(bucketName, metadataName, opts)
 	if err != nil {
@@ -144,22 +141,22 @@ func (client *s3Client) metadataExist(bucketName string) (bool) {
 //TODO check for readonly
 
 //func (client *s3Client) getBucket(bucketName string) (*bucket, error) {
-	//opts := minio.GetObjectOptions{}
-	//obj, err := client.minio.GetObject(bucketName, metadataName, opts)
-	//if err != nil {
-	//	return &bucket{}, err
-	//}
-	//objInfo, err := obj.Stat()
-	//if err != nil {
-	//	return &bucket{}, err
-	//}
-	//b := make([]byte, objInfo.Size)
-	//_, err = obj.Read(b)
-	//
-	//if err != nil && err != io.EOF {
-	//	return &bucket{}, err
-	//}
-	//var meta bucket
-	//err = json.Unmarshal(b, &meta)
-	//return &meta, err
+//opts := minio.GetObjectOptions{}
+//obj, err := client.minio.GetObject(bucketName, metadataName, opts)
+//if err != nil {
+//	return &bucket{}, err
+//}
+//objInfo, err := obj.Stat()
+//if err != nil {
+//	return &bucket{}, err
+//}
+//b := make([]byte, objInfo.Size)
+//_, err = obj.Read(b)
+//
+//if err != nil && err != io.EOF {
+//	return &bucket{}, err
+//}
+//var meta bucket
+//err = json.Unmarshal(b, &meta)
+//return &meta, err
 //}
