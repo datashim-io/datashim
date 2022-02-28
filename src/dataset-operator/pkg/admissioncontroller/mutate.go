@@ -50,7 +50,7 @@ func Mutate(body []byte) ([]byte, error) {
 			if strings.HasPrefix(k, prefixLabels) {
 				datasetNameArray := strings.Split(k, ".")
 				datasetId := strings.Join([]string{datasetNameArray[0], datasetNameArray[1]}, ".")
-				if _, ok := datasetInfo[datasetId]; ok == false {
+				if _, ok := datasetInfo[datasetId]; !ok {
 					datasetInfo[datasetId] = map[string]string{datasetNameArray[2]: v}
 				} else {
 					datasetInfo[datasetId][datasetNameArray[2]] = v
@@ -269,7 +269,7 @@ func in_array(val interface{}, array interface{}) (exists bool, index int) {
 		s := reflect.ValueOf(array)
 
 		for i := 0; i < s.Len(); i++ {
-			if reflect.DeepEqual(val, s.Index(i).Interface()) == true {
+			if reflect.DeepEqual(val, s.Index(i).Interface()) {
 				index = i
 				exists = true
 				return
