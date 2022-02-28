@@ -74,6 +74,10 @@ func Mutate(body []byte) ([]byte, error) {
 
 		p := []map[string]interface{}{}
 
+		//for _, d := range datasets_tomount {
+		//
+		//}
+
 		for k, v := range datasetInfo {
 			log.Printf("key[%s] value[%s]\n", k, v)
 
@@ -97,6 +101,9 @@ func Mutate(body []byte) ([]byte, error) {
 			case "configmap":
 				//by default, we will mount a config map inside the containers.
 				configs_toinject = append(configs_toinject, v["id"])
+			case "inline":
+				// this handles ephemeral volumes
+				log.Printf("Error: useas inline is not yet implemented")
 			default:
 				//this is an error
 				log.Printf("Error: The useas for this dataset is not recognized")
