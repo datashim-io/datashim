@@ -3,12 +3,16 @@ kind: Pod
 metadata:
   name: nginx
   labels:
-    dataset.0.id: "example-dataset"
+    dataset.0.id: "example-dataset" #optional, if volumeMount is specified
     dataset.0.useas: "mount"
 spec:
+  volumes:
+    - name: "example-dataset"
+      persistentVolumeClaim:
+        claimName: "example-dataset"
   containers:
     - name: nginx
       image: nginx
       volumeMounts:
-        - mountPath: "/mount/dataset1" #optional, if not specified it would be mounted in /mnt/datasets/example-dataset
+        - mountPath: "/mount/dataset1" #optional, if label is specified it would be mounted in /mnt/datasets/example-dataset
           name: "example-dataset"
