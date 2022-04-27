@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"github.com/datashim-io/datashim/src/dataset-operator/pkg/admissioncontroller"
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/datashim-io/datashim/src/dataset-operator/admissioncontroller"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -18,17 +18,9 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
-	"github.com/datashim-io/datashim/src/dataset-operator/pkg/apis"
-	"github.com/datashim-io/datashim/src/dataset-operator/pkg/controller"
+	"github.com/datashim-io/datashim/src/dataset-operator/controllers"
 	"github.com/datashim-io/datashim/src/dataset-operator/version"
 
-	objectstorage "github.com/kube-object-storage/lib-bucket-provisioner/pkg/apis/objectbucket.io/v1alpha1"
-	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
-	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
-	"github.com/operator-framework/operator-sdk/pkg/leader"
-	"github.com/operator-framework/operator-sdk/pkg/log/zap"
-	"github.com/operator-framework/operator-sdk/pkg/metrics"
-	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/spf13/pflag"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -166,8 +158,7 @@ func main() {
 			// comments below on more discussion on how to handle this.
 			log.Info("Error in listen")
 		}
-	}()
-
+	}
 
 	log.Info("Server set up as well!")
 

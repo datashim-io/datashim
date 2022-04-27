@@ -1,4 +1,4 @@
-package controller
+package controllers
 
 import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"

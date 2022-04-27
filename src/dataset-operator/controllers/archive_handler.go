@@ -4,7 +4,7 @@ import (
 	"path"
 	"strconv"
 
-	datasets "github.com/datashim-io/datashim/api/v1alpha1"
+	datasets "github.com/datashim-io/datashim/src/dataset-operator/api/v1alpha1"
 	"github.com/google/uuid"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
