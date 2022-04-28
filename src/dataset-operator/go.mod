@@ -77,5 +77,5 @@ require (
 )
 
 replace github.com/datashim-io/datashim => ../../../datashim
-
 replace github.com/datashim-io/datashim/src/dataset-operator => ../dataset-operator
+replace github.com/datashim-io/datashim/plugins/ceph-cache-plugin => ../../plugins/ceph-cache-plugin

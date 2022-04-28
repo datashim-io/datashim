@@ -5,20 +5,27 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/datashim-io/datashim/src/dataset-operator/admissioncontroller"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"runtime"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"strings"
 	"time"
+
+	"github.com/datashim-io/datashim/plugins/ceph-cache-plugin/pkg/apis"
+	"github.com/datashim-io/datashim/plugins/ceph-cache-plugin/pkg/controller"
+	"github.com/datashim-io/datashim/src/dataset-operator/admissioncontroller"
+	kubemetrics "github.com/datashim-io/datashim/src/pkg/mod/github.com/operator-framework/operator-sdk@v0.16.0/pkg/kube-metrics"
+	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
+	"github.com/operator-framework/operator-sdk/pkg/leader"
+	"github.com/operator-framework/operator-sdk/pkg/metrics"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
-	"github.com/datashim-io/datashim/src/dataset-operator/controllers"
 	"github.com/datashim-io/datashim/src/dataset-operator/version"
 
 	"github.com/spf13/pflag"
@@ -69,7 +76,7 @@ func main() {
 	printVersion()
 
 	// TODO add multi-namespace support
-	namespace, err := k8sutil.GetWatchNamespace()
+	namespace, err := getWatchNamespace()
 	if err != nil {
 		log.Error(err, "Failed to get watch namespace")
 		os.Exit(1)
@@ -158,7 +165,7 @@ func main() {
 			// comments below on more discussion on how to handle this.
 			log.Info("Error in listen")
 		}
-	}
+	}()
 
 	log.Info("Server set up as well!")
 
@@ -237,6 +244,15 @@ func serveCRMetrics(cfg *rest.Config, operatorNs string) error {
 		return err
 	}
 	return nil
+}
+
+func getWatchNamespace() (string, error) {
+	ns, hasErr := os.LookupEnv("WATCH_NAMESPACE")
+	if hasErr {
+		return "", errors.New("Could not get the watch namespace")
+	} else {
+		return ns, nil
+	}
 }
 
 func handleMutate(w http.ResponseWriter, r *http.Request) {
