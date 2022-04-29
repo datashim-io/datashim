@@ -71,11 +71,12 @@ func Mutate(body []byte) ([]byte, error) {
 			}
 		}
 		// Finally, don't inject those datasets which are already mounted as a PVC
-		for datasetIndex, datasetInfo := range datasetInfo {
-			datasetName := datasetInfo["id"]
-			if _, found := mountedPVCs[datasetName]; found {
+		for datasetIndex, info := range datasetInfo {
+			if info["useas"] == "mount" {
 				// The dataset is already mounted as a PVC no need to add it again
-				delete(datasetInfo, datasetIndex)
+				if _, found := mountedPVCs[info["id"]]; found {
+					delete(datasetInfo, datasetIndex)
+				}
 			}
 		}
 
