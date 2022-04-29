@@ -47,7 +47,7 @@ require (
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.28.0 // indirect
 	github.com/prometheus/procfs v0.6.0 // indirect
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.5 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.19.1 // indirect
@@ -76,6 +76,6 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/datashim-io/datashim => ../../../datashim
 replace github.com/datashim-io/datashim/src/dataset-operator => ../dataset-operator
+
 replace github.com/datashim-io/datashim/plugins/ceph-cache-plugin => ../../plugins/ceph-cache-plugin

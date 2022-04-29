@@ -20,8 +20,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"net/http"
 	"os"
+	goruntime "runtime"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -29,15 +29,16 @@ import (
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	datasetsv1alpha1 "github.com/datashim-io/datashim/api/v1alpha1"
-	"github.com/datashim-io/datashim/controllers"
-	"github.com/datashim-io/datashim/src/dataset-operator/version"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	datasetsv1alpha1 "github.com/datashim-io/datashim/src/dataset-operator/api/v1alpha1"
+	"github.com/datashim-io/datashim/src/dataset-operator/controllers"
+	"github.com/datashim-io/datashim/src/dataset-operator/version"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -52,12 +53,6 @@ func init() {
 	utilruntime.Must(datasetsv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
-
-var (
-	metricsHost               = "0.0.0.0"
-	metricsPort         int32 = 8383
-	operatorMetricsPort int32 = 8686
-)
 
 func main() {
 	var metricsAddr string
@@ -76,13 +71,6 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	// TODO add multi-namespace support
-	namespace, nserr := os.LookupEnv("WATCH_NAMESPACE")
-	if !nserr {
-		setupLog.Error("Failed to get watch namespace")
-		os.Exit(1)
-	}
-
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
@@ -90,7 +78,6 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "9889c07a.datashim.io",
-		Namespace:              namespace,
 	})
 
 	if err != nil {
@@ -98,8 +85,8 @@ func main() {
 		os.Exit(1)
 	} else {
 		setupLog.Info(fmt.Sprintf("Operator Version: %s", version.Version))
-		setupLog.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
-		setupLog.Info(fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
+		setupLog.Info(fmt.Sprintf("Go Version: %s", goruntime.Version()))
+		setupLog.Info(fmt.Sprintf("Go OS/Arch: %s/%s", goruntime.GOOS, goruntime.GOARCH))
 		/* TODO(srikumarv) - these APIs have all been deprecated or made internal. Find alts
 		log.Info(fmt.Sprintf("Version of operator-sdk: %v", sdkVersion.Version))
 		*/
@@ -137,19 +124,6 @@ func main() {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}
-
-	o
-
-	go func() {
-		// returns ErrServerClosed on graceful close
-		if err := s.ListenAndServeTLS("/run/secrets/tls/tls.crt", "/run/secrets/tls/tls.key"); err != http.ErrServerClosed {
-			// NOTE: there is a chance that next line won't have time to run,
-			// as main() doesn't wait for this goroutine to stop. don't use
-			// code with race conditions like these for production. see post
-			// comments below on more discussion on how to handle this.
-			log.Info("Error in listen")
-		}
-	}()
 
 	setupLog.Info("Server set up as well!")
 
