@@ -46,6 +46,8 @@ func Mutate(body []byte) ([]byte, error) {
 
 		// Record the names of already mounted PVCs. Cross-check them with those referenced in
 		// a label. We only want to inject PVCs whose name is not in the mountedPVCs map.
+
+		// Format is {<dataset id:str>: 1} -- basically using the map as a set
 		mountedPVCs := make(map[string]int)
 		for _, v := range pod.Spec.Volumes {
 			if v.PersistentVolumeClaim != nil {
@@ -53,16 +55,12 @@ func Mutate(body []byte) ([]byte, error) {
 			}
 		}
 
+		// Format is {"dataset.<index>": {"id": <str>, "useas": mount/configmap}
 		datasetInfo := map[string]map[string]string{}
 
 		for k, v := range pod.Labels {
 			log.Printf("key[%s] value[%s]\n", k, v)
 			if strings.HasPrefix(k, prefixLabels) {
-				if _, found := mountedPVCs[v]; found {
-					// The dataset is already mounted as a PVC no need to add it again
-					continue
-				}
-
 				datasetNameArray := strings.Split(k, ".")
 				datasetId := strings.Join([]string{datasetNameArray[0], datasetNameArray[1]}, ".")
 				if _, ok := datasetInfo[datasetId]; ok == false {
@@ -70,6 +68,14 @@ func Mutate(body []byte) ([]byte, error) {
 				} else {
 					datasetInfo[datasetId][datasetNameArray[2]] = v
 				}
+			}
+		}
+		// Finally, don't inject those datasets which are already mounted as a PVC
+		for datasetIndex, datasetInfo := range datasetInfo {
+			datasetName := datasetInfo["id"]
+			if _, found := mountedPVCs[datasetName]; found {
+				// The dataset is already mounted as a PVC no need to add it again
+				delete(datasetInfo, datasetIndex)
 			}
 		}
 
