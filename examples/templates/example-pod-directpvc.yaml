@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  volumes:
+    - name: "example-dataset"
+      persistentVolumeClaim:
+        claimName: "example-dataset"
+  containers:
+    - name: nginx
+      image: nginx
+      volumeMounts:
+        - mountPath: "/mount/dataset1" 
+          name: "example-dataset"
