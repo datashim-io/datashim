@@ -138,7 +138,7 @@ func main() {
 func getWatchNamespace() (string, error) {
 	ns, hasErr := os.LookupEnv("WATCH_NAMESPACE")
 	if hasErr {
-		return "", errors.New("Could not get the watch namespace")
+		return "", errors.New("could not get the watch namespace")
 	} else {
 		return ns, nil
 	}

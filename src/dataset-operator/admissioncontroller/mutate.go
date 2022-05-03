@@ -3,138 +3,120 @@
 package admissioncontroller
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"reflect"
 	"strings"
 
-	v1beta1 "k8s.io/api/admission/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 const (
 	prefixLabels = "dataset."
 )
 
-// Mutate mutates
-func Mutate(body []byte) ([]byte, error) {
+//following the kubebuilder example for the pod mutator
 
-	log.Printf("recv: %s\n", string(body))
+// +kubebuilder:webhook:path=/mutate-v1-pod,mutating=true,failurePolicy=fail,groups="",resources=pods,verbs=create;update,versions=v1,name=mpod.datashim.io
+type datasetPodMutator struct {
+	decoder *admission.Decoder
+}
 
-	// unmarshal request into AdmissionReview struct
-	admReview := v1beta1.AdmissionReview{}
-	if err := json.Unmarshal(body, &admReview); err != nil {
-		return nil, fmt.Errorf("unmarshaling request failed with %s", err)
-	}
+func (m *datasetPodMutator) Handle(ctx context.Context, req admission.Request) admission.Response {
+	// Mutate mutates
+	log.Printf("recv: %s\n", string(req))
 
 	var err error
-	var pod *corev1.Pod
+	pod := &corev1.Pod{}
 
-	responseBody := []byte{}
-	ar := admReview.Request
-	resp := v1beta1.AdmissionResponse{}
-	admReview.Response = &resp
+	err = m.decoder.Decode(req, pod)
 
-	if ar != nil {
+	if err != nil {
+		log.Fatalf("Could not decode pod ")
+		return admission.Errored(http.StatusBadRequest, err)
+	}
 
-		// get the Pod object and unmarshal it into its struct, if we cannot, we might as well stop here
-		if err := json.Unmarshal(ar.Object.Raw, &pod); err != nil {
-			return nil, fmt.Errorf("unable unmarshal pod json object %v", err)
+	resp := admission.Response{}
+
+	// Record the names of already mounted PVCs. Cross-check them with those referenced in
+	// a label. We only want to inject PVCs whose name is not in the mountedPVCs map.
+
+	// Format is {<dataset id:str>: 1} -- basically using the map as a set
+	mountedPVCs := make(map[string]int)
+	for _, v := range pod.Spec.Volumes {
+		if v.PersistentVolumeClaim != nil {
+			mountedPVCs[v.PersistentVolumeClaim.ClaimName] = 1
 		}
+	}
 
-		// Record the names of already mounted PVCs. Cross-check them with those referenced in
-		// a label. We only want to inject PVCs whose name is not in the mountedPVCs map.
+	// Format is {"dataset.<index>": {"id": <str>, "useas": mount/configmap}
+	datasetInfo := map[string]map[string]string{}
 
-		// Format is {<dataset id:str>: 1} -- basically using the map as a set
-		mountedPVCs := make(map[string]int)
-		for _, v := range pod.Spec.Volumes {
-			if v.PersistentVolumeClaim != nil {
-				mountedPVCs[v.PersistentVolumeClaim.ClaimName] = 1
+	for k, v := range pod.Labels {
+		log.Printf("key[%s] value[%s]\n", k, v)
+		if strings.HasPrefix(k, prefixLabels) {
+			datasetNameArray := strings.Split(k, ".")
+			datasetId := strings.Join([]string{datasetNameArray[0], datasetNameArray[1]}, ".")
+			if _, ok := datasetInfo[datasetId]; ok == false {
+				datasetInfo[datasetId] = map[string]string{datasetNameArray[2]: v}
+			} else {
+				datasetInfo[datasetId][datasetNameArray[2]] = v
 			}
 		}
-
-		// Format is {"dataset.<index>": {"id": <str>, "useas": mount/configmap}
-		datasetInfo := map[string]map[string]string{}
-
-		for k, v := range pod.Labels {
-			log.Printf("key[%s] value[%s]\n", k, v)
-			if strings.HasPrefix(k, prefixLabels) {
-				datasetNameArray := strings.Split(k, ".")
-				datasetId := strings.Join([]string{datasetNameArray[0], datasetNameArray[1]}, ".")
-				if _, ok := datasetInfo[datasetId]; ok == false {
-					datasetInfo[datasetId] = map[string]string{datasetNameArray[2]: v}
-				} else {
-					datasetInfo[datasetId][datasetNameArray[2]] = v
-				}
+	}
+	// Finally, don't inject those datasets which are already mounted as a PVC
+	for datasetIndex, info := range datasetInfo {
+		if info["useas"] == "mount" {
+			// The dataset is already mounted as a PVC no need to add it again
+			if _, found := mountedPVCs[info["id"]]; found {
+				delete(datasetInfo, datasetIndex)
 			}
 		}
-		// Finally, don't inject those datasets which are already mounted as a PVC
-		for datasetIndex, info := range datasetInfo {
-			if info["useas"] == "mount" {
-				// The dataset is already mounted as a PVC no need to add it again
-				if _, found := mountedPVCs[info["id"]]; found {
-					delete(datasetInfo, datasetIndex)
-				}
+	}
+
+	if len(datasetInfo) == 0 {
+		m := fmt.Sprintf("Pod %s/%s does not need to be mutated - skipping\n", pod.Namespace, pod.Name)
+		log.Printf(m)
+		return admission.Allowed(m)
+	}
+
+	existing_volumes_id := len(pod.Spec.Volumes)
+	datasets_tomount := []string{}
+	configs_toinject := []string{}
+
+	p := []map[string]interface{}{}
+
+	for k, v := range datasetInfo {
+		log.Printf("key[%s] value[%s]\n", k, v)
+
+		//TODO: currently, the useas and dataset types are not cross-checked
+		//e.g. useas configmap is not applicable to NFS shares.
+		//There may be future dataset backends (e.g. SQL queries) that may
+		//not be able to be mounted. This logic needs to be revisited
+		switch v["useas"] {
+		case "mount":
+			patch := map[string]interface{}{
+				"op":   "add",
+				"path": "/spec/volumes/" + fmt.Sprint(existing_volumes_id),
 			}
-		}
-
-		if len(datasetInfo) == 0 {
-			log.Printf("Pod %s/%s does not need to be mutated - skipping\n", pod.Namespace, pod.Name)
-			resp.Allowed = true
-			resp.UID = ar.UID
-			responseBody, err = json.Marshal(admReview)
-			if err != nil {
-				return nil, err
+			patch["value"] = map[string]interface{}{
+				"name":                  v["id"],
+				"persistentVolumeClaim": map[string]string{"claimName": v["id"]},
 			}
-			return responseBody, nil
-		}
-		// set response options
-		resp.Allowed = true
-		resp.UID = ar.UID
-		pT := v1beta1.PatchTypeJSONPatch
-		resp.PatchType = &pT // it's annoying that this needs to be a pointer as you cannot give a pointer to a constant?
-
-		// add some audit annotations, helpful to know why a object was modified, maybe (?)
-		resp.AuditAnnotations = map[string]string{
-			"mutateme": "yup it did it",
-		}
-
-		existing_volumes_id := len(pod.Spec.Volumes)
-		datasets_tomount := []string{}
-		configs_toinject := []string{}
-
-		p := []map[string]interface{}{}
-
-		for k, v := range datasetInfo {
-			log.Printf("key[%s] value[%s]\n", k, v)
-
-			//TODO: currently, the useas and dataset types are not cross-checked
-			//e.g. useas configmap is not applicable to NFS shares.
-			//There may be future dataset backends (e.g. SQL queries) that may
-			//not be able to be mounted. This logic needs to be revisited
-			switch v["useas"] {
-			case "mount":
-				patch := map[string]interface{}{
-					"op":   "add",
-					"path": "/spec/volumes/" + fmt.Sprint(existing_volumes_id),
-				}
-				patch["value"] = map[string]interface{}{
-					"name":                  v["id"],
-					"persistentVolumeClaim": map[string]string{"claimName": v["id"]},
-				}
-				datasets_tomount = append(datasets_tomount, v["id"])
-				p = append(p, patch)
-				existing_volumes_id += 1
-			case "configmap":
-				//by default, we will mount a config map inside the containers.
-				configs_toinject = append(configs_toinject, v["id"])
-			default:
-				//this is an error
-				log.Printf("Error: The useas for this dataset is not recognized")
-			}
-
+			datasets_tomount = append(datasets_tomount, v["id"])
+			p = append(p, patch)
+			existing_volumes_id += 1
+		case "configmap":
+			//by default, we will mount a config map inside the containers.
+			configs_toinject = append(configs_toinject, v["id"])
+		default:
+			//this is an error
+			log.Printf("Error: The useas for this dataset is not recognized")
 		}
 
 		init_containers := pod.Spec.InitContainers
@@ -185,6 +167,12 @@ func Mutate(body []byte) ([]byte, error) {
 
 	log.Printf("resp: %s\n", string(responseBody))
 	return responseBody, nil
+}
+
+// InjectDecoder injects the decoder.
+func (m *datasetPodMutator) InjectDecoder(d *admission.Decoder) error {
+	m.decoder = d
+	return nil
 }
 
 func patchContainersWithDatasetVolumes(datasets []string, containers []corev1.Container, init bool) (patch []map[string]interface{}) {
