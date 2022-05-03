@@ -17,6 +17,7 @@ COPY main.go main.go
 COPY api/ api/
 COPY controllers/ controllers/
 COPY version/ version/
+COPY admissioncontroller/ admissioncontroller/
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build -a -o manager main.go

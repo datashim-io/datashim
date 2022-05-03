@@ -4,15 +4,15 @@ package admissioncontroller
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"reflect"
 	"strings"
 
+	jsonpatch "gomodules.xyz/jsonpatch/v2"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -23,13 +23,14 @@ const (
 //following the kubebuilder example for the pod mutator
 
 // +kubebuilder:webhook:path=/mutate-v1-pod,mutating=true,failurePolicy=fail,groups="",resources=pods,verbs=create;update,versions=v1,name=mpod.datashim.io
-type datasetPodMutator struct {
+type DatasetPodMutator struct {
+	Client  client.Client
 	decoder *admission.Decoder
 }
 
-func (m *datasetPodMutator) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (m *DatasetPodMutator) Handle(ctx context.Context, req admission.Request) admission.Response {
 	// Mutate mutates
-	log.Printf("recv: %s\n", string(req))
+	log.Printf("recv: %s\n", string(req.String()))
 
 	var err error
 	pod := &corev1.Pod{}
@@ -40,8 +41,6 @@ func (m *datasetPodMutator) Handle(ctx context.Context, req admission.Request) a
 		log.Fatalf("Could not decode pod ")
 		return admission.Errored(http.StatusBadRequest, err)
 	}
-
-	resp := admission.Response{}
 
 	// Record the names of already mounted PVCs. Cross-check them with those referenced in
 	// a label. We only want to inject PVCs whose name is not in the mountedPVCs map.
@@ -89,7 +88,7 @@ func (m *datasetPodMutator) Handle(ctx context.Context, req admission.Request) a
 	datasets_tomount := []string{}
 	configs_toinject := []string{}
 
-	p := []map[string]interface{}{}
+	patchops := []jsonpatch.JsonPatchOperation{}
 
 	for k, v := range datasetInfo {
 		log.Printf("key[%s] value[%s]\n", k, v)
@@ -100,16 +99,16 @@ func (m *datasetPodMutator) Handle(ctx context.Context, req admission.Request) a
 		//not be able to be mounted. This logic needs to be revisited
 		switch v["useas"] {
 		case "mount":
-			patch := map[string]interface{}{
-				"op":   "add",
-				"path": "/spec/volumes/" + fmt.Sprint(existing_volumes_id),
+			patchop := jsonpatch.JsonPatchOperation{
+				Operation: "add",
+				Path:      "/spec/volumes/" + fmt.Sprint(existing_volumes_id),
+				Value: map[string]interface{}{
+					"name":                  v["id"],
+					"persistentVolumeClaim": map[string]string{"claimName": v["id"]},
+				},
 			}
-			patch["value"] = map[string]interface{}{
-				"name":                  v["id"],
-				"persistentVolumeClaim": map[string]string{"claimName": v["id"]},
-			}
+			patchops = append(patchops, patchop)
 			datasets_tomount = append(datasets_tomount, v["id"])
-			p = append(p, patch)
 			existing_volumes_id += 1
 		case "configmap":
 			//by default, we will mount a config map inside the containers.
@@ -117,6 +116,7 @@ func (m *datasetPodMutator) Handle(ctx context.Context, req admission.Request) a
 		default:
 			//this is an error
 			log.Printf("Error: The useas for this dataset is not recognized")
+			return admission.Errored(http.StatusBadRequest, fmt.Errorf("The useas for this dataset is not recognized"))
 		}
 
 		init_containers := pod.Spec.InitContainers
@@ -127,57 +127,39 @@ func (m *datasetPodMutator) Handle(ctx context.Context, req admission.Request) a
 		if len(datasets_tomount) > 0 {
 			log.Print("Adding Volumes to Init Containers")
 			patch_init := patchContainersWithDatasetVolumes(datasets_tomount, init_containers, true)
-			p = append(p, patch_init...)
+			patchops = append(patchops, patch_init...)
 
 			log.Print("Adding Volumes to App Containers")
 			patch_main := patchContainersWithDatasetVolumes(datasets_tomount, main_containers, false)
-			p = append(p, patch_main...)
+			patchops = append(patchops, patch_main...)
 		}
 
 		if len(configs_toinject) > 0 {
 			log.Print("Adding config maps to Init Containers")
 			config_patch_init := patchContainersWithDatasetMaps(configs_toinject, init_containers, true)
-			p = append(p, config_patch_init...)
+			patchops = append(patchops, config_patch_init...)
 
 			log.Print("Adding config maps to App Containers")
 			config_patch_main := patchContainersWithDatasetMaps(configs_toinject, main_containers, false)
-			p = append(p, config_patch_main...)
+			patchops = append(patchops, config_patch_main...)
 		}
 
-		log.Printf("Patch \n%v", p)
-		resp.Patch, err = json.Marshal(p)
-
-		// Success, of course ;)
-		if err != nil {
-			return nil, err
-		} else {
-			resp.Result = &metav1.Status{
-				Status: "Success",
-			}
-		}
-
-		admReview.Response = &resp
-		// back into JSON so we can return the finished AdmissionReview w/ Response directly
-		// w/o needing to convert things in the http handler
-		responseBody, err = json.Marshal(admReview)
-		if err != nil {
-			return nil, err
-		}
 	}
 
-	log.Printf("resp: %s\n", string(responseBody))
-	return responseBody, nil
+	return admission.Patched("added volumes to Pod in response to dataset", patchops...)
+
 }
 
 // InjectDecoder injects the decoder.
-func (m *datasetPodMutator) InjectDecoder(d *admission.Decoder) error {
+func (m *DatasetPodMutator) InjectDecoder(d *admission.Decoder) error {
 	m.decoder = d
 	return nil
 }
 
-func patchContainersWithDatasetVolumes(datasets []string, containers []corev1.Container, init bool) (patch []map[string]interface{}) {
+func patchContainersWithDatasetVolumes(datasets []string, containers []corev1.Container, init bool) (patches []jsonpatch.JsonPatchOperation) {
 
-	p := []map[string]interface{}{}
+	patchOps := []jsonpatch.JsonPatchOperation{}
+
 	container_typ := "containers"
 	if init {
 		container_typ = "initContainers"
@@ -196,27 +178,27 @@ func patchContainersWithDatasetVolumes(datasets []string, containers []corev1.Co
 			//TODO: Check if the dataset reference exists in the API server
 			exists, _ := in_array(dataset_tomount, mount_names)
 			if !exists {
-				patch := map[string]interface{}{
-					"op":   "add",
-					"path": "/spec/" + container_typ + "/" + fmt.Sprint(container_idx) + "/volumeMounts/" + fmt.Sprint(mount_idx),
-					"value": map[string]interface{}{
+				patch := jsonpatch.JsonPatchOperation{
+					Operation: "add",
+					Path:      "/spec/" + container_typ + "/" + fmt.Sprint(container_idx) + "/volumeMounts/" + fmt.Sprint(mount_idx),
+					Value: map[string]interface{}{
 						"name":      dataset_tomount,
 						"mountPath": "/mnt/datasets/" + dataset_tomount,
 					},
 				}
-				p = append(p, patch)
+				patchOps = append(patchOps, patch)
 				mount_idx += 1
 			}
 		}
 	}
 
-	return p
+	return patchOps
 
 }
 
-func patchContainersWithDatasetMaps(datasets []string, containers []corev1.Container, init bool) (patch []map[string]interface{}) {
+func patchContainersWithDatasetMaps(datasets []string, containers []corev1.Container, init bool) (patches []jsonpatch.JsonPatchOperation) {
 
-	p := []map[string]interface{}{}
+	patchOps := []jsonpatch.JsonPatchOperation{}
 
 	container_typ := "containers"
 	if init {
@@ -250,28 +232,28 @@ func patchContainersWithDatasetMaps(datasets []string, containers []corev1.Conta
 		if container.EnvFrom == nil || len(container.EnvFrom) == 0 {
 			// In this case, the envFrom path does not exist in the PodSpec. We are creating
 			// (initialising) this path with an array of configMapRef (RFC 6902)
-			patch := map[string]interface{}{
-				"op":    "add",
-				"path":  "/spec/" + container_typ + "/" + fmt.Sprint(container_idx) + "/envFrom",
-				"value": values,
+			patchOp := jsonpatch.JsonPatchOperation{
+				Operation: "add",
+				Path:      "/spec/" + container_typ + "/" + fmt.Sprint(container_idx) + "/envFrom",
+				Value:     values,
 			}
-			p = append(p, patch)
+			patchOps = append(patchOps, patchOp)
 		} else {
 			// In this case, the envFrom path does exist in the PodSpec. So, we just append to
 			// the existing array (Notice the path value)
 			for _, val := range values {
-				patch := map[string]interface{}{
-					"op":    "add",
-					"path":  "/spec/" + container_typ + "/" + fmt.Sprint(container_idx) + "/envFrom/-",
-					"value": val,
+				patchOp := jsonpatch.JsonPatchOperation{
+					Operation: "add",
+					Path:      "/spec/" + container_typ + "/" + fmt.Sprint(container_idx) + "/envFrom/-",
+					Value:     val,
 				}
-				p = append(p, patch)
+				patchOps = append(patchOps, patchOp)
 			}
 		}
 
 	}
 
-	return p
+	return patchOps
 }
 
 func in_array(val interface{}, array interface{}) (exists bool, index int) {
