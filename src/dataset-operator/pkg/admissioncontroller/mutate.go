@@ -137,6 +137,7 @@ func Mutate(body []byte) ([]byte, error) {
 			case "inline":
 				// this handles ephemeral volumes
 				log.Printf("Error: useas inline is not yet implemented")
+
 			default:
 				//this is an error
 				log.Printf("Error: The useas for this dataset is not recognized")

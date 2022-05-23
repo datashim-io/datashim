@@ -12,8 +12,6 @@ require (
 	github.com/onsi/ginkgo v1.5.0
 	github.com/onsi/gomega v1.4.0
 	github.com/smartystreets/goconvey v0.0.0-20190222223459-a17d461953aa // indirect
-	github.com/spf13/afero v1.2.1 // indirect
-	github.com/stretchr/testify v1.3.0 // indirect
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
 	golang.org/x/net v0.0.0-20191112182307-2180aed22343
 	golang.org/x/sys v0.0.0-20191112214154-59a1497f0cea // indirect
@@ -24,7 +22,7 @@ require (
 	k8s.io/apimachinery v0.0.0-20180714051327-705cfa51a97f // indirect
 	k8s.io/klog v0.2.0 // indirect
 	k8s.io/kubernetes v1.14.2
-	k8s.io/utils v0.0.0-20180703210027-ab9069044f32 // indirect
+	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9 // indirect
 )
 
-go 1.13
+go 1.15
