@@ -63,7 +63,7 @@ func Mutate(body []byte) ([]byte, error) {
 			if strings.HasPrefix(k, prefixLabels) {
 				datasetNameArray := strings.Split(k, ".")
 				datasetId := strings.Join([]string{datasetNameArray[0], datasetNameArray[1]}, ".")
-				if _, ok := datasetInfo[datasetId]; ok == false {
+				if _, ok := datasetInfo[datasetId]; !ok {
 					datasetInfo[datasetId] = map[string]string{datasetNameArray[2]: v}
 				} else {
 					datasetInfo[datasetId][datasetNameArray[2]] = v
@@ -107,6 +107,10 @@ func Mutate(body []byte) ([]byte, error) {
 
 		p := []map[string]interface{}{}
 
+		//for _, d := range datasets_tomount {
+		//
+		//}
+
 		for k, v := range datasetInfo {
 			log.Printf("key[%s] value[%s]\n", k, v)
 
@@ -130,6 +134,10 @@ func Mutate(body []byte) ([]byte, error) {
 			case "configmap":
 				//by default, we will mount a config map inside the containers.
 				configs_toinject = append(configs_toinject, v["id"])
+			case "inline":
+				// this handles ephemeral volumes
+				log.Printf("Error: useas inline is not yet implemented")
+
 			default:
 				//this is an error
 				log.Printf("Error: The useas for this dataset is not recognized")
@@ -295,7 +303,7 @@ func in_array(val interface{}, array interface{}) (exists bool, index int) {
 		s := reflect.ValueOf(array)
 
 		for i := 0; i < s.Len(); i++ {
-			if reflect.DeepEqual(val, s.Index(i).Interface()) == true {
+			if reflect.DeepEqual(val, s.Index(i).Interface()) {
 				index = i
 				exists = true
 				return

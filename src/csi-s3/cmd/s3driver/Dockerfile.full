@@ -1,53 +1,50 @@
-FROM ubuntu:16.04 as base
-RUN apt-get update && \
-  apt-get install -y \
-  git wget gcc make mercurial && \
-  rm -rf /var/lib/apt/lists/*
-
 ARG ARCH
 
-ENV ARCH=$ARCH
-ENV GO_VERSION=1.13.6
+FROM ${ARCH}/golang:1.17-bullseye as base
 
-RUN echo $ARCH $GO_VERSION
+ENV ARCH=${ARCH}
 
-RUN wget -q https://dl.google.com/go/go$GO_VERSION.linux-$ARCH.tar.gz && \
-  tar -xf go$GO_VERSION.linux-$ARCH.tar.gz && \
-  rm go$GO_VERSION.linux-$ARCH.tar.gz && \
-  mv go /usr/local
-
-ENV GOROOT /usr/local/go
-ENV GOPATH /go
-ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH:/opt/goofys
-ENV GOARCH $ARCH
-ENV GO111MODULE=on
-
-COPY go.mod .
-COPY go.sum .
-COPY go.mod.goofys .
-
-RUN go mod download
-
-#modified instructions according to https://github.com/kahing/goofys/issues/527
-
-RUN cd /opt && \
-    git clone https://github.com/kahing/goofys.git && \
+WORKDIR /go/src
+RUN git clone https://github.com/kahing/goofys.git && \
     cd goofys && \
-    cp /go.mod.goofys go.mod && \
-    git submodule init && \
-    git submodule update && \
-    go get ./... && \
+    go mod tidy && \
     if [ "$ARCH" = "ppc64le" ]; then \
 	  sed -i 's/4096/65536/g' /go/pkg/mod/github.com/kahing/fuse*/internal/buffer/in_message.go ; \
 	  sed -i 's/17/21/g' /go/pkg/mod/github.com/kahing/fuse*/internal/buffer/in_message_linux.go ; \
 	  sed -i 's/17/21/g' /go/pkg/mod/github.com/kahing/fuse*/internal/buffer/out_message_linux.go ; \
     else echo 'true'; fi && \
-    go build
+    go build -o /go/bin/goofys
 
-COPY . /csi-s3
-WORKDIR /csi-s3
-RUN mkdir -p /_output
-RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o /_output/s3driver /csi-s3/cmd/s3driver
+
+
+
+#COPY go.mod .
+#COPY go.sum .
+#COPY go.mod.goofys .
+
+#RUN go mod tidy
+
+#modified instructions according to https://github.com/kahing/goofys/issues/527
+
+# RUN cd /opt && \
+#    cd goofys && \
+#    git clone https://github.com/kahing/goofys.git && \
+#    cp /go.mod.goofys go.mod && \
+#    git submodule init && \
+#    git submodule update && \
+#    go get ./... && \
+#    if [ "$ARCH" = "ppc64le" ]; then \
+#	  sed -i 's/4096/65536/g' /go/pkg/mod/github.com/kahing/fuse*/internal/buffer/in_message.go ; \
+#	  sed -i 's/17/21/g' /go/pkg/mod/github.com/kahing/fuse*/internal/buffer/in_message_linux.go ; \
+#	  sed -i 's/17/21/g' /go/pkg/mod/github.com/kahing/fuse*/internal/buffer/out_message_linux.go ; \
+#   else echo 'true'; fi && \
+#    go build
+
+COPY . /go/src/csi-s3
+WORKDIR /go/src/csi-s3
+RUN ls -l && \ 
+    go mod tidy && \
+    CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o /go/bin/s3driver /go/src/csi-s3/cmd/s3driver
 
 FROM debian as s3backer
 ARG S3BACKER_VERSION=1.5.0
@@ -99,6 +96,6 @@ RUN cd /tmp \
   && mv /tmp/rclone-*-linux-amd64/rclone /usr/bin \
   && rm -r /tmp/rclone*
 
-COPY --from=base /_output/s3driver /s3driver
-COPY --from=base /opt/goofys/goofys /bin/goofys
+COPY --from=base /go/bin/s3driver /s3driver
+COPY --from=base /go/bin/goofys /bin/goofys
 ENTRYPOINT ["/s3driver"]
