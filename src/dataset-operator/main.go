@@ -37,7 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	admissioncontroller "github.com/datashim-io/datashim/src/dataset-operator/admissioncontroller"
+	"github.com/datashim-io/datashim/src/dataset-operator/admissioncontroller"
 	datasetsv1alpha1 "github.com/datashim-io/datashim/src/dataset-operator/api/v1alpha1"
 	"github.com/datashim-io/datashim/src/dataset-operator/controllers"
 	"github.com/datashim-io/datashim/src/dataset-operator/version"

@@ -29,4 +29,4 @@ WORKDIR /
 COPY --from=builder /dataset-operator/manager .
 USER 65532:65532
 
-ENTRYPOINT ["/  manager"]
+ENTRYPOINT ["/manager"]
