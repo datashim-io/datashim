@@ -1,4 +1,4 @@
-DOCKER_REGISTRY ?= quay.io/ibm-dlf
+DOCKER_REGISTRY ?= quay.io/datashim
 
 ARCH ?= 
 
