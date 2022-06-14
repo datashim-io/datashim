@@ -17,7 +17,7 @@ build-sidecars:
 
 build-components:
 	$(call install_local,dataset-operator,$(DATASET_OPERATOR_IMAGE))
-	$(call install_local,generate-keys,$(GENERAGE_KEYS_IMAGE))
+	$(call install_local,generate-keys,$(GENERATE_KEYS_IMAGE))
 
 build-csi-plugins:
 	$(call install_local,csi-s3,$(CSI_S3_IMAGE))

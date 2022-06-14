@@ -162,10 +162,11 @@ parameters:
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
   name: datasetsinternal.com.ie.ibm.hpsys
 spec:
-  conversion:
-    strategy: None
   group: com.ie.ibm.hpsys
   names:
     kind: DatasetInternal
@@ -192,43 +193,77 @@ spec:
           metadata:
             type: object
           spec:
-            description: DatasetInternalSpec defines the desired state of DatasetInternal
+            description: DatasetSpec defines the desired state of Dataset
             properties:
+              extract:
+                type: string
+              format:
+                type: string
               local:
                 additionalProperties:
                   type: string
-                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                  Important: Run "operator-sdk generate k8s" to regenerate code after
-                  modifying this file Add custom validation using kubebuilder tags:
-                  https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
+                description: Foo is an example field of Dataset. Edit dataset_types.go
+                  to remove/update
                 type: object
-                x-kubernetes-preserve-unknown-fields: true
               remote:
                 additionalProperties:
                   type: string
                 type: object
-                x-kubernetes-preserve-unknown-fields: true
+              type:
+                description: TODO temp definition for archive
+                type: string
+              url:
+                type: string
             type: object
-            x-kubernetes-preserve-unknown-fields: true
           status:
             description: DatasetInternalStatus defines the observed state of DatasetInternal
+            properties:
+              caching:
+                properties:
+                  placements:
+                    properties:
+                      datalocations:
+                        items:
+                          properties:
+                            key:
+                              type: string
+                            value:
+                              type: string
+                          type: object
+                        type: array
+                      gateways:
+                        items:
+                          properties:
+                            key:
+                              type: string
+                            value:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                type: object
             type: object
-            x-kubernetes-preserve-unknown-fields: true
         type: object
-        x-kubernetes-preserve-unknown-fields: true
     served: true
     storage: true
     subresources:
       status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
 ---
 # Source: dlf-chart/charts/dataset-operator-chart/templates/crds/com.ie.ibm.hpsys_datasets_crd.yaml
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
   name: datasets.com.ie.ibm.hpsys
 spec:
-  conversion:
-    strategy: None
   group: com.ie.ibm.hpsys
   names:
     kind: Dataset
@@ -257,40 +292,55 @@ spec:
           spec:
             description: DatasetSpec defines the desired state of Dataset
             properties:
+              extract:
+                type: string
+              format:
+                type: string
               local:
                 additionalProperties:
                   type: string
-                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                  Important: Run "operator-sdk generate k8s" to regenerate code after
-                  modifying this file Add custom validation using kubebuilder tags:
-                  https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-                  Conf map[string]string `json:"conf,omitempty"`'
+                description: Foo is an example field of Dataset. Edit dataset_types.go
+                  to remove/update
                 type: object
-                x-kubernetes-preserve-unknown-fields: true
               remote:
                 additionalProperties:
                   type: string
                 type: object
-                x-kubernetes-preserve-unknown-fields: true
+              type:
+                description: TODO temp definition for archive
+                type: string
+              url:
+                type: string
             type: object
-            x-kubernetes-preserve-unknown-fields: true
           status:
             description: DatasetStatus defines the observed state of Dataset
             properties:
-              error:
-                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                  of cluster Important: Run "operator-sdk generate k8s" to regenerate
-                  code after modifying this file Add custom validation using kubebuilder
-                  tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
-                type: string
+              caching:
+                properties:
+                  info:
+                    type: string
+                  status:
+                    type: string
+                type: object
+              provision:
+                properties:
+                  info:
+                    type: string
+                  status:
+                    type: string
+                type: object
             type: object
-            x-kubernetes-preserve-unknown-fields: true
         type: object
-        x-kubernetes-preserve-unknown-fields: true
     served: true
     storage: true
     subresources:
       status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
 ---
 # Source: dlf-chart/charts/csi-h3-chart/templates/csi-controller-rbac.yaml
 kind: ClusterRole
@@ -302,31 +352,16 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["persistentvolumes"]
-    verbs: ["get", "list", "watch", "update"]
-  - apiGroups: [""]
-    resources: ["nodes"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: ["csi.storage.k8s.io"]
-    resources: ["csinodeinfos"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["csinodes"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["storage.k8s.io"]
     resources: ["volumeattachments"]
-    verbs: ["get", "list", "watch", "update", "patch"]
----
-# Source: dlf-chart/charts/csi-h3-chart/templates/csi-controller-rbac.yaml
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: csi-cluster-driver-registrar-role-h3
-  labels:
-    app.kubernetes.io/name: "dlf"
-rules:
-  - apiGroups: ["csi.storage.k8s.io"]
-    resources: ["csidrivers"]
-    verbs: ["create", "delete"]
-  - apiGroups: ["apiextensions.k8s.io"]
-    resources: ["customresourcedefinitions"]
-    verbs: ["create", "list", "watch", "delete"]
+    verbs: ["get", "list", "watch", "update", "patch", "create"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["volumeattachments/status"]
+    verbs: ["patch"]
 ---
 # Source: dlf-chart/charts/csi-h3-chart/templates/csi-nodeplugin-rbac.yaml
 kind: ClusterRole
@@ -554,6 +589,7 @@ rules:
   resources:
   - '*'
   - datasetsinternal
+  - datasets
   verbs:
   - '*'
 - apiGroups:
@@ -593,23 +629,6 @@ subjects:
 roleRef:
   kind: ClusterRole
   name: external-controller-h3
-  apiGroup: rbac.authorization.k8s.io
----
-# Source: dlf-chart/charts/csi-h3-chart/templates/csi-controller-rbac.yaml
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: csi-cluster-driver-registrar-binding-h3
-  labels:
-    app.kubernetes.io/name: "dlf"
-  namespace: dlf
-subjects:
-  - kind: ServiceAccount
-    name: csi-controller-h3
-    namespace: dlf
-roleRef:
-  kind: ClusterRole
-  name: csi-cluster-driver-registrar-role-h3
   apiGroup: rbac.authorization.k8s.io
 ---
 # Source: dlf-chart/charts/csi-h3-chart/templates/csi-nodeplugin-rbac.yaml
@@ -882,11 +901,12 @@ metadata:
     app.kubernetes.io/name: "dlf"
   namespace: dlf
 spec:
-  selector:
-    name: dataset-operator
   ports:
     - port: 443
+      protocol: TCP
       targetPort: webhook-api
+  selector:
+    name: dataset-operator
 ---
 # Source: dlf-chart/charts/csi-h3-chart/templates/csi-nodeplugin-h3.yaml
 # This YAML file contains driver-registrar & csi driver nodeplugin API objects
@@ -913,7 +933,7 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: node-driver-registrar
-          image: "quay.io/k8scsi/csi-node-driver-registrar:v1.2.0"
+          image: "k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.3.0"
           lifecycle:
             preStop:
               exec:
@@ -921,7 +941,7 @@ spec:
           args:
             - --v=5
             - --csi-address=/plugin/csi.sock
-            - --kubelet-registration-path=/var/lib/kubelet/plugins/csi-h3/csi.sock
+            - --kubelet-registration-path=/var/data/kubelet/plugins/csi-h3/csi.sock
           env:
             - name: KUBE_NODE_NAME
               valueFrom:
@@ -958,19 +978,19 @@ spec:
             - name: plugin-dir
               mountPath: /plugin
             - name: pods-mount-dir
-              mountPath: /var/lib/kubelet/pods
+              mountPath: /var/data/kubelet/pods
               mountPropagation: "Bidirectional"
       volumes:
         - name: plugin-dir
           hostPath:
-            path: /var/lib/kubelet/plugins/csi-h3
+            path: /var/data/kubelet/plugins/csi-h3
             type: DirectoryOrCreate
         - name: pods-mount-dir
           hostPath:
-            path: /var/lib/kubelet/pods
+            path: /var/data/kubelet/pods
             type: Directory
         - hostPath:
-            path: /var/lib/kubelet/plugins_registry
+            path: /var/data/kubelet/plugins_registry
             type: DirectoryOrCreate
           name: registration-dir
 ---
@@ -1199,10 +1219,10 @@ spec:
           # Replace this with the built image name
           image: "quay.io/datashim/dataset-operator:latest-amd64"
           command:
-            - dataset-operator
+            - /manager
           imagePullPolicy: Always
           ports:
-            - containerPort: 8443
+            - containerPort: 9443
               name: webhook-api
           env:
             - name: WATCH_NAMESPACE
@@ -1219,7 +1239,7 @@ spec:
                   fieldPath: metadata.namespace
           volumeMounts:
             - name: webhook-tls-certs
-              mountPath: /run/secrets/tls
+              mountPath: /tmp/k8s-webhook-server/serving-certs
               readOnly: true
       volumes:
         - name: webhook-tls-certs
@@ -1251,7 +1271,7 @@ spec:
       serviceAccountName: csi-controller-h3
       containers:
         - name: csi-attacher
-          image: "quay.io/k8scsi/csi-attacher:v2.2.0"
+          image: "k8s.gcr.io/sig-storage/csi-attacher:v3.3.0"
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"
@@ -1259,18 +1279,6 @@ spec:
             - name: ADDRESS
               value: /csi/csi.sock
           # imagePullPolicy: "Always"
-          volumeMounts:
-            - name: socket-dir
-              mountPath: /csi
-        - name: csi-cluster-driver-registrar
-          image: "quay.io/k8scsi/csi-cluster-driver-registrar:v1.0.1"
-          args:
-            - "--v=5"
-            - "--pod-info-mount-version=\"v1\""
-            - "--csi-address=$(ADDRESS)"
-          env:
-            - name: ADDRESS
-              value: /csi/csi.sock
           volumeMounts:
             - name: socket-dir
               mountPath: /csi

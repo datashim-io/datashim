@@ -130,10 +130,11 @@ parameters:
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
   name: datasetsinternal.com.ie.ibm.hpsys
 spec:
-  conversion:
-    strategy: None
   group: com.ie.ibm.hpsys
   names:
     kind: DatasetInternal
@@ -160,43 +161,77 @@ spec:
           metadata:
             type: object
           spec:
-            description: DatasetInternalSpec defines the desired state of DatasetInternal
+            description: DatasetSpec defines the desired state of Dataset
             properties:
+              extract:
+                type: string
+              format:
+                type: string
               local:
                 additionalProperties:
                   type: string
-                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                  Important: Run "operator-sdk generate k8s" to regenerate code after
-                  modifying this file Add custom validation using kubebuilder tags:
-                  https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
+                description: Foo is an example field of Dataset. Edit dataset_types.go
+                  to remove/update
                 type: object
-                x-kubernetes-preserve-unknown-fields: true
               remote:
                 additionalProperties:
                   type: string
                 type: object
-                x-kubernetes-preserve-unknown-fields: true
+              type:
+                description: TODO temp definition for archive
+                type: string
+              url:
+                type: string
             type: object
-            x-kubernetes-preserve-unknown-fields: true
           status:
             description: DatasetInternalStatus defines the observed state of DatasetInternal
+            properties:
+              caching:
+                properties:
+                  placements:
+                    properties:
+                      datalocations:
+                        items:
+                          properties:
+                            key:
+                              type: string
+                            value:
+                              type: string
+                          type: object
+                        type: array
+                      gateways:
+                        items:
+                          properties:
+                            key:
+                              type: string
+                            value:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                type: object
             type: object
-            x-kubernetes-preserve-unknown-fields: true
         type: object
-        x-kubernetes-preserve-unknown-fields: true
     served: true
     storage: true
     subresources:
       status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
 ---
 # Source: dlf-chart/charts/dataset-operator-chart/templates/crds/com.ie.ibm.hpsys_datasets_crd.yaml
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
   name: datasets.com.ie.ibm.hpsys
 spec:
-  conversion:
-    strategy: None
   group: com.ie.ibm.hpsys
   names:
     kind: Dataset
@@ -225,40 +260,55 @@ spec:
           spec:
             description: DatasetSpec defines the desired state of Dataset
             properties:
+              extract:
+                type: string
+              format:
+                type: string
               local:
                 additionalProperties:
                   type: string
-                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                  Important: Run "operator-sdk generate k8s" to regenerate code after
-                  modifying this file Add custom validation using kubebuilder tags:
-                  https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-                  Conf map[string]string `json:"conf,omitempty"`'
+                description: Foo is an example field of Dataset. Edit dataset_types.go
+                  to remove/update
                 type: object
-                x-kubernetes-preserve-unknown-fields: true
               remote:
                 additionalProperties:
                   type: string
                 type: object
-                x-kubernetes-preserve-unknown-fields: true
+              type:
+                description: TODO temp definition for archive
+                type: string
+              url:
+                type: string
             type: object
-            x-kubernetes-preserve-unknown-fields: true
           status:
             description: DatasetStatus defines the observed state of Dataset
             properties:
-              error:
-                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                  of cluster Important: Run "operator-sdk generate k8s" to regenerate
-                  code after modifying this file Add custom validation using kubebuilder
-                  tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
-                type: string
+              caching:
+                properties:
+                  info:
+                    type: string
+                  status:
+                    type: string
+                type: object
+              provision:
+                properties:
+                  info:
+                    type: string
+                  status:
+                    type: string
+                type: object
             type: object
-            x-kubernetes-preserve-unknown-fields: true
         type: object
-        x-kubernetes-preserve-unknown-fields: true
     served: true
     storage: true
     subresources:
       status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
 ---
 # Source: dlf-chart/charts/csi-nfs-chart/templates/csi-attacher-rbac.yaml
 kind: ClusterRole
@@ -462,6 +512,7 @@ rules:
   resources:
   - '*'
   - datasetsinternal
+  - datasets
   verbs:
   - '*'
 - apiGroups:
@@ -739,11 +790,12 @@ metadata:
     app.kubernetes.io/name: "dlf"
   namespace: dlf
 spec:
-  selector:
-    name: dataset-operator
   ports:
     - port: 443
+      protocol: TCP
       targetPort: webhook-api
+  selector:
+    name: dataset-operator
 ---
 # Source: dlf-chart/charts/csi-nfs-chart/templates/csi-nodeplugin-nfsplugin.yaml
 # This YAML file contains driver-registrar & csi driver nodeplugin API objects
@@ -970,10 +1022,10 @@ spec:
           # Replace this with the built image name
           image: "quay.io/datashim/dataset-operator:latest-ppc64le"
           command:
-            - dataset-operator
+            - /manager
           imagePullPolicy: Always
           ports:
-            - containerPort: 8443
+            - containerPort: 9443
               name: webhook-api
           env:
             - name: WATCH_NAMESPACE
@@ -990,7 +1042,7 @@ spec:
                   fieldPath: metadata.namespace
           volumeMounts:
             - name: webhook-tls-certs
-              mountPath: /run/secrets/tls
+              mountPath: /tmp/k8s-webhook-server/serving-certs
               readOnly: true
       volumes:
         - name: webhook-tls-certs
