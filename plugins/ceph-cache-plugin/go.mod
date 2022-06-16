@@ -1,4 +1,4 @@
-module ceph-cache-plugin
+module github.com/datashim-io/datashim/plugins/ceph-cache-plugin
 
 go 1.13
 
