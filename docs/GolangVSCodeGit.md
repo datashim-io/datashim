@@ -56,3 +56,12 @@ We'll roughly follow the Github development flow [used by the Kubernetes project
 ### Setting up Datashim in VSCode
 
 Datashim is a collection of multiple Go projects including the Dataset Operator, CSI-S3, Ceph Cache plugin, etc. Therefore, the VSCode setup is not as straightforward as with a single Go project. 
+
+1. Start VSCode. Open a new window (**File** -> **New Window**). Select the Explorer view (generally the topmost icon on the left pane)
+
+2. Add a folder to the workspace (**File** -> **Add Folder To Workspace**). In the file picker dialog, traverse to `$HOME/goprojects/src/github.com/$user/datashim` and then deeper into subprojects (i.e. `src/` folder). At this point, add the subfolder representing the project that you want to work on (e.g. `dataset-operator`)
+   
+3. Your Explorer view will have the project in the side panel like so:
+   ![](pictures/vscode-ws.png)
+
+4. 
