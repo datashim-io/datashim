@@ -62,6 +62,16 @@ Datashim is a collection of multiple Go projects including the Dataset Operator,
 2. Add a folder to the workspace (**File** -> **Add Folder To Workspace**). In the file picker dialog, traverse to `$HOME/goprojects/src/github.com/$user/datashim` and then deeper into subprojects (i.e. `src/` folder). At this point, add the subfolder representing the project that you want to work on (e.g. `dataset-operator`)
    
 3. Your Explorer view will have the project in the side panel like so:
+   
    ![](pictures/vscode-ws.png)
 
-4. 
+4. If you have followed the advice of having a separate directory for go projects, you need to inform Go plugin in VSCode about it. Open **Preferences** -> **Settings**. Click on **User** or **Workspace** tab. On the left pane, click on **Extensions** -> **Go** and scroll down to **Gopath** on the right-hand pane like so:
+
+   ![](pictures/vscode-gopath.png) 
+
+5. Add these lines to the JSON file:
+   ```
+   "go.toolsGopath": "$HOME/go",
+   "go.gopath": "$HOME/goprojects",
+   ```
+   where the first line is the Go installation folder and the second line is the folder you've created for hacking.
