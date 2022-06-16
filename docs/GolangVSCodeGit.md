@@ -27,7 +27,7 @@ We'll roughly follow the Github development flow [used by the Kubernetes project
 
 3. Set the Datashim repo as your upstream and rebase
    ```
-   $> cd $HOME/goprojects/src/datashim.git
+   $> cd $HOME/goprojects/src/datashim
    $> git remote add upstream https://github.com/datashim-io/datashim.git
    $> git remote set-url --push upstream no_push 
    ```
@@ -46,7 +46,7 @@ We'll roughly follow the Github development flow [used by the Kubernetes project
    Make your changes. Then commit your changes. [Always sign your commits](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits)
    ```
    $> git commit -s -m "short descriptive message"
-   $> git push -f $your_remote nnn-short-title
+   $> git push $your_remote nnn-short-title
    ```
 
 5. When you are ready to submit a Pull Request (PR) for your completed feature or branch, visit your fork on Github and click the button titled `Compare and Pull Request` next to your `nnn-short-title` branch. This will submit the PR to Datashim.io for review
@@ -59,8 +59,8 @@ Datashim is a collection of multiple Go projects including the Dataset Operator,
 
 1. Start VSCode. Open a new window (**File** -> **New Window**). Select the Explorer view (generally the topmost icon on the left pane)
 
-2. Add a folder to the workspace (**File** -> **Add Folder To Workspace**). In the file picker dialog, traverse to `$HOME/goprojects/src/github.com/$user/datashim` and then deeper into subprojects (i.e. `src/` folder). At this point, add the subfolder representing the project that you want to work on (e.g. `dataset-operator`)
-   
+2. Add a folder to the workspace (**File** -> **Add Folder To Workspace**). In the file picker dialog, traverse to `$HOME/goprojects/src/github.com/$user/datashim` and then deeper into subprojects (i.e. `src/` folder). At this point, add the subfolder representing the project that you want to work on (e.g. `dataset-operator`). **Do not add the project root folder to the VSCode workspace**.
+
 3. Your Explorer view will have the project in the side panel like so:
    
    ![](pictures/vscode-ws.png)
