@@ -21,6 +21,7 @@ We'll roughly follow the Github development flow [used by the Kubernetes project
 
 2. Go to the source directory of your Go workspace and clone your fork there. Using the example above where the workspace is in `$HOME/goprojects`,
    ```
+   $> mkdir -p $HOME/goprojects/src
    $> cd $HOME/goprojects/src
    $> git clone https://github.com/$user/datashim.git
    ```
@@ -28,7 +29,7 @@ We'll roughly follow the Github development flow [used by the Kubernetes project
 3. Set the Datashim repo as your upstream and rebase
    ```
    $> cd $HOME/goprojects/src/datashim
-   $> git remote add upstream https://github.com/datashim-io/datashim.git
+   $> git remote add upstream https://github.com/datashim-io/datashim
    $> git remote set-url --push upstream no_push 
    ```
    The last line prevents pushing to upstream. You can verify your remotes by `git remote -v`
