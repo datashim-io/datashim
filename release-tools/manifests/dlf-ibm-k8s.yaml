@@ -1219,7 +1219,7 @@ spec:
           # Replace this with the built image name
           image: "quay.io/datashim/dataset-operator:latest-amd64"
           command:
-            - /manager
+            - dataset-operator
           imagePullPolicy: Always
           ports:
             - containerPort: 9443
