@@ -75,9 +75,9 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	glog.V(4).Infof("target %v\ndevice %v\nreadonly %v\nvolumeId %v\nattributes %v\nmountflags %v\n",
 		targetPath, deviceID, readOnly, volumeID, volContext, mountFlags)
 
-	//Check if it's an ephemeral storage request
-	ephemeralVolume := volContext["csi.storage.k8s.io/ephemeral"] == "true" || volContext["csi.storage.k8s.io/ephemeral"] == ""
-
+	//Check if it's an ephemeral storage request - disable ephemeral volume creation for 0.3.0
+	//ephemeralVolume := volContext["csi.storage.k8s.io/ephemeral"] == "true" || volContext["csi.storage.k8s.io/ephemeral"] == ""
+	ephemeralVolume := false
 	var s3args map[string]string
 	if ephemeralVolume {
 
