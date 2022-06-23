@@ -83,7 +83,7 @@ spec:
             # This is necessary only for systems with SELinux, where
             # non-privileged sidecar containers cannot access unix domain socket
             # created by privileged CSI driver container.
-            privileged: true
+            privileged: false
           env:
             - name: KUBE_NODE_NAME
               valueFrom:
@@ -97,7 +97,7 @@ spec:
               name: registration-dir
         - name: csi-s3
           image: "{{ $csiS3Properties.baseRepo }}/{{ $csiS3Properties.csis3.image }}:{{ $csiS3Properties.csis3.tag }}-{{ $csiS3Properties.arch }}"
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           args:
             - "--v=5"
             - "--endpoint=$(CSI_ENDPOINT)"
@@ -113,7 +113,7 @@ spec:
             - name: cheap
               value: "off"
           securityContext:
-            privileged: true
+            privileged: false
           #          ports:
           #            - containerPort: 9898
           #              name: healthz
@@ -131,7 +131,7 @@ spec:
             - mountPath: /csi
               name: socket-dir
             - mountPath: {{ $csiS3Properties.sidecars.kubeletPath }}/pods
-              mountPropagation: Bidirectional
+              mountPropagation: HostToContainer
               name: mountpoint-dir
             - mountPath: /dev
               name: dev-dir

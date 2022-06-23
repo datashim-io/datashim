@@ -7,8 +7,8 @@ type Config struct {
 	Region          string
 	Endpoint        string
 	Mounter         string
-	ExistingBucket  string
+	Bucket          string
 	RemoveOnDelete  bool
-	Readonly		bool
+	Readonly        bool
 	Provision       bool
 }
