@@ -26,7 +26,7 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/kubernetes/pkg/util/mount"
+	mount "k8s.io/mount-utils"
 
 	csicommon "github.com/kubernetes-csi/drivers/pkg/csi-common"
 )
@@ -82,7 +82,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return nil, fmt.Errorf("failed to initialize S3 client: %s", err)
 	}
 
-	if(len(s3.cfg.ExistingBucket)!=0) {
+	if len(s3.cfg.ExistingBucket) != 0 {
 		bucketName = s3.cfg.ExistingBucket
 	}
 
@@ -93,7 +93,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	volContext := req.GetVolumeContext()
 
 	b := &bucket{
-		Name:          bucketName,
+		Name:    bucketName,
 		Mounter: volContext[mounterTypeKey],
 	}
 
@@ -159,11 +159,11 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize S3 client: %s", err)
 	}
-	if(len(s3.cfg.ExistingBucket)!=0) {
+	if len(s3.cfg.ExistingBucket) != 0 {
 		bucketName = s3.cfg.ExistingBucket
 	}
 	b := &bucket{
-		Name:          bucketName,
+		Name: bucketName,
 	}
 	//b, err := s3.getBucket(bucketName)
 	//if err != nil {

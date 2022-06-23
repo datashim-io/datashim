@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/mitchellh/go-ps"
-	"k8s.io/kubernetes/pkg/util/mount"
+	mount "k8s.io/mount-utils"
 
 	"github.com/golang/glog"
 )
@@ -45,7 +45,7 @@ func waitForMount(path string, timeout time.Duration) error {
 	var elapsed time.Duration
 	var interval = 10 * time.Millisecond
 	for {
-		notMount, err := mount.New("").IsNotMountPoint(path)
+		notMount, err := mount.IsNotMountPoint(mount.New(""), path)
 		if err != nil {
 			return err
 		}
