@@ -40,7 +40,7 @@ spec:
           image: "{{ .baseRepo }}/{{ .datasetoperator.image }}:{{ .datasetoperator.tag }}-{{ .arch }}"
           {{- end}}
           command:
-            - dataset-operator
+            - /manager
           imagePullPolicy: Always
           ports:
             - containerPort: 9443

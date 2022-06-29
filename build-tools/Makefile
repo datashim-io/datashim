@@ -1,6 +1,6 @@
-DOCKER_REGISTRY ?= quay.io/datashim
+DOCKER_REGISTRY ?= quay.io/datashim-io
 
-ARCH ?= 
+ARCH ?= $(shell go env GOARCH)
 
 #used only when building the plugins
 
