@@ -34,10 +34,12 @@ RUN ls -l && \
 
 # Installing and compiling various S3 filesystems and mounters
 # Datashim's CSI-S3 is only tested with goofys at present so the others are redundant for now
-# Build goofys
+# Build goofys 
+# Add additional line to go.mod to deal with CVE-2021-38561
 WORKDIR /go/src
 RUN git clone https://github.com/kahing/goofys.git && \
     cd goofys && \
+    sed -i -e '/require/ a \\tgolang.org/x/text v0.3.7' go.mod && \
     go mod tidy && \
     if [ "$ARCH" = "ppc64le" ]; then \
 	  sed -i 's/4096/65536/g' /go/pkg/mod/github.com/kahing/fuse*/internal/buffer/in_message.go ; \
