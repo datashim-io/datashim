@@ -1,52 +1,9 @@
 ARG ARCH
 
-FROM ${ARCH}/golang:1.17-bullseye as base
+FROM golang:1.17-bullseye as base
 
 ENV ARCH=${ARCH}
 
-WORKDIR /go/src
-RUN git clone https://github.com/kahing/goofys.git && \
-    cd goofys && \
-    go mod tidy && \
-    if [ "$ARCH" = "ppc64le" ]; then \
-	  sed -i 's/4096/65536/g' /go/pkg/mod/github.com/kahing/fuse*/internal/buffer/in_message.go ; \
-	  sed -i 's/17/21/g' /go/pkg/mod/github.com/kahing/fuse*/internal/buffer/in_message_linux.go ; \
-	  sed -i 's/17/21/g' /go/pkg/mod/github.com/kahing/fuse*/internal/buffer/out_message_linux.go ; \
-    else echo 'true'; fi && \
-    go build -o /go/bin/goofys
-
-
-
-
-#COPY go.mod .
-#COPY go.sum .
-#COPY go.mod.goofys .
-
-#RUN go mod tidy
-
-#modified instructions according to https://github.com/kahing/goofys/issues/527
-
-# RUN cd /opt && \
-#    cd goofys && \
-#    git clone https://github.com/kahing/goofys.git && \
-#    cp /go.mod.goofys go.mod && \
-#    git submodule init && \
-#    git submodule update && \
-#    go get ./... && \
-#    if [ "$ARCH" = "ppc64le" ]; then \
-#	  sed -i 's/4096/65536/g' /go/pkg/mod/github.com/kahing/fuse*/internal/buffer/in_message.go ; \
-#	  sed -i 's/17/21/g' /go/pkg/mod/github.com/kahing/fuse*/internal/buffer/in_message_linux.go ; \
-#	  sed -i 's/17/21/g' /go/pkg/mod/github.com/kahing/fuse*/internal/buffer/out_message_linux.go ; \
-#   else echo 'true'; fi && \
-#    go build
-
-COPY . /go/src/csi-s3
-WORKDIR /go/src/csi-s3
-RUN ls -l && \ 
-    go mod tidy && \
-    CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o /go/bin/s3driver /go/src/csi-s3/cmd/s3driver
-
-FROM debian as s3backer
 ARG S3BACKER_VERSION=1.5.0
 
 RUN apt-get update && apt-get install -y \
@@ -60,42 +17,65 @@ RUN apt-get update && apt-get install -y \
   zlib1g-dev \
   psmisc \
   pkg-config \
-  git && \
+  git \
+  libfuse2 gcc sqlite3 libsqlite3-dev \
+  psmisc procps libcurl4 xfsprogs curl unzip \
+  libfuse-dev fuse libssl-dev git autotools-dev automake libc6-dev build-essential libcurl4-openssl-dev libxml2-dev pkg-config && \
   rm -rf /var/lib/apt/lists/*
 
+WORKDIR /go/src
+
+# Build csi-s3
+COPY . csi-s3
+WORKDIR /go/src/csi-s3
+RUN ls -l && \ 
+    go mod tidy && \
+    CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o /go/bin/s3driver /go/src/csi-s3/cmd/s3driver
+
+# Installing and compiling various S3 filesystems and mounters
+# Datashim's CSI-S3 is only tested with goofys at present so the others are redundant for now
+# Build goofys
+WORKDIR /go/src
+RUN git clone https://github.com/kahing/goofys.git && \
+    cd goofys && \
+    go mod tidy && \
+    if [ "$ARCH" = "ppc64le" ]; then \
+	  sed -i 's/4096/65536/g' /go/pkg/mod/github.com/kahing/fuse*/internal/buffer/in_message.go ; \
+	  sed -i 's/17/21/g' /go/pkg/mod/github.com/kahing/fuse*/internal/buffer/in_message_linux.go ; \
+	  sed -i 's/17/21/g' /go/pkg/mod/github.com/kahing/fuse*/internal/buffer/out_message_linux.go ; \
+    else echo 'true'; fi && \
+    go build -o /go/bin/goofys
+
 # Compile & install s3backer
-RUN git clone https://github.com/archiecobbs/s3backer.git /src/s3backer
-WORKDIR /src/s3backer
-RUN git checkout tags/${S3BACKER_VERSION}
+# WORKDIR /
+# RUN git clone https://github.com/archiecobbs/s3backer.git /s3backer && \
+#     cd s3backer && \
+#     git checkout tags/${S3BACKER_VERSION} && \
+#     ./autogen.sh && \
+#     ./configure && \
+#     make && \
+#     make install
 
-RUN ./autogen.sh && \
-  ./configure && \
-  make && \
-  make install
-
-FROM debian
-LABEL maintainers="Cyrill Troxler <cyrilltroxler@gmail.com>"
-LABEL description="csi-s3 image"
-COPY --from=s3backer /usr/bin/s3backer /usr/bin/s3backer
-
-# s3fs and some other dependencies
-RUN apt-get update -y && apt-get upgrade -y && apt-get install -y \
-libfuse2 gcc sqlite3 libsqlite3-dev \
-psmisc procps libcurl4 xfsprogs curl unzip \
-libfuse-dev fuse libssl-dev git autotools-dev automake libc6-dev build-essential libcurl4-openssl-dev libxml2-dev pkg-config && \
-git clone https://github.com/s3fs-fuse/s3fs-fuse.git && cd s3fs-fuse && \
-#git checkout v1.86 && \
-./autogen.sh && ./configure && make && make install && \
-rm -rf /var/lib/apt/lists/*
+# Compile and install s3fs-fuse
+# WORKDIR /
+# RUN git clone https://github.com/s3fs-fuse/s3fs-fuse.git && cd s3fs-fuse && \
+# #git checkout v1.86 && \
+# ./autogen.sh && ./configure && make && make install
 
 # install rclone
-ARG RCLONE_VERSION=v1.47.0
-RUN cd /tmp \
-  && curl -O https://downloads.rclone.org/${RCLONE_VERSION}/rclone-${RCLONE_VERSION}-linux-amd64.zip \
-  && unzip /tmp/rclone-${RCLONE_VERSION}-linux-amd64.zip \
-  && mv /tmp/rclone-*-linux-amd64/rclone /usr/bin \
-  && rm -r /tmp/rclone*
+# ARG RCLONE_VERSION=v1.47.0
+# RUN cd /tmp \
+#   && curl -O https://downloads.rclone.org/${RCLONE_VERSION}/rclone-${RCLONE_VERSION}-linux-amd64.zip \
+#   && unzip /tmp/rclone-${RCLONE_VERSION}-linux-amd64.zip \
+#   && mv /tmp/rclone-*-linux-amd64/rclone /usr/bin \
+#   && rm -r /tmp/rclone*
+
+FROM gcr.io/distroless/base-debian11
 
 COPY --from=base /go/bin/s3driver /s3driver
 COPY --from=base /go/bin/goofys /bin/goofys
+# COPY --from=base /usr/bin/s3backer /usr/bin/s3backer
+# COPY --from=base /usr/bin/s3fs-fuse /usr/bin/s3fs-fuse
+# COPY --from=base /usr/bin/rclone /usr/bin/rclone
+
 ENTRYPOINT ["/s3driver"]
