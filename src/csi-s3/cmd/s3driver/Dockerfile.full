@@ -1,27 +1,14 @@
 ARG ARCH
-
-FROM golang:1.17-bullseye as base
+FROM golang:1.18-alpine3.15 as base
 
 ENV ARCH=${ARCH}
 
 ARG S3BACKER_VERSION=1.5.0
 
-RUN apt-get update && apt-get install -y \
-  build-essential \
-  autoconf \
-  libcurl4-openssl-dev \
-  libfuse-dev \
+RUN apk add --update --no-cache \
+  fuse-dev \
   fuse \
-  libexpat1-dev \
-  libssl-dev \
-  zlib1g-dev \
-  psmisc \
-  pkg-config \
-  git \
-  libfuse2 gcc sqlite3 libsqlite3-dev \
-  psmisc procps libcurl4 xfsprogs curl unzip \
-  libfuse-dev fuse libssl-dev git autotools-dev automake libc6-dev build-essential libcurl4-openssl-dev libxml2-dev pkg-config && \
-  rm -rf /var/lib/apt/lists/*
+  git curl 
 
 WORKDIR /go/src
 
@@ -72,8 +59,9 @@ RUN git clone https://github.com/kahing/goofys.git && \
 #   && mv /tmp/rclone-*-linux-amd64/rclone /usr/bin \
 #   && rm -r /tmp/rclone*
 
-FROM gcr.io/distroless/base-debian11
+FROM alpine:3.15
 
+RUN apk add --update --no-cache fuse fuse-dev
 COPY --from=base /go/bin/s3driver /s3driver
 COPY --from=base /go/bin/goofys /bin/goofys
 # COPY --from=base /usr/bin/s3backer /usr/bin/s3backer
