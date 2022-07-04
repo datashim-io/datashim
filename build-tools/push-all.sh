@@ -1,13 +1,6 @@
 #!/bin/bash
 
-MAKE_ARGS="build-csi-plugins"
-
-if [ -n "$DOCKER_REGISTRY" ]
-then
-      MAKE_ARGS+=" push-csi-plugins"
-else
-      DOCKER_REGISTRY="local"
-fi
+MAKE_ARGS="push-all"
 
 export ARCH=`arch`;
 if [ "$ARCH" == "x86_64" ]; then export ARCH="amd64"; fi

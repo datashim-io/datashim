@@ -1,13 +1,6 @@
 #!/bin/bash
 
-MAKE_ARGS="build-components"
-
-if [ -n "$DOCKER_REGISTRY" ]
-then
-      MAKE_ARGS+=" push-components"
-else
-      DOCKER_REGISTRY="local"
-fi
+MAKE_ARGS="build-all"
 
 export ARCH=`arch`;
 if [ "$ARCH" == "x86_64" ]; then export ARCH="amd64"; fi
