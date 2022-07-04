@@ -14,7 +14,7 @@ include helpers.mk
 build-all: build-components build-csi-plugins build-sidecars
 
 .PHONY: push-all
-push-all: push-components push-sidecars push-csi-plugins push-multi-arch-manifest
+push-all: push-components push-sidecars push-csi-plugins push-multi-arch-manifests
 
 build-sidecars:
 	$(call install_sidecar,https://github.com/kubernetes-csi/external-attacher.git,$(EXTERNAL_ATTACHER_TAG),external-attacher,$(EXTERNAL_ATTACHER_IMAGE),$(BASE_EXTERNAL_ATTACHER_IMAGE))
@@ -45,11 +45,11 @@ push-csi-plugins:
 	docker push $(CSI_S3_IMAGE)-$(ARCH) ;\
 	docker push $(CSI_NFS_IMAGE)-$(ARCH)
 
-push-multi-arch-manifest:
+push-multi-arch-manifests:
 	$(call generate_push_multi_arch_manifest,$(DATASET_OPERATOR_IMAGE))
 	$(call generate_push_multi_arch_manifest,$(GENERATE_KEYS_IMAGE))
 	$(call generate_push_multi_arch_manifest,$(CSI_S3_IMAGE))
 	$(call generate_push_multi_arch_manifest,$(CSI_NFS_IMAGE))
 	$(call generate_push_multi_arch_manifest,$(EXTERNAL_PROVISIONER_IMAGE))
 	$(call generate_push_multi_arch_manifest,$(EXTERNAL_ATTACHER_IMAGE))
-    $(call generate_push_multi_arch_manifest,$(NODE_DRIVER_REGISTRAR_IMAGE))
+	$(call generate_push_multi_arch_manifest,$(NODE_DRIVER_REGISTRAR_IMAGE))

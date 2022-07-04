@@ -76,6 +76,5 @@ define generate_push_multi_arch_manifest
 	docker manifest annotate $(1) $(1)-amd64 --arch amd64 ;\
 	docker manifest annotate $(1) $(1)-arm64 --arch arm64 ;\
 	docker manifest annotate $(1) $(1)-ppc64le --arch ppc64le ;\
-
 	docker manifest push $(1)
 endef
