@@ -38,7 +38,7 @@ push-sidecars:
 push-components:
 	@docker login -u="datashim-io+datashim_builder" -p=${DOCKER_PASSWORD} quay.io ;\
 	docker push $(DATASET_OPERATOR_IMAGE)-$(ARCH) ;\
-	docker push $(GENERAGE_KEYS_IMAGE)-$(ARCH)
+	docker push $(GENERATE_KEYS_IMAGE)-$(ARCH)
 
 push-csi-plugins:
 	@docker login -u="datashim-io+datashim_builder" -p=${DOCKER_PASSWORD} quay.io ;\

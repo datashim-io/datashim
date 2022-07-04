@@ -68,7 +68,7 @@ endef
 #1: Image Name:Tag 
 define generate_push_multi_arch_manifest
 	@export DOCKER_CLI_EXPERIMENTAL=enabled ;\
-	docker login -u="datashim-io+datashim_builder" -p=${DOCKER_TOKEN} quay.io ;\
+	docker login -u="datashim-io+datashim_builder" -p=${DOCKER_PASSWORD} quay.io ;\
 	docker create manifest $(1) \
 	       $(1)-amd64 \
 		   $(1)-arm64 \
