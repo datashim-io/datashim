@@ -8,7 +8,7 @@ stages:
     if: type != pull_request AND tag IS present
   - name: build_release_ppc64le
     if: type != pull_request AND tag IS present
-  - name: build_multi_arch
+  - name: build_release_multi_arch
     if: type != pull_request AND tag IS present
     
   - name: build_pr_arm64
@@ -16,8 +16,6 @@ stages:
   - name: build_pr_amd64
     if: type = pull_request
   - name: build_pr_ppc64le
-    if: type = pull_request
-  - name: build_pr_multi_arch
     if: type = pull_request
 
   - name: build_latest_arm64
@@ -74,7 +72,7 @@ matrix:
       env: 
         - COMMON_IMAGE_TAG="pr_${TRAVIS_COMMIT}"
       install: echo "no install"
-      script: cd build-tools && ./build_all.sh && ./push_all.sh
+      script: cd build-tools && ./build_all.sh
 
     - stage: build_pr_amd64
       services:
@@ -85,7 +83,7 @@ matrix:
       env: 
         - COMMON_IMAGE_TAG="pr_${TRAVIS_COMMIT}"
       install: echo "no install"
-      script: cd build-tools && ./build_all.sh && ./push_all.sh
+      script: cd build-tools && ./build_all.sh
 
     - stage: build_pr_ppc64le
       services:
@@ -95,7 +93,7 @@ matrix:
       env: 
         - COMMON_IMAGE_TAG="pr_${TRAVIS_COMMIT}"
       install: echo "no install"
-      script: cd build-tools && ./build_all.sh && ./push_all.sh
+      script: cd build-tools && ./build_all.sh
 
     # master branch stages
     - stage: build_latest_arm64
@@ -103,7 +101,8 @@ matrix:
         - docker
       os: linux
       arch: arm64
-      env: 
+      env:
+        - COMMON_IMAGE_TAG=latest
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
       script: cd build-tools && ./build_all.sh && ./push_all.sh
@@ -114,7 +113,8 @@ matrix:
       os: linux
       arch: amd64
       dist: bionic
-      env: 
+      env:
+        - COMMON_IMAGE_TAG=latest
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
       script: cd build-tools && ./build_all.sh && ./push_all.sh
@@ -125,24 +125,17 @@ matrix:
       os: linux
       arch: ppc64le
       env: 
+        - COMMON_IMAGE_TAG=latest
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
       script: cd build-tools && ./build_all.sh && ./push_all.sh
     
-    - stage: build_multi_arch
+    - stage: build_release_multi_arch
       services:
          - docker
       os: linux
       env: 
-        - DOCKER_REGISTRY=quay.io/datashim-io
-      install: echo "no install"
-      script: cd build-tools && make push-multi-arch-manifests
-    
-    - stage: build_pr_multi_arch
-      services:
-         - docker
-      os: linux
-      env: 
+        - COMMON_IMAGE_TAG=${TRAVIS_TAG}
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
       script: cd build-tools && make push-multi-arch-manifests
@@ -152,6 +145,7 @@ matrix:
          - docker
       os: linux
       env: 
+        - COMMON_IMAGE_TAG=latest
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
       script: cd build-tools && make push-multi-arch-manifests
