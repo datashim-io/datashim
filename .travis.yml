@@ -2,13 +2,13 @@ services:
   - docker
 
 stages:
-  - name: build_release_multiarch
-    if: type != pull_request AND tag IS present
   - name: build_release_arm64
     if: type != pull_request AND tag IS present
   - name: build_release_amd64
     if: type != pull_request AND tag IS present
   - name: build_release_ppc64le
+    if: type != pull_request AND tag IS present
+  - name: build_multi_arch
     if: type != pull_request AND tag IS present
     
   - name: build_pr_arm64
@@ -17,12 +17,16 @@ stages:
     if: type = pull_request
   - name: build_pr_ppc64le
     if: type = pull_request
+  - name: build_pr_multi_arch
+    if: type = pull_request
 
   - name: build_latest_arm64
     if: type != pull_request AND branch = master
   - name: build_latest_amd64
     if: type != pull_request AND branch = master
   - name: build_latest_ppc64le
+    if: type != pull_request AND branch = master
+  - name: build_latest_multi_arch
     if: type != pull_request AND branch = master
 
 matrix:
@@ -120,6 +124,33 @@ matrix:
         - docker
       os: linux
       arch: ppc64le
+      env: 
+        - DOCKER_REGISTRY=quay.io/datashim-io
+      install: echo "no install"
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+    
+    - stage: build_multi_arch
+      services:
+         - docker
+      os: linux
+      env: 
+        - DOCKER_REGISTRY=quay.io/datashim-io
+      install: echo "no install"
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+    
+    - stage: build_pr_multi_arch
+      services:
+         - docker
+      os: linux
+      env: 
+        - DOCKER_REGISTRY=quay.io/datashim-io
+      install: echo "no install"
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+    
+    - stage: build_latest_multi_arch
+      services:
+         - docker
+      os: linux
       env: 
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"

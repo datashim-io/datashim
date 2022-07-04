@@ -64,3 +64,18 @@ endef
 define install_local
 	cd ../src/$(1) && make container -e IMAGE_TAG=$(2)-$(ARCH) -e ARCH=$(ARCH)
 endef
+
+#1: Image Name:Tag 
+define generate_push_multi_arch_manifest
+	@export DOCKER_CLI_EXPERIMENTAL=enabled ;\
+	docker login -u="datashim-io+datashim_builder" -p=${DOCKER_TOKEN} quay.io ;\
+	docker create manifest $(1) \
+	       $(1)-amd64 \
+		   $(1)-arm64 \
+		   $(1)-ppc64le ;\
+	docker manifest annotate $(1) $(1)-amd64 --arch amd64 ;\
+	docker manifest annotate $(1) $(1)-arm64 --arch arm64 ;\
+	docker manifest annotate $(1) $(1)-ppc64le --arch ppc64le ;\
+
+	docker manifest push $(1)
+endef
