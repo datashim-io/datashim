@@ -40,7 +40,7 @@ matrix:
         - COMMON_IMAGE_TAG=${TRAVIS_TAG}
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_all.sh && ./push_all.sh
 
     - stage: build_release_amd64
       services:
@@ -52,7 +52,7 @@ matrix:
         - COMMON_IMAGE_TAG=${TRAVIS_TAG}
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_all.sh && ./push_all.sh
 
     - stage: build_release_ppc64le
       services:
@@ -63,7 +63,7 @@ matrix:
         - COMMON_IMAGE_TAG=${TRAVIS_TAG}
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_all.sh && ./push_all.sh
 
     # pull request stages
     - stage: build_pr_arm64
@@ -74,7 +74,7 @@ matrix:
       env: 
         - COMMON_IMAGE_TAG="pr_${TRAVIS_COMMIT}"
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_all.sh && ./push_all.sh
 
     - stage: build_pr_amd64
       services:
@@ -85,7 +85,7 @@ matrix:
       env: 
         - COMMON_IMAGE_TAG="pr_${TRAVIS_COMMIT}"
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_all.sh && ./push_all.sh
 
     - stage: build_pr_ppc64le
       services:
@@ -95,7 +95,7 @@ matrix:
       env: 
         - COMMON_IMAGE_TAG="pr_${TRAVIS_COMMIT}"
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_all.sh && ./push_all.sh
 
     # master branch stages
     - stage: build_latest_arm64
@@ -106,7 +106,7 @@ matrix:
       env: 
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_all.sh && ./push_all.sh
 
     - stage: build_latest_amd64
       services:
@@ -117,7 +117,7 @@ matrix:
       env: 
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_all.sh && ./push_all.sh
 
     - stage: build_latest_ppc64le
       services:
@@ -127,7 +127,7 @@ matrix:
       env: 
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_all.sh && ./push_all.sh
     
     - stage: build_multi_arch
       services:
@@ -136,7 +136,7 @@ matrix:
       env: 
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_all.sh && ./push_all.sh
     
     - stage: build_pr_multi_arch
       services:
@@ -145,7 +145,7 @@ matrix:
       env: 
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_all.sh && ./push_all.sh
     
     - stage: build_latest_multi_arch
       services:
@@ -154,4 +154,4 @@ matrix:
       env: 
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_all.sh && ./push_all.sh
