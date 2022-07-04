@@ -136,7 +136,7 @@ matrix:
       env: 
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_all.sh && ./push_all.sh
+      script: cd build-tools && make push-multi-arch-manifests
     
     - stage: build_pr_multi_arch
       services:
@@ -145,7 +145,7 @@ matrix:
       env: 
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_all.sh && ./push_all.sh
+      script: cd build-tools && make push-multi-arch-manifests
     
     - stage: build_latest_multi_arch
       services:
@@ -154,4 +154,4 @@ matrix:
       env: 
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_all.sh && ./push_all.sh
+      script: cd build-tools && make push-multi-arch-manifests

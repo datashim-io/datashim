@@ -14,7 +14,7 @@ include helpers.mk
 build-all: build-components build-csi-plugins build-sidecars
 
 .PHONY: push-all
-push-all: push-components push-sidecars push-csi-plugins push-multi-arch-manifests
+push-all: push-components push-sidecars push-csi-plugins
 
 build-sidecars:
 	$(call install_sidecar,https://github.com/kubernetes-csi/external-attacher.git,$(EXTERNAL_ATTACHER_TAG),external-attacher,$(EXTERNAL_ATTACHER_IMAGE),$(BASE_EXTERNAL_ATTACHER_IMAGE))
@@ -30,18 +30,18 @@ build-csi-plugins:
 	$(call install_local,csi-driver-nfs,$(CSI_NFS_IMAGE))
 
 push-sidecars:
-	@docker login -u="datashim-io+datashim_builder" -p=${DOCKER_TOKEN} quay.io ;\
+	@docker login -u="datashim-io+datashim_builder" -p=${DOCKER_PASSWORD} quay.io ;\
 	docker push $(EXTERNAL_PROVISIONER_IMAGE)-$(ARCH) ;\
 	docker push $(EXTERNAL_ATTACHER_IMAGE)-$(ARCH) ;\
 	docker push $(NODE_DRIVER_REGISTRAR_IMAGE)-$(ARCH)
 
 push-components:
-	@docker login -u="datashim-io+datashim_builder" -p=${DOCKER_TOKEN} quay.io ;\
+	@docker login -u="datashim-io+datashim_builder" -p=${DOCKER_PASSWORD} quay.io ;\
 	docker push $(DATASET_OPERATOR_IMAGE)-$(ARCH) ;\
 	docker push $(GENERAGE_KEYS_IMAGE)-$(ARCH)
 
 push-csi-plugins:
-	@docker login -u="datashim-io+datashim_builder" -p=${DOCKER_TOKEN} quay.io ;\
+	@docker login -u="datashim-io+datashim_builder" -p=${DOCKER_PASSWORD} quay.io ;\
 	docker push $(CSI_S3_IMAGE)-$(ARCH) ;\
 	docker push $(CSI_NFS_IMAGE)-$(ARCH)
 
