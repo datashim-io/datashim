@@ -1,4 +1,4 @@
-FROM alpine
+FROM alpine:3.15
 
 ENV BUILD_DEPS="gettext"  \
     RUNTIME_DEPS="libintl"
