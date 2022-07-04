@@ -46,5 +46,4 @@ push-multi-arch-manifest:
 	$(call generate_push_multi_arch_manifest, $(CSI_NFS_IMAGE))
 	$(call generate_push_multi_arch_manifest, $(EXTERNAL_PROVISIONER_IMAGE))
 	$(call generate_push_multi_arch_manifest, $(EXTERNAL_ATTACHER_IMAGE))
-    $(call generate_push_multi_arch_manifest, $(NODE_DRIVER_REGISTRAR_IMAGE))	
-
+    $(call generate_push_multi_arch_manifest, $(NODE_DRIVER_REGISTRAR_IMAGE))
