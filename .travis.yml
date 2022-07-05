@@ -105,8 +105,10 @@ matrix:
         - COMMON_IMAGE_TAG=latest
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_all.sh && ./push_all.sh
-
+      script: 
+        - cd build-tools
+        - make ARCH=${TRAVIS_CPU_ARCH} DOCKER_REGISTRY=${DOCKER_REGISTRY} build-components build-csi-plugins
+        - make ARCH=${TRAVIS_CPU_ARCH} DOCKER_REGISTRY=${DOCKER_REGISTRY} push-components push-csi-plugins
     - stage: build_latest_amd64
       services:
         - docker
@@ -117,8 +119,10 @@ matrix:
         - COMMON_IMAGE_TAG=latest
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_all.sh && ./push_all.sh
-
+      script:  
+        - cd build-tools
+        - make ARCH=${TRAVIS_CPU_ARCH} DOCKER_REGISTRY=${DOCKER_REGISTRY} build-components build-csi-plugins
+        - make ARCH=${TRAVIS_CPU_ARCH} DOCKER_REGISTRY=${DOCKER_REGISTRY} push-components push-csi-plugins
     - stage: build_latest_ppc64le
       services:
         - docker
@@ -128,8 +132,10 @@ matrix:
         - COMMON_IMAGE_TAG=latest
         - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_all.sh && ./push_all.sh
-    
+      script:  
+        - cd build-tools
+        - make ARCH=${TRAVIS_CPU_ARCH} DOCKER_REGISTRY=${DOCKER_REGISTRY} build-components build-csi-plugins
+        - make ARCH=${TRAVIS_CPU_ARCH} DOCKER_REGISTRY=${DOCKER_REGISTRY} push-components push-csi-plugins
     - stage: build_release_multi_arch
       services:
          - docker
