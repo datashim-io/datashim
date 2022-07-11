@@ -33,9 +33,9 @@ matrix:
       arch: arm64
       env: 
         - COMMON_IMAGE_TAG=${TRAVIS_TAG}
-        - DOCKER_REGISTRY=quay.io/datashim
+        - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh
 
     - stage: build_release_amd64
       services:
@@ -47,7 +47,7 @@ matrix:
         - COMMON_IMAGE_TAG=${TRAVIS_TAG}
         - DOCKER_REGISTRY=quay.io/datashim
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh
 
     - stage: build_release_ppc64le
       services:
@@ -56,9 +56,9 @@ matrix:
       arch: ppc64le
       env: 
         - COMMON_IMAGE_TAG=${TRAVIS_TAG}
-        - DOCKER_REGISTRY=quay.io/datashim
+        - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh
 
     # pull request stages
     - stage: build_pr_arm64
@@ -69,7 +69,7 @@ matrix:
       env: 
         - COMMON_IMAGE_TAG="pr_${TRAVIS_COMMIT}"
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh
 
     - stage: build_pr_amd64
       services:
@@ -80,7 +80,7 @@ matrix:
       env: 
         - COMMON_IMAGE_TAG="pr_${TRAVIS_COMMIT}"
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh
 
     - stage: build_pr_ppc64le
       services:
@@ -90,7 +90,7 @@ matrix:
       env: 
         - COMMON_IMAGE_TAG="pr_${TRAVIS_COMMIT}"
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh
 
     # master branch stages
     - stage: build_latest_arm64
@@ -99,9 +99,9 @@ matrix:
       os: linux
       arch: arm64
       env: 
-        - DOCKER_REGISTRY=quay.io/datashim
+        - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh
 
     - stage: build_latest_amd64
       services:
@@ -110,9 +110,9 @@ matrix:
       arch: amd64
       dist: bionic
       env: 
-        - DOCKER_REGISTRY=quay.io/datashim
+        - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh
 
     - stage: build_latest_ppc64le
       services:
@@ -120,6 +120,6 @@ matrix:
       os: linux
       arch: ppc64le
       env: 
-        - DOCKER_REGISTRY=quay.io/datashim
+        - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh
