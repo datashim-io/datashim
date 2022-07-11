@@ -29,8 +29,8 @@ CSI_NFS_IMAGE := $(CSI_NFS_IMAGE):$(CSI_NFS_IMAGE_TAG)
 
 GENERATE_KEYS_IMAGE := generate-keys
 GENERATE_KEYS_IMAGE_TAG := $(COMMON_IMAGE_TAG)
-GENERATE_KEYS_IMAGE := $(DOCKER_REGISTRY)/$(GENERATE_KEYS_IMAGE)
-GENERATE_KEYS_IMAGE := $(GENERATE_KEYS_IMAGE):$(GENERATE_KEYS_IMAGE_TAG)
+GENERATE_KEYS_IMAGE := $(DOCKER_REGISTRY)/$(GENERAGE_KEYS_IMAGE)
+GENERATE_KEYS_IMAGE := $(GENERAGE_KEYS_IMAGE):$(GENERAGE_KEYS_IMAGE_TAG)
 
 #1: git repo url
 #2: git tag
@@ -63,4 +63,17 @@ endef
 #2: image to be created
 define install_local
 	cd ../src/$(1) && make container -e IMAGE_TAG=$(2)-$(ARCH) -e ARCH=$(ARCH)
+endef
+
+define generate_push_multi_arch_manifest
+	@export DOCKER_CLI_EXPERIMENTAL=enabled ;\
+	docker login -u=${DOCKER_USER} -p=${DOCKER_PASSWORD} quay.io ;\
+	docker create manifest $(1) \
+	       $(1)-amd64 \
+		   $(1)-arm64 \
+		   $(1)-ppc64le ;\
+	docker manifest annotate $(1) $(1)-amd64 --arch amd64 ;\
+	docker manifest annotate $(1) $(1)-arm64 --arch arm64 ;\
+	docker manifest annotate $(1) $(1)-ppc64le --arch ppc64le ;\
+	docker manifest push $(1)
 endef
