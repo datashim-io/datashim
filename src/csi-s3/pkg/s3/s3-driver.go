@@ -37,6 +37,7 @@ type s3Volume struct {
 	VolID   string `json:"volID"`
 	VolSize int64  `json:"volSize"`
 	VolPath string `json:"volPath"`
+	Bucket  string `json:"volPath"`
 }
 
 var (

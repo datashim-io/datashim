@@ -1,117 +1,95 @@
-package datasetinternal
+/*
+Copyright 2022.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package controllers
 
 import (
 	"context"
 	b64 "encoding/base64"
 	"strconv"
 
-	"github.com/go-logr/logr"
-	"github.com/google/uuid"
-
-	comv1alpha1 "github.com/datashim-io/datashim/src/dataset-operator/pkg/apis/com/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	datasets "github.com/datashim-io/datashim/src/dataset-operator/api/v1alpha1"
+	"github.com/go-logr/logr"
+	"github.com/google/uuid"
 )
 
-var log = logf.Log.WithName("controller_datasetinternal")
+// DatasetInternalReconciler reconciles a DatasetInternal object
+type DatasetInternalReconciler struct {
+	client.Client
+	Scheme *runtime.Scheme
+}
+
+var logi = logf.Log.WithName("controller_datasetinternal")
 var datasetFinalizer = "dataset-finalizer"
 
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
-
-/**
- * Functions table for hadnling creation of local datasets.
- * Each function in the table should respect the following signature:
- *		processLocalDatasetXYZ func(*comv1alpha1.Dataset, *ReconcileDataset) (reconcile.Result, error)
- */
-var datasetLocalProcessTable = map[string]func(*comv1alpha1.DatasetInternal,
-	*ReconcileDatasetInternal) (reconcile.Result, error){
+var datasetLocalProcessTable = map[string]func(*datasets.DatasetInternal,
+	*DatasetInternalReconciler) (reconcile.Result, error){
 	"COS":  processLocalDatasetCOS,
 	"NFS":  processLocalDatasetNFS,
 	"HOST": processLocalDatasetHOST,
 	"H3":   processLocalDatasetH3,
 }
 
-// Add creates a new Dataset Controller and adds it to the Manager. The Manager will set fields on the Controller
-// and Start it when the Manager is Started.
-func Add(mgr manager.Manager) error {
-	return add(mgr, newReconciler(mgr))
-}
+//+kubebuilder:rbac:groups=com.ie.ibm.hpsys,resources=datasetsinternal,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=com.ie.ibm.hpsys,resources=datasetsinternal/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=com.ie.ibm.hpsys,resources=datasetsinternal/finalizers,verbs=update
 
-// newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileDatasetInternal{client: mgr.GetClient(), scheme: mgr.GetScheme()}
-}
+// Reconcile is part of the main kubernetes reconciliation loop which aims to
+// move the current state of the cluster closer to the desired state.
+// TODO(user): Modify the Reconcile function to compare the state specified by
+// the DatasetInternal object against the actual cluster state, and then
+// perform operations to make the cluster state reflect the state specified by
+// the user.
+//
+// For more details, check Reconcile and its Result here:
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
+func (r *DatasetInternalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	_ = logf.FromContext(ctx)
 
-// add adds a new Controller to mgr with r as the reconcile.Reconciler
-func add(mgr manager.Manager, r reconcile.Reconciler) error {
-	// Create a new controller
-	c, err := controller.New("dataset-controller", mgr, controller.Options{Reconciler: r})
-	if err != nil {
-		return err
-	}
-
-	// Watch for changes to primary resource Dataset
-	err = c.Watch(&source.Kind{Type: &comv1alpha1.DatasetInternal{}}, &handler.EnqueueRequestForObject{})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// blank assignment to verify that ReconcileDatasetInternal implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcileDatasetInternal{}
-
-// ReconcileDataset reconciles a Dataset object
-type ReconcileDatasetInternal struct {
-	// This client, initialized using mgr.Client() above, is a split client
-	// that reads objects from the cache and writes to the apiserver
-	client client.Client
-	scheme *runtime.Scheme
-}
-
-// Reconcile reads that state of the cluster for a Dataset object and makes changes based on the state read
-// and what is in the Dataset.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
-// a Pod as an example
-// Note:
-// The Controller will requeue the Request to be processed again if the returned error is non-nil or
-// Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileDatasetInternal) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	reqLogger := logi.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
 	reqLogger.Info("Reconciling DatasetInternal")
 
-	result := reconcile.Result{}
+	result := ctrl.Result{}
 	var err error = nil
 
 	// Fetch the Dataset instance
-	instance := &comv1alpha1.DatasetInternal{}
-	err = r.client.Get(context.TODO(), request.NamespacedName, instance)
+	instance := &datasets.DatasetInternal{}
+	err = r.Client.Get(context.TODO(), req.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
 			reqLogger.Info("Dataset is not found")
-			return reconcile.Result{}, nil
+			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		return reconcile.Result{}, err
+		return ctrl.Result{}, err
 	}
 
 	if instance.Spec.Local != nil {
@@ -132,10 +110,10 @@ func (r *ReconcileDatasetInternal) Reconcile(request reconcile.Request) (reconci
 			// that we can retry during the next reconciliation.
 			reqLogger.Info("Finalizer logic here!!")
 			foundPVC := &corev1.PersistentVolumeClaim{}
-			err := r.client.Get(context.TODO(), request.NamespacedName, foundPVC)
+			err := r.Client.Get(context.TODO(), req.NamespacedName, foundPVC)
 			if err == nil {
 				reqLogger.Info("COS-related PVC still exists, deleting...")
-				r.client.Delete(context.TODO(), foundPVC)
+				r.Client.Delete(context.TODO(), foundPVC)
 				return reconcile.Result{Requeue: true}, nil
 			} else if !errors.IsNotFound(err) {
 				reqLogger.Info("COS-related PVC error")
@@ -144,10 +122,10 @@ func (r *ReconcileDatasetInternal) Reconcile(request reconcile.Request) (reconci
 			}
 
 			found := &corev1.Secret{}
-			err = r.client.Get(context.TODO(), request.NamespacedName, found)
+			err = r.Client.Get(context.TODO(), req.NamespacedName, found)
 			if err == nil {
 				reqLogger.Info("COS-related secret still exists, deleting...")
-				r.client.Delete(context.TODO(), found)
+				r.Client.Delete(context.TODO(), found)
 				return reconcile.Result{Requeue: true}, nil
 			} else if !errors.IsNotFound(err) {
 				reqLogger.Info("COS-related secret error")
@@ -157,7 +135,7 @@ func (r *ReconcileDatasetInternal) Reconcile(request reconcile.Request) (reconci
 			// Remove memcachedFinalizer. Once all finalizers have been
 			// removed, the object will be deleted.
 			controllerutil.RemoveFinalizer(instance, datasetFinalizer)
-			err = r.client.Update(context.TODO(), instance)
+			err = r.Client.Update(context.TODO(), instance)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
@@ -186,11 +164,39 @@ func (r *ReconcileDatasetInternal) Reconcile(request reconcile.Request) (reconci
 		err = errors.NewBadRequest("Dataset type not supported")
 	}
 
-	return result, err
+	return result, nil
 }
 
-func processLocalDatasetH3(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatasetInternal) (reconcile.Result, error) {
-	processLocalDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processLocalDatasetH3")
+// SetupWithManager sets up the controller with the Manager.
+func (r *DatasetInternalReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&datasets.DatasetInternal{}).
+		Complete(r)
+}
+
+func (r *DatasetInternalReconciler) addFinalizer(reqLogger logr.Logger, m *datasets.DatasetInternal) error {
+	reqLogger.Info("Adding Finalizer for the Dataset")
+	controllerutil.AddFinalizer(m, datasetFinalizer)
+
+	// Update CR
+	err := r.Client.Update(context.TODO(), m)
+	if err != nil {
+		reqLogger.Error(err, "Failed to update Dataset with finalizer")
+	}
+	return err
+}
+
+func contains(list []string, s string) bool {
+	for _, v := range list {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
+func processLocalDatasetH3(cr *datasets.DatasetInternal, rc *DatasetInternalReconciler) (reconcile.Result, error) {
+	processLocalDatasetLogger := logi.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processLocalDatasetH3")
 	processLocalDatasetLogger.Info("Dataset type H3")
 
 	// hostpathType := corev1.HostPathDirectory
@@ -283,15 +289,15 @@ func processLocalDatasetH3(cr *comv1alpha1.DatasetInternal, rc *ReconcileDataset
 	}
 	// pv done
 
-	if err := controllerutil.SetControllerReference(cr, newPV, rc.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(cr, newPV, rc.Scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	foundPV := &corev1.PersistentVolume{}
-	err := rc.client.Get(context.TODO(), types.NamespacedName{Name: newPV.Name, Namespace: newPV.Namespace}, foundPV)
+	err := rc.Client.Get(context.TODO(), types.NamespacedName{Name: newPV.Name, Namespace: newPV.Namespace}, foundPV)
 	if err != nil && errors.IsNotFound(err) {
 		processLocalDatasetLogger.Info("Creating new PV", "PV.Namespace", newPV.Namespace, "PV.Name", newPV.Name)
-		err = rc.client.Create(context.TODO(), newPV)
+		err = rc.Client.Create(context.TODO(), newPV)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -318,15 +324,15 @@ func processLocalDatasetH3(cr *comv1alpha1.DatasetInternal, rc *ReconcileDataset
 		},
 	}
 
-	if err := controllerutil.SetControllerReference(cr, newPVC, rc.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(cr, newPVC, rc.Scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	foundPVC := &corev1.PersistentVolumeClaim{}
-	err = rc.client.Get(context.TODO(), types.NamespacedName{Name: newPVC.Name, Namespace: newPVC.Namespace}, foundPVC)
+	err = rc.Client.Get(context.TODO(), types.NamespacedName{Name: newPVC.Name, Namespace: newPVC.Namespace}, foundPVC)
 	if err != nil && errors.IsNotFound(err) {
 		processLocalDatasetLogger.Info("Creating new pvc", "PVC.Namespace", newPVC.Namespace, "PVC.Name", newPVC.Name)
-		err = rc.client.Create(context.TODO(), newPVC)
+		err = rc.Client.Create(context.TODO(), newPVC)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -335,8 +341,8 @@ func processLocalDatasetH3(cr *comv1alpha1.DatasetInternal, rc *ReconcileDataset
 
 }
 
-func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatasetInternal) (reconcile.Result, error) {
-	processLocalDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processLocalDataset")
+func processLocalDatasetCOS(cr *datasets.DatasetInternal, rc *DatasetInternalReconciler) (reconcile.Result, error) {
+	processLocalDatasetLogger := logi.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processLocalDataset")
 
 	authProvided := false
 	secretOK := false
@@ -364,7 +370,7 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 	if secretOK {
 		// Check if the secret is present
 		cosSecret := &corev1.Secret{}
-		err := rc.client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: secretNamespace}, cosSecret)
+		err := rc.Client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: secretNamespace}, cosSecret)
 
 		if err != nil && errors.IsNotFound(err) {
 			processLocalDatasetLogger.Error(err, "Provided secret not found! ", "Dataset.Name", cr.Name)
@@ -476,10 +482,10 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 	}
 
 	foundPVC := &corev1.PersistentVolumeClaim{}
-	err := rc.client.Get(context.TODO(), types.NamespacedName{Name: newPVC.Name, Namespace: newPVC.Namespace}, foundPVC)
+	err := rc.Client.Get(context.TODO(), types.NamespacedName{Name: newPVC.Name, Namespace: newPVC.Namespace}, foundPVC)
 	if err != nil && errors.IsNotFound(err) {
 		processLocalDatasetLogger.Info("Creating new pvc", "PVC.Namespace", newPVC.Namespace, "PVC.Name", newPVC.Name)
-		err = rc.client.Create(context.TODO(), newPVC)
+		err = rc.Client.Create(context.TODO(), newPVC)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -489,10 +495,10 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 	}
 
 	foundSecret := &corev1.Secret{}
-	err = rc.client.Get(context.TODO(), types.NamespacedName{Name: secretObj.Name, Namespace: secretObj.Namespace}, foundSecret)
+	err = rc.Client.Get(context.TODO(), types.NamespacedName{Name: secretObj.Name, Namespace: secretObj.Namespace}, foundSecret)
 	if err != nil && errors.IsNotFound(err) {
 		processLocalDatasetLogger.Info("Creating new secrets", "Secret.Namespace", secretObj.Namespace, "Secret.Name", secretObj.Name)
-		errCreation := rc.client.Create(context.TODO(), secretObj)
+		errCreation := rc.Client.Create(context.TODO(), secretObj)
 		if errCreation != nil {
 			return reconcile.Result{}, errCreation
 		}
@@ -501,7 +507,7 @@ func processLocalDatasetCOS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 		return reconcile.Result{}, err
 	} else {
 		processLocalDatasetLogger.Info("Secrets exist already!")
-		errorSecretUpdate := checkIfEditableValueChangeAndUpdate(rc.client, processLocalDatasetLogger, foundSecret, secretObj)
+		errorSecretUpdate := checkIfEditableValueChangeAndUpdate(rc.Client, processLocalDatasetLogger, foundSecret, secretObj)
 		if errorSecretUpdate != nil {
 			return reconcile.Result{}, errorSecretUpdate
 		}
@@ -536,12 +542,12 @@ func checkIfEditableValueChangeAndUpdate(c client.Client, logger logr.Logger, ex
 	return nil
 }
 
-func processLocalDatasetNFS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatasetInternal) (reconcile.Result, error) {
-	processLocalDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processLocalDatasetNFS")
+func processLocalDatasetNFS(cr *datasets.DatasetInternal, rc *DatasetInternalReconciler) (reconcile.Result, error) {
+	processLocalDatasetLogger := logi.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processLocalDatasetNFS")
 	processLocalDatasetLogger.Info("Dataset type NFS")
 
 	foundPVC := &corev1.PersistentVolumeClaim{}
-	err := rc.client.Get(context.TODO(), types.NamespacedName{Name: cr.ObjectMeta.Name, Namespace: cr.ObjectMeta.Namespace}, foundPVC)
+	err := rc.Client.Get(context.TODO(), types.NamespacedName{Name: cr.ObjectMeta.Name, Namespace: cr.ObjectMeta.Namespace}, foundPVC)
 	if err == nil {
 		processLocalDatasetLogger.Info("NFS Dataset has been provisioned, skipping...")
 		return reconcile.Result{}, nil
@@ -593,16 +599,16 @@ func processLocalDatasetNFS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 		},
 	}
 
-	if err := controllerutil.SetControllerReference(cr, newPV, rc.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(cr, newPV, rc.Scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	// the csi-nfs plugin does not support dynamic provisioning so PV and PVC must be created manually
 	foundPV := &corev1.PersistentVolume{}
-	err = rc.client.Get(context.TODO(), types.NamespacedName{Name: newPV.Name, Namespace: newPV.Namespace}, foundPV)
+	err = rc.Client.Get(context.TODO(), types.NamespacedName{Name: newPV.Name, Namespace: newPV.Namespace}, foundPV)
 	if err != nil && errors.IsNotFound(err) {
 		processLocalDatasetLogger.Info("Creating new PV", "PV.Namespace", newPV.Namespace, "PV.Name", newPV.Name)
-		err = rc.client.Create(context.TODO(), newPV)
+		err = rc.Client.Create(context.TODO(), newPV)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -628,15 +634,15 @@ func processLocalDatasetNFS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
 		},
 	}
 
-	if err := controllerutil.SetControllerReference(cr, newPVC, rc.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(cr, newPVC, rc.Scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	foundPVC = &corev1.PersistentVolumeClaim{}
-	err = rc.client.Get(context.TODO(), types.NamespacedName{Name: newPVC.Name, Namespace: newPVC.Namespace}, foundPVC)
+	err = rc.Client.Get(context.TODO(), types.NamespacedName{Name: newPVC.Name, Namespace: newPVC.Namespace}, foundPVC)
 	if err != nil && errors.IsNotFound(err) {
 		processLocalDatasetLogger.Info("Creating new pvc", "PVC.Namespace", newPVC.Namespace, "PVC.Name", newPVC.Name)
-		err = rc.client.Create(context.TODO(), newPVC)
+		err = rc.Client.Create(context.TODO(), newPVC)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -649,8 +655,8 @@ func processLocalDatasetNFS(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatase
  * complexity of doing this via the hostpath CSI driver:
  *    https://github.com/kubernetes-csi/csi-driver-host-path
  */
-func processLocalDatasetHOST(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatasetInternal) (reconcile.Result, error) {
-	processLocalDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processLocalDatasetHOST")
+func processLocalDatasetHOST(cr *datasets.DatasetInternal, rc *DatasetInternalReconciler) (reconcile.Result, error) {
+	processLocalDatasetLogger := logi.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processLocalDatasetHOST")
 	processLocalDatasetLogger.Info("Dataset type HOST")
 
 	hostpathType := corev1.HostPathDirectory
@@ -732,15 +738,15 @@ func processLocalDatasetHOST(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatas
 		},
 	}
 
-	if err := controllerutil.SetControllerReference(cr, newPV, rc.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(cr, newPV, rc.Scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	foundPV := &corev1.PersistentVolume{}
-	err := rc.client.Get(context.TODO(), types.NamespacedName{Name: newPV.Name, Namespace: newPV.Namespace}, foundPV)
+	err := rc.Client.Get(context.TODO(), types.NamespacedName{Name: newPV.Name, Namespace: newPV.Namespace}, foundPV)
 	if err != nil && errors.IsNotFound(err) {
 		processLocalDatasetLogger.Info("Creating new PV", "PV.Namespace", newPV.Namespace, "PV.Name", newPV.Name)
-		err = rc.client.Create(context.TODO(), newPV)
+		err = rc.Client.Create(context.TODO(), newPV)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -766,15 +772,15 @@ func processLocalDatasetHOST(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatas
 		},
 	}
 
-	if err := controllerutil.SetControllerReference(cr, newPVC, rc.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(cr, newPVC, rc.Scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	foundPVC := &corev1.PersistentVolumeClaim{}
-	err = rc.client.Get(context.TODO(), types.NamespacedName{Name: newPVC.Name, Namespace: newPVC.Namespace}, foundPVC)
+	err = rc.Client.Get(context.TODO(), types.NamespacedName{Name: newPVC.Name, Namespace: newPVC.Namespace}, foundPVC)
 	if err != nil && errors.IsNotFound(err) {
 		processLocalDatasetLogger.Info("Creating new pvc", "PVC.Namespace", newPVC.Namespace, "PVC.Name", newPVC.Name)
-		err = rc.client.Create(context.TODO(), newPVC)
+		err = rc.Client.Create(context.TODO(), newPVC)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -783,9 +789,9 @@ func processLocalDatasetHOST(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatas
 
 }
 
-func processRemoteDataset(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatasetInternal) (reconcile.Result, error) {
+func processRemoteDataset(cr *datasets.DatasetInternal, rc *DatasetInternalReconciler) (reconcile.Result, error) {
 
-	processRemoteDatasetLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processRemoteDataset")
+	processRemoteDatasetLogger := logi.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processRemoteDataset")
 	result := reconcile.Result{}
 	var err error = nil
 
@@ -814,7 +820,7 @@ func processRemoteDataset(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatasetI
 			catalogSvcName := "hivemetastore"
 			catalogSvcNamespace := cr.Namespace
 			svc := &corev1.Service{}
-			err = rc.client.Get(context.TODO(), types.NamespacedName{Name: catalogSvcName, Namespace: catalogSvcNamespace}, svc)
+			err = rc.Client.Get(context.TODO(), types.NamespacedName{Name: catalogSvcName, Namespace: catalogSvcNamespace}, svc)
 
 			if err != nil {
 				processRemoteDatasetLogger.Error(err, "Could not obtain any catalogs in the current cluster")
@@ -931,16 +937,16 @@ func processRemoteDataset(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatasetI
 			StringData: secretData,
 		}
 
-		if err := controllerutil.SetControllerReference(cr, secretObj, rc.scheme); err != nil {
+		if err := controllerutil.SetControllerReference(cr, secretObj, rc.Scheme); err != nil {
 			processRemoteDatasetLogger.Error(err, "Could not set secret object for dataset", "name", cr.Name)
 			return reconcile.Result{}, err
 		}
 
 		found := &corev1.Secret{}
-		err := rc.client.Get(context.TODO(), types.NamespacedName{Name: secretObj.Name, Namespace: secretObj.Namespace}, found)
+		err := rc.Client.Get(context.TODO(), types.NamespacedName{Name: secretObj.Name, Namespace: secretObj.Namespace}, found)
 		if err != nil && errors.IsNotFound(err) {
 			processRemoteDatasetLogger.Info("Creating new secrets", "Secret.Namespace", secretObj.Namespace, "Secret.Name", secretObj.Name)
-			err = rc.client.Create(context.TODO(), secretObj)
+			err = rc.Client.Create(context.TODO(), secretObj)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
@@ -968,9 +974,9 @@ func processRemoteDataset(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatasetI
 	return result, nil
 }
 
-func createConfigMapforDataset(configMapData map[string]string, cr *comv1alpha1.DatasetInternal, rc *ReconcileDatasetInternal) (reconcile.Result, error) {
+func createConfigMapforDataset(configMapData map[string]string, cr *datasets.DatasetInternal, rc *DatasetInternalReconciler) (reconcile.Result, error) {
 
-	createConfigMapLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "createConfigMapforObjectStorage")
+	createConfigMapLogger := logi.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "createConfigMapforObjectStorage")
 	result := reconcile.Result{}
 	var err error = nil
 
@@ -987,17 +993,17 @@ func createConfigMapforDataset(configMapData map[string]string, cr *comv1alpha1.
 		Data: configMapData,
 	}
 
-	if err = controllerutil.SetControllerReference(cr, configMapObject, rc.scheme); err != nil {
+	if err = controllerutil.SetControllerReference(cr, configMapObject, rc.Scheme); err != nil {
 		return result, err
 	}
 
 	foundConfigMap := &corev1.ConfigMap{}
-	err = rc.client.Get(context.TODO(), types.NamespacedName{Name: configMapObject.Name, Namespace: configMapObject.Namespace}, foundConfigMap)
+	err = rc.Client.Get(context.TODO(), types.NamespacedName{Name: configMapObject.Name, Namespace: configMapObject.Namespace}, foundConfigMap)
 
 	if err != nil && errors.IsNotFound(err) {
 		createConfigMapLogger.Info("Creating new configMap", "configMap.namespace",
 			configMapObject.Namespace, "configMap.Name", configMapObject.Name)
-		err = rc.client.Create(context.TODO(), configMapObject)
+		err = rc.Client.Create(context.TODO(), configMapObject)
 		if err != nil {
 			return result, err
 		}
@@ -1008,9 +1014,9 @@ func createConfigMapforDataset(configMapData map[string]string, cr *comv1alpha1.
 	return result, err
 }
 
-func createPVCforObjectStorage(cr *comv1alpha1.DatasetInternal, rc *ReconcileDatasetInternal) (reconcile.Result, error) {
+func createPVCforObjectStorage(cr *datasets.DatasetInternal, rc *DatasetInternalReconciler) (reconcile.Result, error) {
 
-	createPVCLogger := log.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "createPVCforObjectStorage")
+	createPVCLogger := logi.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "createPVCforObjectStorage")
 	result := reconcile.Result{}
 	var err error = nil
 
@@ -1037,14 +1043,14 @@ func createPVCforObjectStorage(cr *comv1alpha1.DatasetInternal, rc *ReconcileDat
 		},
 	}
 
-	if err = controllerutil.SetControllerReference(cr, newPVC, rc.scheme); err == nil {
+	if err = controllerutil.SetControllerReference(cr, newPVC, rc.Scheme); err == nil {
 
 		foundPVC := &corev1.PersistentVolumeClaim{}
-		err = rc.client.Get(context.TODO(), types.NamespacedName{Name: newPVC.Name, Namespace: newPVC.Namespace}, foundPVC)
+		err = rc.Client.Get(context.TODO(), types.NamespacedName{Name: newPVC.Name, Namespace: newPVC.Namespace}, foundPVC)
 		if err != nil && errors.IsNotFound(err) {
 			//PVC not created - requeue
 			createPVCLogger.Info("Creating new pvc", "PVC.Namespace", newPVC.Namespace, "PVC.Name", newPVC.Name)
-			err = rc.client.Create(context.TODO(), newPVC)
+			err = rc.Client.Create(context.TODO(), newPVC)
 		}
 	}
 
@@ -1063,25 +1069,4 @@ func getBooleanStringForKeyInMap(reqLogger logr.Logger, defaultValue string, key
 		}
 	}
 	return toret
-}
-
-func contains(list []string, s string) bool {
-	for _, v := range list {
-		if v == s {
-			return true
-		}
-	}
-	return false
-}
-
-func (r *ReconcileDatasetInternal) addFinalizer(reqLogger logr.Logger, m *comv1alpha1.DatasetInternal) error {
-	reqLogger.Info("Adding Finalizer for the Dataset")
-	controllerutil.AddFinalizer(m, datasetFinalizer)
-
-	// Update CR
-	err := r.client.Update(context.TODO(), m)
-	if err != nil {
-		reqLogger.Error(err, "Failed to update Dataset with finalizer")
-	}
-	return err
 }

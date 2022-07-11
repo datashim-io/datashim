@@ -1,6 +1,6 @@
-DOCKER_REGISTRY ?= quay.io/ibm-dlf
+DOCKER_REGISTRY ?= quay.io/datashim-io
 
-ARCH ?= 
+ARCH ?= $(shell go env GOARCH)
 
 #used only when building the plugins
 
@@ -32,7 +32,7 @@ push-sidecars:
 push-components:
 	@docker login -u=${DOCKER_USER} -p=${DOCKER_PASSWORD} quay.io ;\
 	docker push $(DATASET_OPERATOR_IMAGE)-$(ARCH) ;\
-	docker push $(GENERAGE_KEYS_IMAGE)-$(ARCH)
+	docker push $(GENERATE_KEYS_IMAGE)-$(ARCH)
 
 push-csi-plugins:
 	@docker login -u=${DOCKER_USER} -p=${DOCKER_PASSWORD} quay.io ;\

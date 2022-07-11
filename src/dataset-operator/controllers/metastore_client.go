@@ -1,4 +1,4 @@
-package datasetinternal
+package controllers
 
 import (
 	"errors"
@@ -6,10 +6,9 @@ import (
 	"strconv"
 	"strings"
 
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-
 	"github.com/akolb1/gometastore/hmsclient"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var catalogLogger = logf.Log.WithName("metastore_client")
