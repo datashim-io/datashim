@@ -1209,7 +1209,7 @@ spec:
       serviceAccountName: dataset-operator
       initContainers:
         - name: generate-keys
-          image: "quay.io/datashim-io/generate-keys:latest"
+          image: "quay.io/datashim-io/generate-keys:0.3.0"
           imagePullPolicy: Always
           env:
             - name: DATASET_OPERATOR_NAMESPACE
@@ -1217,7 +1217,7 @@ spec:
       containers:
         - name: dataset-operator
           # Replace this with the built image name
-          image: "quay.io/datashim-io/dataset-operator:latest"
+          image: "quay.io/datashim-io/dataset-operator:0.3.0"
           command:
             - /manager
           imagePullPolicy: Always

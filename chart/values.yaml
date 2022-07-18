@@ -48,7 +48,7 @@ dataset-operator-chart:
 # dockerRegistrySecret: "anothersecret"
   generatekeys:
     image: "generate-keys"
-    tag: "latest"
+    tag: "0.3.0"
   datasetoperator:
     image: "dataset-operator"
-    tag: "latest"
+    tag: "0.3.0"

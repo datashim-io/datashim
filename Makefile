@@ -2,7 +2,7 @@ DATASET_OPERATOR_NAMESPACE=dlf
 
 COMMON_IMAGE_TAG ?= latest
 
-HELM_IMAGE_TAGS = --set global.namespaceYaml="true" --set csi-nfs-chart.csinfs.tag=$(COMMON_IMAGE_TAG) --set csi-s3-chart.csis3.tag=$(COMMON_IMAGE_TAG) --set dataset-operator-chart.generatekeys.tag=$(COMMON_IMAGE_TAG) --set dataset-operator-chart.datasetoperator.tag=$(COMMON_IMAGE_TAG)
+HELM_IMAGE_TAGS = --set global.namespaceYaml="true" --set csi-nfs-chart.csinfs.tag=$(COMMON_IMAGE_TAG) --set csi-s3-chart.csis3.tag=$(COMMON_IMAGE_TAG)
 
 manifests:
 	helm template $(HELM_IMAGE_TAGS) --namespace=$(DATASET_OPERATOR_NAMESPACE) --name-template=default --set csi-h3-chart.enabled="false" chart/ > release-tools/manifests/dlf.yaml
