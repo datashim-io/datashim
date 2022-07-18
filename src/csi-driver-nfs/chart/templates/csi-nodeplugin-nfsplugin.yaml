@@ -53,7 +53,7 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: "{{ $csiNFSProperties.baseRepo }}/{{ $csiNFSProperties.csinfs.image }}:{{ $csiNFSProperties.csinfs.tag }}-{{ $csiNFSProperties.arch }}"
+          image: "{{ $csiNFSProperties.baseRepo }}/{{ $csiNFSProperties.csinfs.image }}:{{ $csiNFSProperties.csinfs.tag }}"
           args :
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"

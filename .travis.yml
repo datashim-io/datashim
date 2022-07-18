@@ -1,3 +1,4 @@
+dist: focal
 services:
   - docker
 
@@ -7,6 +8,8 @@ stages:
   - name: build_release_amd64
     if: type != pull_request AND tag IS present
   - name: build_release_ppc64le
+    if: type != pull_request AND tag IS present
+  - name: push_release_multiarch
     if: type != pull_request AND tag IS present
     
   - name: build_pr_arm64
@@ -22,6 +25,8 @@ stages:
     if: type != pull_request AND branch = master
   - name: build_latest_ppc64le
     if: type != pull_request AND branch = master
+  - name: push_latest_multiarch
+    if: type != pull_request AND branch = master
 
 matrix:
   include:
@@ -33,9 +38,9 @@ matrix:
       arch: arm64
       env: 
         - COMMON_IMAGE_TAG=${TRAVIS_TAG}
-        - DOCKER_REGISTRY=quay.io/datashim
+        - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh
 
     - stage: build_release_amd64
       services:
@@ -47,7 +52,7 @@ matrix:
         - COMMON_IMAGE_TAG=${TRAVIS_TAG}
         - DOCKER_REGISTRY=quay.io/datashim
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh
 
     - stage: build_release_ppc64le
       services:
@@ -56,9 +61,19 @@ matrix:
       arch: ppc64le
       env: 
         - COMMON_IMAGE_TAG=${TRAVIS_TAG}
-        - DOCKER_REGISTRY=quay.io/datashim
+        - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh
+  
+    - stage: push_release_multiarch
+      services:
+        - docker
+      os: linux
+      env: 
+        - DOCKER_REGISTRY=quay.io/datashim-io
+      script:
+        - cd build-tools
+        - make DOCKER_REGISTRY=${DOCKER_REGISTRY} push-multiarch
 
     # pull request stages
     - stage: build_pr_arm64
@@ -69,7 +84,7 @@ matrix:
       env: 
         - COMMON_IMAGE_TAG="pr_${TRAVIS_COMMIT}"
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh
 
     - stage: build_pr_amd64
       services:
@@ -80,7 +95,7 @@ matrix:
       env: 
         - COMMON_IMAGE_TAG="pr_${TRAVIS_COMMIT}"
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh
 
     - stage: build_pr_ppc64le
       services:
@@ -90,7 +105,7 @@ matrix:
       env: 
         - COMMON_IMAGE_TAG="pr_${TRAVIS_COMMIT}"
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh
 
     # master branch stages
     - stage: build_latest_arm64
@@ -99,9 +114,9 @@ matrix:
       os: linux
       arch: arm64
       env: 
-        - DOCKER_REGISTRY=quay.io/datashim
+        - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh
 
     - stage: build_latest_amd64
       services:
@@ -110,9 +125,9 @@ matrix:
       arch: amd64
       dist: bionic
       env: 
-        - DOCKER_REGISTRY=quay.io/datashim
+        - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh
 
     - stage: build_latest_ppc64le
       services:
@@ -120,6 +135,16 @@ matrix:
       os: linux
       arch: ppc64le
       env: 
-        - DOCKER_REGISTRY=quay.io/datashim
+        - DOCKER_REGISTRY=quay.io/datashim-io
       install: echo "no install"
-      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh && ./build_sidecars.sh
+      script: cd build-tools && ./build_components.sh && ./build_csi_plugins.sh
+    
+    - stage: push_latest_multiarch
+      services:
+        - docker
+      os: linux
+      env: 
+        - DOCKER_REGISTRY=quay.io/datashim-io
+      script:
+        - cd build-tools
+        - make DOCKER_REGISTRY=${DOCKER_REGISTRY} push-multiarch

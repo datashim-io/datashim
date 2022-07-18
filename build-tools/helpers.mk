@@ -64,3 +64,14 @@ endef
 define install_local
 	cd ../src/$(1) && make container -e IMAGE_TAG=$(2)-$(ARCH) -e ARCH=$(ARCH)
 endef
+
+define generate_push_multi_arch_manifest
+	@export DOCKER_CLI_EXPERIMENTAL=enabled ;\
+	echo "generating multiarch for"+$(1) ;\
+	docker login -u=${DOCKER_USER} -p=${DOCKER_PASSWORD} quay.io ;\
+	docker manifest create $(1) $(1)-amd64 $(1)-arm64 $(1)-ppc64le ;\
+	docker manifest annotate $(1) $(1)-amd64 --arch amd64 ;\
+	docker manifest annotate $(1) $(1)-arm64 --arch arm64 ;\
+	docker manifest annotate $(1) $(1)-ppc64le --arch ppc64le ;\
+	docker manifest push $(1)
+endef
