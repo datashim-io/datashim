@@ -97,7 +97,7 @@ spec:
               name: registration-dir
         - name: csi-s3
           image: "{{ $csiS3Properties.baseRepo }}/{{ $csiS3Properties.csis3.image }}:{{ $csiS3Properties.csis3.tag }}"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           args:
             - "--v=5"
             - "--endpoint=$(CSI_ENDPOINT)"
@@ -113,7 +113,7 @@ spec:
             - name: cheap
               value: "off"
           securityContext:
-            privileged: false
+            privileged: true
           #          ports:
           #            - containerPort: 9898
           #              name: healthz
@@ -131,7 +131,7 @@ spec:
             - mountPath: /csi
               name: socket-dir
             - mountPath: {{ $csiS3Properties.sidecars.kubeletPath }}/pods
-              mountPropagation: HostToContainer
+              mountPropagation: Bidirectional
               name: mountpoint-dir
             - mountPath: /dev
               name: dev-dir

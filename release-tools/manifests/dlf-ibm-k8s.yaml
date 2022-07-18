@@ -1120,7 +1120,7 @@ spec:
               name: registration-dir
         - name: csi-s3
           image: "quay.io/datashim-io/csi-s3:latest"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           args:
             - "--v=5"
             - "--endpoint=$(CSI_ENDPOINT)"
@@ -1136,7 +1136,7 @@ spec:
             - name: cheap
               value: "off"
           securityContext:
-            privileged: false
+            privileged: true
           #          ports:
           #            - containerPort: 9898
           #              name: healthz
@@ -1154,7 +1154,7 @@ spec:
             - mountPath: /csi
               name: socket-dir
             - mountPath: /var/data/kubelet/pods
-              mountPropagation: HostToContainer
+              mountPropagation: Bidirectional
               name: mountpoint-dir
             - mountPath: /dev
               name: dev-dir
