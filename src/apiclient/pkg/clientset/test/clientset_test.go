@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/datashim-io/datashim/src/apiclient/pkg/clientset/versioned/fake"
-	"github.com/datashim-io/datashim/src/dataset-operator/pkg/apis/com/v1alpha1"
+	"github.com/datashim-io/datashim/src/dataset-operator/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
