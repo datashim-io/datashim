@@ -29,8 +29,8 @@ CSI_NFS_IMAGE := $(CSI_NFS_IMAGE):$(CSI_NFS_IMAGE_TAG)
 
 GENERATE_KEYS_IMAGE := generate-keys
 GENERATE_KEYS_IMAGE_TAG := $(COMMON_IMAGE_TAG)
-GENERATE_KEYS_IMAGE := $(DOCKER_REGISTRY)/$(GENERAGE_KEYS_IMAGE)
-GENERATE_KEYS_IMAGE := $(GENERAGE_KEYS_IMAGE):$(GENERAGE_KEYS_IMAGE_TAG)
+GENERATE_KEYS_IMAGE := $(DOCKER_REGISTRY)/$(GENERATE_KEYS_IMAGE)
+GENERATE_KEYS_IMAGE := $(GENERATE_KEYS_IMAGE):$(GENERATE_KEYS_IMAGE_TAG)
 
 #1: git repo url
 #2: git tag
@@ -67,11 +67,9 @@ endef
 
 define generate_push_multi_arch_manifest
 	@export DOCKER_CLI_EXPERIMENTAL=enabled ;\
+	echo "generating multiarch for"+$(1) ;\
 	docker login -u=${DOCKER_USER} -p=${DOCKER_PASSWORD} quay.io ;\
-	docker create manifest $(1) \
-	       $(1)-amd64 \
-		   $(1)-arm64 \
-		   $(1)-ppc64le ;\
+	docker manifest create $(1) $(1)-amd64 $(1)-arm64 $(1)-ppc64le ;\
 	docker manifest annotate $(1) $(1)-amd64 --arch amd64 ;\
 	docker manifest annotate $(1) $(1)-arm64 --arch arm64 ;\
 	docker manifest annotate $(1) $(1)-ppc64le --arch ppc64le ;\
