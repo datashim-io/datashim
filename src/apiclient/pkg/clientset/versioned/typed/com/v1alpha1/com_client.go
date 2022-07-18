@@ -20,7 +20,7 @@ package v1alpha1
 
 import (
 	"github.com/datashim-io/datashim/src/apiclient/pkg/clientset/versioned/scheme"
-	v1alpha1 "github.com/datashim-io/datashim/src/dataset-operator/pkg/apis/com/v1alpha1"
+	v1alpha1 "github.com/datashim-io/datashim/src/dataset-operator/api/v1alpha1"
 	rest "k8s.io/client-go/rest"
 )
 
@@ -72,7 +72,7 @@ func New(c rest.Interface) *ComV1alpha1Client {
 }
 
 func setConfigDefaults(config *rest.Config) error {
-	gv := v1alpha1.SchemeGroupVersion
+	gv := v1alpha1.GroupVersion
 	config.GroupVersion = &gv
 	config.APIPath = "/apis"
 	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()

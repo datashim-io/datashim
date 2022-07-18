@@ -57,7 +57,7 @@ spec:
             - name: socket-dir
               mountPath: /csi
         - name: nfs
-          image: "{{ $csiNFSProperties.baseRepo }}/{{ $csiNFSProperties.csinfs.image }}:{{ $csiNFSProperties.csinfs.tag }}-{{ $csiNFSProperties.arch }}"
+          image: "{{ $csiNFSProperties.baseRepo }}/{{ $csiNFSProperties.csinfs.image }}:{{ $csiNFSProperties.csinfs.tag }}"
           args :
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"

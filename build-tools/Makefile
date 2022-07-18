@@ -30,26 +30,23 @@ build-csi-plugins:
 	$(call install_local,csi-driver-nfs,$(CSI_NFS_IMAGE))
 
 push-sidecars:
-	@docker login -u="datashim-io+datashim_builder" -p=${DOCKER_PASSWORD} quay.io ;\
+	@docker login -u=${DOCKER_USER} -p=${DOCKER_PASSWORD} quay.io ;\
 	docker push $(EXTERNAL_PROVISIONER_IMAGE)-$(ARCH) ;\
 	docker push $(EXTERNAL_ATTACHER_IMAGE)-$(ARCH) ;\
 	docker push $(NODE_DRIVER_REGISTRAR_IMAGE)-$(ARCH)
 
 push-components:
-	@docker login -u="datashim-io+datashim_builder" -p=${DOCKER_PASSWORD} quay.io ;\
+	@docker login -u=${DOCKER_USER} -p=${DOCKER_PASSWORD} quay.io ;\
 	docker push $(DATASET_OPERATOR_IMAGE)-$(ARCH) ;\
 	docker push $(GENERATE_KEYS_IMAGE)-$(ARCH)
 
 push-csi-plugins:
-	@docker login -u="datashim-io+datashim_builder" -p=${DOCKER_PASSWORD} quay.io ;\
+	@docker login -u=${DOCKER_USER} -p=${DOCKER_PASSWORD} quay.io ;\
 	docker push $(CSI_S3_IMAGE)-$(ARCH) ;\
 	docker push $(CSI_NFS_IMAGE)-$(ARCH)
 
-push-multi-arch-manifests:
+push-multiarch:
 	$(call generate_push_multi_arch_manifest,$(DATASET_OPERATOR_IMAGE))
 	$(call generate_push_multi_arch_manifest,$(GENERATE_KEYS_IMAGE))
 	$(call generate_push_multi_arch_manifest,$(CSI_S3_IMAGE))
 	$(call generate_push_multi_arch_manifest,$(CSI_NFS_IMAGE))
-	$(call generate_push_multi_arch_manifest,$(EXTERNAL_PROVISIONER_IMAGE))
-	$(call generate_push_multi_arch_manifest,$(EXTERNAL_ATTACHER_IMAGE))
-	$(call generate_push_multi_arch_manifest,$(NODE_DRIVER_REGISTRAR_IMAGE))

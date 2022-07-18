@@ -27,7 +27,7 @@ spec:
       initContainers:
         - name: generate-keys
           {{- with $datasetProperties}}
-          image: "{{ .baseRepo }}/{{ .generatekeys.image }}:{{ .generatekeys.tag }}-{{ .arch }}"
+          image: "{{ .baseRepo }}/{{ .generatekeys.image }}:{{ .generatekeys.tag }}"
           {{- end}}
           imagePullPolicy: Always
           env:
@@ -37,7 +37,7 @@ spec:
         - name: dataset-operator
           # Replace this with the built image name
           {{- with $datasetProperties}}
-          image: "{{ .baseRepo }}/{{ .datasetoperator.image }}:{{ .datasetoperator.tag }}-{{ .arch }}"
+          image: "{{ .baseRepo }}/{{ .datasetoperator.image }}:{{ .datasetoperator.tag }}"
           {{- end}}
           command:
             - /manager
