@@ -846,7 +846,7 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: "quay.io/datashim-io/csi-nfs:latest-amd64"
+          image: "quay.io/datashim-io/csi-nfs:latest"
           args :
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
@@ -909,7 +909,7 @@ spec:
             # This is necessary only for systems with SELinux, where
             # non-privileged sidecar containers cannot access unix domain socket
             # created by privileged CSI driver container.
-            privileged: true
+            privileged: false
           env:
             - name: KUBE_NODE_NAME
               valueFrom:
@@ -922,8 +922,8 @@ spec:
             - mountPath: /registration
               name: registration-dir
         - name: csi-s3
-          image: "quay.io/datashim-io/csi-s3:latest-amd64"
-          imagePullPolicy: Always
+          image: "quay.io/datashim-io/csi-s3:latest"
+          imagePullPolicy: IfNotPresent
           args:
             - "--v=5"
             - "--endpoint=$(CSI_ENDPOINT)"
@@ -939,7 +939,7 @@ spec:
             - name: cheap
               value: "off"
           securityContext:
-            privileged: true
+            privileged: false
           #          ports:
           #            - containerPort: 9898
           #              name: healthz
@@ -957,7 +957,7 @@ spec:
             - mountPath: /csi
               name: socket-dir
             - mountPath: /var/lib/kubelet/pods
-              mountPropagation: Bidirectional
+              mountPropagation: HostToContainer
               name: mountpoint-dir
             - mountPath: /dev
               name: dev-dir
@@ -1012,7 +1012,7 @@ spec:
       serviceAccountName: dataset-operator
       initContainers:
         - name: generate-keys
-          image: "quay.io/datashim-io/generate-keys:latest-amd64"
+          image: "quay.io/datashim-io/generate-keys:latest"
           imagePullPolicy: Always
           env:
             - name: DATASET_OPERATOR_NAMESPACE
@@ -1020,7 +1020,7 @@ spec:
       containers:
         - name: dataset-operator
           # Replace this with the built image name
-          image: "quay.io/datashim-io/dataset-operator:latest-amd64"
+          image: "quay.io/datashim-io/dataset-operator:latest"
           command:
             - /manager
           imagePullPolicy: Always
@@ -1084,7 +1084,7 @@ spec:
             - name: socket-dir
               mountPath: /csi
         - name: nfs
-          image: "quay.io/datashim-io/csi-nfs:latest-amd64"
+          image: "quay.io/datashim-io/csi-nfs:latest"
           args :
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
@@ -1196,6 +1196,9 @@ metadata:
 spec:
   attachRequired: false
   podInfoOnMount: false
+  volumeLifecycleModes:
+    - Persistent
+#    - Ephemeral
 ---
 # Source: dlf-chart/charts/dataset-operator-chart/templates/apps/webhook-definition.yaml
 apiVersion: admissionregistration.k8s.io/v1

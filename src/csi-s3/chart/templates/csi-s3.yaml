@@ -96,7 +96,7 @@ spec:
             - mountPath: /registration
               name: registration-dir
         - name: csi-s3
-          image: "{{ $csiS3Properties.baseRepo }}/{{ $csiS3Properties.csis3.image }}:{{ $csiS3Properties.csis3.tag }}-{{ $csiS3Properties.arch }}"
+          image: "{{ $csiS3Properties.baseRepo }}/{{ $csiS3Properties.csis3.image }}:{{ $csiS3Properties.csis3.tag }}"
           imagePullPolicy: IfNotPresent
           args:
             - "--v=5"
