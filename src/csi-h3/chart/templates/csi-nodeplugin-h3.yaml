@@ -19,6 +19,9 @@ spec:
         {{- include "common.labels" . | nindent 8 }}
         app: csi-nodeplugin-h3
     spec:
+      {{- if or (.Values.priorityClassName) (.Values.global.priorityClassName) }}
+      priorityClassName: {{ .Values.priorityClassName | default .Values.global.priorityClassName }}
+      {{- end }}
       {{- if or (.Values.dockerRegistrySecret) (.Values.global.dockerRegistrySecret) }}
       imagePullSecrets:
         - name: {{ .Values.dockerRegistrySecret | default .Values.global.dockerRegistrySecret }}
