@@ -1,0 +1,96 @@
+name: Test on KinD
+on:
+  pull_request:
+    types: [ready_for_review, review_requested, opened, edited, reopened, synchronize]
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone Datashim
+        uses: actions/checkout@v2
+      - name: Create k8s Kind Cluster
+        uses: helm/kind-action@v1.4.0
+      - name: Make Datashim manifests
+        run: make manifests
+      - name: Install Datashim
+        run: make deployment
+      - name: Install NooBaa
+        run: |
+          OS="linux"
+          VERSION=$(curl -s https://api.github.com/repos/noobaa/noobaa-operator/releases/latest | jq -r '.name')
+          curl -LO https://github.com/noobaa/noobaa-operator/releases/download/$VERSION/noobaa-$OS-$VERSION
+          chmod +x noobaa-$OS-$VERSION
+          mv noobaa-$OS-$VERSION /usr/local/bin/noobaa
+          noobaa install --mini=true
+      - name: Create S3 Secret
+        run: |
+         kubectl create secret generic s3-secret \
+          --from-literal=accessKeyID=$(kubectl get secret noobaa-admin --template={{.data.AWS_ACCESS_KEY_ID}} | base64 -d) \
+          --from-literal=secretAccessKey=$(kubectl get secret noobaa-admin --template={{.data.AWS_SECRET_ACCESS_KEY}} | base64 -d)
+      - name: Create sample Dataset
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: com.ie.ibm.hpsys/v1alpha1
+          kind: Dataset
+          metadata:
+            name: example-dataset
+          spec:
+            local:
+              type: "COS"
+              secret-name: "s3-secret"
+              endpoint: "http://s3.default.svc"
+              bucket: "first.bucket"
+          EOF
+      - name: Write to Dataset
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: ds-write
+          spec:
+            template:
+              spec:
+                volumes:
+                - name: "example-dataset"
+                  persistentVolumeClaim:
+                    claimName: "example-dataset"
+                containers:
+                - command: ["/bin/sh"]
+                  args: ["-c", "echo 'Some file contents' > /mnt/datashim/test.txt"]
+                  image: busybox
+                  name: busybox
+                  volumeMounts:
+                    - mountPath: "/mnt/datashim" 
+                      name: "example-dataset"
+                restartPolicy: Never
+            backoffLimit: 1
+          EOF
+          kubectl wait --for=condition=complete job/ds-write --timeout=30s
+      - name: Read from Dataset
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: ds-read
+          spec:
+            template:
+              spec:
+                volumes:
+                - name: "example-dataset"
+                  persistentVolumeClaim:
+                    claimName: "example-dataset"
+                containers:
+                - command: ["/bin/sh"]
+                  args: ["-c", "cat /mnt/datashim/test.txt"]
+                  image: busybox
+                  name: busybox
+                  volumeMounts:
+                    - mountPath: "/mnt/datashim" 
+                      name: "example-dataset"
+                restartPolicy: Never
+            backoffLimit: 1
+          EOF
+          kubectl wait --for=condition=complete job/ds-read --timeout=30s
