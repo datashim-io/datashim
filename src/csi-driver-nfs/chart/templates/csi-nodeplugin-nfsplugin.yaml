@@ -17,7 +17,14 @@ spec:
       labels:
         {{- include "common.labels" . | nindent 8 }}
         app: csi-nodeplugin-nfsplugin
+      {{- if or (hasKey .Values "clusterAutoscalerDSEviction") (hasKey .Values.global "clusterAutoscalerDSEviction") }}
+      annotations:
+        cluster-autoscaler.kubernetes.io/enable-ds-eviction: {{ .Values.clusterAutoscalerDSEviction | default .Values.global.clusterAutoscalerDSEviction | quote }}
+      {{- end}}
     spec:
+      {{- if or (.Values.priorityClassName) (.Values.global.priorityClassName) }}
+      priorityClassName: {{ .Values.priorityClassName | default .Values.global.priorityClassName }}
+      {{- end }}
       {{- if or (.Values.dockerRegistrySecret) (.Values.global.dockerRegistrySecret) }}
       imagePullSecrets:
         - name: {{ .Values.dockerRegistrySecret | default .Values.global.dockerRegistrySecret }}
