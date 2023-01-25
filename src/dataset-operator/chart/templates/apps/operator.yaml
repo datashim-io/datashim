@@ -19,6 +19,9 @@ spec:
         name: dataset-operator
         {{- include "common.labels" . | nindent 8 }}
     spec:
+      {{- if or (.Values.priorityClassName) (.Values.global.priorityClassName) }}
+      priorityClassName: {{ .Values.priorityClassName | default .Values.global.priorityClassName }}
+      {{- end }}
       serviceAccountName: dataset-operator
       {{- if or (.Values.dockerRegistrySecret) (.Values.global.dockerRegistrySecret) }}
       imagePullSecrets:

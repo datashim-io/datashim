@@ -34,6 +34,9 @@ spec:
         {{- include "common.labels" . | nindent 8 }}
         app: csi-attacher-s3
     spec:
+      {{- if or (.Values.priorityClassName) (.Values.global.priorityClassName) }}
+      priorityClassName: {{ .Values.priorityClassName | default .Values.global.priorityClassName }}
+      {{- end }}
       serviceAccountName: csi-attacher
       {{- if or (.Values.dockerRegistrySecret) (.Values.global.dockerRegistrySecret) }}
       imagePullSecrets:
