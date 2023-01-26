@@ -1,4 +1,4 @@
 #!/bin/bash
 
-IMAGE_TAG="${IMAGE_TAG:-quay.io/datashim-io/generate-keys}"
-docker build -t ${IMAGE_TAG} .
+REGISTRY_URL="${REGISTRY_URL:-quay.io/datashim-io}"
+docker build -t ${REGISTRY_URL}/generate-keys .
