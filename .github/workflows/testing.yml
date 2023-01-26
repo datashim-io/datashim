@@ -13,7 +13,9 @@ jobs:
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@v1.4.0
       - name: Build components
-        run: ./build-tools/build_components.sh
+        run: |
+          cd build-tools
+          ./build-tools/build_components.sh
       - name: Make Datashim manifests
         run: make manifests
       - name: Update manifests to use local images
