@@ -1,8 +1,8 @@
 name: Build and push multiarch images
 on:
   push:
-    # branches:
-    #   - master
+    branches:
+      - master
 
 jobs:
   dataset-operator:
