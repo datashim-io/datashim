@@ -37,9 +37,9 @@ if [ $BUILD_AND_PUSH = "yes" ]; then
       if [ $CREATE_NEW_BUILDX_CONTEXT = "yes" ]; then
             docker buildx create --use
       fi
-      (cd ../src/dataset-operator && ./build_and_push_multiarch_dataset_operator.sh)
-      (cd ../src/generate-keys && ./build_and_push_multiarch_generate_keys.sh)
+      (cd ../src/dataset-operator && ./build_and_push_multiarch_dataset_operator.sh $REGISTRY_URL)
+      (cd ../src/generate-keys && ./build_and_push_multiarch_generate_keys.sh $REGISTRY_URL)
 else
-      (cd ../src/dataset-operator && ./build_dataset_operator.sh)
-      (cd ../src/generate-keys && ./build_generate_keys.sh)
+      (cd ../src/dataset-operator && ./build_dataset_operator.sh $REGISTRY_URL)
+      (cd ../src/generate-keys && ./build_generate_keys.sh $REGISTRY_URL)
 fi
