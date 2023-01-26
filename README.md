@@ -85,35 +85,17 @@ spec:
 As a convention the Dataset will be mounted in `/mnt/datasets/example-dataset`. If instead you wish to pass the connection
 details as environment variables, change the `useas` line to `dataset.0.useas: "configmap"`
 
-Feel free to explore our [examples](./examples)
+**Note:** We recommend using secrets to pass your S3/Object Storage Service credentials to Datashim, as shown in [this example](./examples/templates/example-dataset-s3-provision.yaml).
 
-## FAQ
+Feel free to explore our [other examples](./examples)
 
-Have a look on our wiki for [Frequently Asked Questions](https://datashim-io.github.io/datashim/FAQ)
+## Questions
 
-## Roadmap
+The wiki and [Frequently Asked Questions](https://datashim-io.github.io/datashim/FAQ) documents are a bit out of date. We recommend browsing [the issues](https://github.com/datashim-io/datashim/issues?q=is%3Aissue+label%3Aquestion) for previously answered questions. Please open an issue if you are not able to find the answers to your questions, or if you have discovered a bug. 
 
-Have a look on our wiki for [Roadmap](https://datashim-io.github.io/datashim/Roadmap)
+## Contributing
 
-## References
+We welcome all contributions to Datashim. Please read [this document](./docs/GitWorkflow.md) for setting up a Git workflow for contributing to Datashim. If you use VSCode, then we have [recommendations for setting it up for development](./docs/GolangVSCodeGit.md). 
 
-1. P. Koutsovasilis, S. Venugopal, Y. Gkoufas and C. Pinto,  "A Holistic Approach to Data Access for Cloud-Native Analytics and Machine Learning," in 2021 IEEE 14th International Conference on Cloud Computing (CLOUD), Chicago, IL, USA, 2021 pp. 654-659 [doi](https://doi.org/10.1109/CLOUD53861.2021.00084) [bibtex](https://www.computer.org/csdl/api/v1/citation/bibtex/proceedings/1ymIXmTZpgQ/006000a654) - Please cite this paper when referring to Datashim
-2. Y. Gkoufas, D.Y. Yuan, C.Pinto, P. Koutsovasilis, S. Venugopal, "Datashim and Its Applications in Bioinformatics", Proceedings of International Conference on High Performance Computing, Lecture Notes in Computer Science, vol 12761, pp. 416-427, Springer, Cham.[doi](https://doi.org/10.1007/978-3-030-90539-2_28)
-3. C. Pinto, et. al, "Data Convergence for High-Performance Cloud", HPC, Big Data, and AI Convergence Towards Exascale: Challenge and Vision, CRC Press, 2022. [doi](https://doi.org/10.1201/9781003176664)
-
-
-## Contact
-
-Reach out to us via email:
-- Srikumar Venugopal, <srikumarv@ie.ibm.com>
-- Yiannis Gkoufas, <yiannisg@ie.ibm.com>
-- Christian Pinto, <christian.pinto@ibm.com>
-- Panagiotis Koutsovasilis, <koutsovasilis.panagiotis1@ibm.com>
-
-## Acknowledgements
-This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement No 825061.
-
-[H2020 evolve](https://www.evolve-h2020.eu/).
-
-<img src="./docs/pictures/evolve-logo.png" alt="H2020 evolve logo" width="150" height="24.07">
+If you have an idea for a feature request, please open an issue. Let us know in the issue description the problem or the pain point, and how the proposed feature would help solve it. If you are looking to contribute but you don't know where to start, we recommend looking at the open issues first. Thanks!
 
