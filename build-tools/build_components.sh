@@ -2,14 +2,16 @@
 set -e
 
 print_usage() {
-    echo "Usage: $0 [-p] [-k]"
+    echo "Usage: $0 [-k] [-p] [-s]"
     echo "Use -k to avoid creating another buildx context"
     echo "Use -p to build and push multiarch images"
+    echo "Use -s to skip logging in to the container registry"
 }
 
 BUILD_AND_PUSH="no"
-CREATE_NEW_BUILDX_CONTEXT='yes'
-while getopts 'pk' OPTION
+CREATE_NEW_BUILDX_CONTEXT="yes"
+SKIP_LOGIN="no"
+while getopts 'kps' OPTION
 do
     case "$OPTION" in
         k)
@@ -17,6 +19,9 @@ do
             ;;
         p)
             BUILD_AND_PUSH="yes"
+            ;;
+        s)
+            SKIP_LOGIN="yes"
             ;;
         ?)
             print_usage >&2
@@ -26,7 +31,9 @@ do
 done
 
 if [ $BUILD_AND_PUSH = "yes" ]; then
-      echo $REGISTRY_PASSWORD | docker login -u $REGISTRY_USERNAME --password-stdin $REGISTRY_URL
+      if [ $SKIP_LOGIN = "no" ]; then
+            echo $REGISTRY_PASSWORD | docker login -u $REGISTRY_USERNAME --password-stdin $REGISTRY_URL
+      fi
       if [ $CREATE_NEW_BUILDX_CONTEXT = "yes" ]; then
             docker buildx create --use
       fi
