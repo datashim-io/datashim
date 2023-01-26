@@ -2,6 +2,7 @@ name: Test on KinD
 on:
   pull_request:
     types: [ready_for_review, review_requested, opened, edited, reopened, synchronize]
+  push:
 
 jobs:
   integration-test:
@@ -11,8 +12,12 @@ jobs:
         uses: actions/checkout@v2
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@v1.4.0
+      - name: Build components
+        run: ./build-tools/build_components.sh
       - name: Make Datashim manifests
         run: make manifests
+      - name: Update manifests to use local images
+        run: "sed -i 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' release-tools/manifests/dlf.yaml"
       - name: Install Datashim
         run: make deployment
       - name: Install NooBaa
