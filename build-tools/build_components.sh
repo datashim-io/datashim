@@ -26,7 +26,7 @@ do
 done
 
 if [ $BUILD_AND_PUSH = "yes" ]; then
-      docker login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD $REGISTRY_URL
+      echo $REGISTRY_PASSWORD | docker login -u $REGISTRY_USERNAME --password-stdin $REGISTRY_URL
       if [ $CREATE_NEW_BUILDX_CONTEXT = "yes" ]; then
             docker buildx create --use
       fi
