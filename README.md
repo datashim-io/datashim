@@ -95,7 +95,9 @@ The wiki and [Frequently Asked Questions](https://datashim-io.github.io/datashim
 
 ## Contributing
 
-We welcome all contributions to Datashim. Please read [this document](./docs/GitWorkflow.md) for setting up a Git workflow for contributing to Datashim. If you use VSCode, then we have [recommendations for setting it up for development](./docs/GolangVSCodeGit.md). 
+We welcome all contributions to Datashim. Please read [this document](./docs/GitWorkflow.md) for setting up a Git workflow for contributing to Datashim. This project uses [DCO (Developer Certificate of Origin)](https://github.com/apps/dco) to certify code ownership and contribution rights. 
+
+If you use VSCode, then we have [recommendations for setting it up for development](./docs/GolangVSCodeGit.md). 
 
 If you have an idea for a feature request, please open an issue. Let us know in the issue description the problem or the pain point, and how the proposed feature would help solve it. If you are looking to contribute but you don't know where to start, we recommend looking at the open issues first. Thanks!
 
