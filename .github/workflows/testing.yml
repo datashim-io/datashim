@@ -1,7 +1,7 @@
 name: Test on KinD
 on:
   pull_request:
-    types: [ready_for_review, review_requested, opened, edited, reopened, synchronize]
+    types: [ready_for_review, review_requested, opened, reopened, synchronize]
 
 jobs:
   integration-test:
