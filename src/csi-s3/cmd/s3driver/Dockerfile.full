@@ -1,8 +1,6 @@
 ARG ARCH
 FROM golang:1.18-alpine3.15 as base
 
-ENV ARCH=${ARCH}
-
 ARG S3BACKER_VERSION=1.5.0
 
 RUN apk add --update --no-cache \
@@ -23,16 +21,17 @@ RUN ls -l && \
 # Datashim's CSI-S3 is only tested with goofys at present so the others are redundant for now
 # Build goofys 
 # Add additional line to go.mod to deal with CVE-2021-38561
+
+# AP: NOTE: git checkout is required because as of 27/01/2023
+# goofys cannot be built.
+# This instruction can be safely removed once
+# https://github.com/kahing/goofys/issues/740 has been fixed
 WORKDIR /go/src
 RUN git clone https://github.com/kahing/goofys.git && \
     cd goofys && \
+    git checkout e903e56038fe0325e4538007b6acc064af8164c7 && \ 
     sed -i -e '/require/ a \\tgolang.org/x/text v0.3.7' go.mod && \
     go mod tidy && \
-    if [ "$ARCH" = "ppc64le" ]; then \
-	  sed -i 's/4096/65536/g' /go/pkg/mod/github.com/kahing/fuse*/internal/buffer/in_message.go ; \
-	  sed -i 's/17/21/g' /go/pkg/mod/github.com/kahing/fuse*/internal/buffer/in_message_linux.go ; \
-	  sed -i 's/17/21/g' /go/pkg/mod/github.com/kahing/fuse*/internal/buffer/out_message_linux.go ; \
-    else echo 'true'; fi && \
     go build -o /go/bin/goofys
 
 # Compile & install s3backer
