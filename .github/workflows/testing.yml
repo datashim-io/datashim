@@ -25,19 +25,25 @@ jobs:
           kind load docker-image -n chart-testing quay.io/datashim-io/generate-keys:latest
       - name: Install Datashim
         run: make deployment
-      - name: Install NooBaa
+      - name: Install MinIO
         run: |
-          OS="linux"
-          VERSION=$(curl -s https://api.github.com/repos/noobaa/noobaa-operator/releases/latest | jq -r '.name')
-          curl -LO https://github.com/noobaa/noobaa-operator/releases/download/$VERSION/noobaa-$OS-$VERSION
-          chmod +x noobaa-$OS-$VERSION
-          mv noobaa-$OS-$VERSION /usr/local/bin/noobaa
-          noobaa install --mini=true
+          # Start MinIO
+          docker run -d -p 9000:9000 -p 9001:9001 \
+            -e "MINIO_ACCESS_KEY=ACCESS_KEY" \
+            -e "MINIO_SECRET_KEY=SECRET_KEY" \
+            quay.io/minio/minio server /data --console-address ":9001"
+          # Install AWS Cli
+          pip install awscli
+          # Configure AWS CLI
+          aws configure set aws_access_key_id --profile=minio ACCESS_KEY
+          aws configure set aws_secret_access_key --profile=minio SECRET_KEY
+          # Create bucket
+          aws s3api --profile minio --endpoint http://127.0.0.1:9000 create-bucket --bucket first.bucket
       - name: Create S3 Secret
         run: |
          kubectl create secret generic s3-secret \
-          --from-literal=accessKeyID=$(kubectl get secret noobaa-admin --template={{.data.AWS_ACCESS_KEY_ID}} | base64 -d) \
-          --from-literal=secretAccessKey=$(kubectl get secret noobaa-admin --template={{.data.AWS_SECRET_ACCESS_KEY}} | base64 -d)
+          --from-literal=accessKeyID=ACCESS_KEY \
+          --from-literal=secretAccessKey=SECRET_KEY
       - name: Create sample Dataset
         run: |
           cat <<EOF | kubectl apply -f -
