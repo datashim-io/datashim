@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: configure-minio
+spec:
+  template:
+    spec:
+      containers:
+        - command:
+          - /bin/sh
+          - -c
+          - |
+            aws configure set aws_access_key_id --profile=minio ACCESS_KEY 
+            aws configure set aws_secret_access_key --profile=minio SECRET_KEY
+            aws s3api --profile minio --endpoint http://minio:9000 create-bucket --bucket first.bucket
+          image: amazon/aws-cli
+          name: aws-cli
+      restartPolicy: Never
+  backoffLimit: 1

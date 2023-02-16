@@ -25,20 +25,12 @@ jobs:
           kind load docker-image -n chart-testing quay.io/datashim-io/generate-keys:latest
       - name: Install Datashim
         run: make deployment
-      - name: Install MinIO
+      - name: Install and configure MinIO
         run: |
-          # Start MinIO
-          docker run -d -p 9000:9000 -p 9001:9001 \
-            -e "MINIO_ACCESS_KEY=ACCESS_KEY" \
-            -e "MINIO_SECRET_KEY=SECRET_KEY" \
-            quay.io/minio/minio server /data --console-address ":9001"
-          # Install AWS Cli
-          pip install awscli
-          # Configure AWS CLI
-          aws configure set aws_access_key_id --profile=minio ACCESS_KEY
-          aws configure set aws_secret_access_key --profile=minio SECRET_KEY
-          # Create bucket
-          aws s3api --profile minio --endpoint http://127.0.0.1:9000 create-bucket --bucket first.bucket
+          kubectl create -f ci/minio.yaml
+          kubectl wait --for=condition=ready pod/minio --timeout=1m
+          kubectl create -f ci/s3.yaml
+          kubectl wait --for=condition=complete job/configure-minio --timeout=30s
       - name: Create S3 Secret
         run: |
          kubectl create secret generic s3-secret \
@@ -55,7 +47,7 @@ jobs:
             local:
               type: "COS"
               secret-name: "s3-secret"
-              endpoint: "http://s3.default.svc"
+              endpoint: "http://minio:9000"
               bucket: "first.bucket"
           EOF
       - name: Write to Dataset
