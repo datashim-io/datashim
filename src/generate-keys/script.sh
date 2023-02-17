@@ -56,7 +56,7 @@ keyUsage=keyEncipherment,dataEncipherment
 extendedKeyUsage=serverAuth,clientAuth
 subjectAltName=@alt_names
 EOF
-openssl req -new -key /tmp/dlf-keys/webhook-server-tls.key -config /tmp/dlf-keys/csr.conf -days 10000 | openssl x509 -req -CA /tmp/dlf-keys/ca.crt -CAkey /tmp/dlf-keys/ca.key -set_serial 01 -days 10000 -extensions v3_ext -extfile /tmp/dlf-keys/csr.conf -out /tmp/dlf-keys/webhook-server-tls.crt
+openssl req -new -key /tmp/dlf-keys/webhook-server-tls.key -config /tmp/dlf-keys/csr.conf | openssl x509 -req -CA /tmp/dlf-keys/ca.crt -CAkey /tmp/dlf-keys/ca.key -set_serial 01 -days 10000 -extensions v3_ext -extfile /tmp/dlf-keys/csr.conf -out /tmp/dlf-keys/webhook-server-tls.crt
 rm /tmp/dlf-keys/csr.conf
 
 kubectl -n $DATASET_OPERATOR_NAMESPACE create secret tls webhook-server-tls \

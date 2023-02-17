@@ -11,8 +11,8 @@ RUN apk update && \
   apk add --no-cache openssl curl bash && \
   rm -rf /var/cache/apk/* && \
   export ARCH=`arch` && \
-  if [ "$ARCH" == "x86_64" ]; then export ARCH="amd64"; fi && \
-  curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/$ARCH/kubectl && \
+  if [ "$ARCH" == "x86_64" ]; then export ARCH="amd64"; elif [ "$ARCH" == "aarch64" ]; then export ARCH="arm64"; fi && \
+  curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/$ARCH/kubectl" && \
   chmod +x kubectl && mv kubectl /tmp/kubectl
 ENV PATH="/tmp:${PATH}"
 COPY "script.sh" /tmp
