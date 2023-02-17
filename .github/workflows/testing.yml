@@ -16,9 +16,13 @@ jobs:
       - name: Make Datashim manifests
         run: make manifests
       - name: Update manifests to use local images
-        run: "sed -i 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' release-tools/manifests/dlf.yaml"
+        run: "sed -i 's/Always/IfNotPresent/g' release-tools/manifests/dlf.yaml"
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@v1.4.0
+      - name: Import built images in Kind Cluster
+        run: |
+          kind load docker-image quay.io/datashim-io/dataset-operator:latest
+          kind load docker-image quay.io/datashim-io/generate-keys:latest
       - name: Install Datashim
         run: make deployment
       - name: Install NooBaa
