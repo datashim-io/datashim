@@ -10,13 +10,9 @@ spec:
           - /bin/sh
           - -c
           - |
-            echo "configuring access key id"
             aws configure set aws_access_key_id --profile=minio ACCESS_KEY 
-            echo "configuring secret key"
             aws configure set aws_secret_access_key --profile=minio SECRET_KEY
-            echo "creating bucket"
             aws s3api --profile minio --endpoint http://minio.default.svc:9000 create-bucket --bucket first.bucket
-            echo "done"
           image: amazon/aws-cli
           name: aws-cli
       restartPolicy: Never
