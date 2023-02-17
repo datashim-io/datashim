@@ -10,10 +10,9 @@ spec:
           - /bin/sh
           - -c
           - |
-            aws configure set aws_access_key_id --profile=minio ACCESS_KEY 
-            aws configure set aws_secret_access_key --profile=minio SECRET_KEY
-            aws s3api --profile minio --endpoint http://minio.default.svc:9000 create-bucket --bucket first.bucket
-          image: amazon/aws-cli
-          name: aws-cli
+            mc config host add kindminio http://minio.default.svc:9000 ACCESS_KEY SECRET_KEY
+            mc mb kindminio/first.bucket
+          image: minio/mc
+          name: minio-mc
       restartPolicy: Never
   backoffLimit: 1
