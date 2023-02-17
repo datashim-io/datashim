@@ -30,10 +30,7 @@ jobs:
           kubectl create -f ci/minio.yaml
           kubectl wait --for=condition=ready pod/minio --timeout=1m
           kubectl create -f ci/configure-minio.yaml
-          sleep 60s
-          kubectl get jobs
-          kubectl describe job/configure-minio
-          time kubectl wait --for=condition=complete job/configure-minio --timeout=3m
+          kubectl wait --for=condition=complete job/configure-minio --timeout=2m
       - name: Create S3 Secret
         run: |
          kubectl create secret generic s3-secret \
@@ -78,10 +75,7 @@ jobs:
                 restartPolicy: Never
             backoffLimit: 1
           EOF
-          sleep 60s
-          kubectl get jobs
-          kubectl describe job/ds-write
-          time kubectl wait --for=condition=complete job/ds-write --timeout=3m
+          kubectl wait --for=condition=complete job/ds-write --timeout=2m
       - name: Read from Dataset
         run: |
           cat <<EOF | kubectl apply -f -
@@ -107,7 +101,4 @@ jobs:
                 restartPolicy: Never
             backoffLimit: 1
           EOF
-          sleep 60s
-          kubectl get jobs
-          kubectl describe job/ds-read
-          time kubectl wait --for=condition=complete job/ds-read --timeout=3m
+          kubectl wait --for=condition=complete job/ds-read --timeout=2m
