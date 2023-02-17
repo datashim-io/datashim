@@ -19,10 +19,10 @@ jobs:
         run: "sed -i 's/Always/IfNotPresent/g' release-tools/manifests/dlf.yaml"
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@v1.4.0
-      - name: Import built images in Kind Cluster
+      - name: Import built images in KinD Cluster
         run: |
-          kind load docker-image quay.io/datashim-io/dataset-operator:latest
-          kind load docker-image quay.io/datashim-io/generate-keys:latest
+          kind load docker-image -n chart-testing quay.io/datashim-io/dataset-operator:latest
+          kind load docker-image -n chart-testing quay.io/datashim-io/generate-keys:latest
       - name: Install Datashim
         run: make deployment
       - name: Install NooBaa
