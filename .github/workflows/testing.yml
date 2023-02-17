@@ -30,6 +30,12 @@ jobs:
           kubectl create -f ci/minio.yaml
           kubectl wait --for=condition=ready pod/minio --timeout=1m
           kubectl create -f ci/s3.yaml
+          sleep 10s
+          kubectl get pods
+          sleep 30s
+          kubectl get jobs
+          kubectl get pods
+          kubectl logs job/configure-minio
           kubectl wait --for=condition=complete job/configure-minio --timeout=5m
       - name: Create S3 Secret
         run: |
