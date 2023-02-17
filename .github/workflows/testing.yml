@@ -29,15 +29,8 @@ jobs:
         run: |
           kubectl create -f ci/minio.yaml
           kubectl wait --for=condition=ready pod/minio --timeout=1m
-          kubectl create -f ci/s3.yaml
-          sleep 10s
-          kubectl get pods
-          sleep 30s
-          kubectl get jobs
-          kubectl get pods
-          kubectl describe job configure-minio
-          kubectl logs job/configure-minio
-          kubectl wait --for=condition=complete job/configure-minio --timeout=5m
+          kubectl create -f ci/configure-minio.yaml
+          kubectl wait --for=condition=complete job/configure-minio --timeout=1m
       - name: Create S3 Secret
         run: |
          kubectl create secret generic s3-secret \
@@ -54,7 +47,7 @@ jobs:
             local:
               type: "COS"
               secret-name: "s3-secret"
-              endpoint: "http://minio:9000"
+              endpoint: "http://minio.default.svc:9000"
               bucket: "first.bucket"
           EOF
       - name: Write to Dataset
