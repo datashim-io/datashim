@@ -10,11 +10,11 @@ require (
 	github.com/mitchellh/go-ps v0.0.0-20170309133038-4fdf99ab2936
 	github.com/onsi/ginkgo v1.14.0
 	github.com/onsi/gomega v1.10.1
-	golang.org/x/net v0.0.0-20210520170846-37e1c6afe023
+	golang.org/x/net v0.0.0-20220722155237-a158d28d115b
+	golang.org/x/text v0.3.8 // indirect
 	google.golang.org/grpc v1.38.0
 	k8s.io/mount-utils v0.23.0
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
-	golang.org/x/text v0.3.7
 )
 
 go 1.15
