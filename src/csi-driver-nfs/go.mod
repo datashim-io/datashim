@@ -37,10 +37,9 @@ require (
 	github.com/prometheus/procfs v0.0.0-20190412120340-e22ddced7142 // indirect
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect
-	golang.org/x/crypto v0.0.0-20190411191339-88737f569e3a // indirect
-	golang.org/x/net v0.0.0-20190812203447-cdfb69ac37fc
+	golang.org/x/crypto v0.1.0 // indirect
+	golang.org/x/net v0.1.0
 	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a // indirect
-	golang.org/x/sys v0.1.0 // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/genproto v0.0.0-20190404172233-64821d5d2107 // indirect
 	google.golang.org/grpc v1.20.0
