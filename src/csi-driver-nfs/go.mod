@@ -38,7 +38,7 @@ require (
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect
 	golang.org/x/crypto v0.0.0-20190411191339-88737f569e3a // indirect
-	golang.org/x/net v0.0.0-20190415100556-4a65cf94b679
+	golang.org/x/net v0.0.0-20190812203447-cdfb69ac37fc
 	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a // indirect
 	golang.org/x/sys v0.1.0 // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
@@ -46,10 +46,9 @@ require (
 	google.golang.org/grpc v1.20.0
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.3.1 // indirect
-	gopkg.in/yaml.v2 v2.2.2 // indirect
 	k8s.io/api v0.0.0-20190415132514-c2f1300cac21
 	k8s.io/apiextensions-apiserver v0.0.0-20190315093550-53c4693659ed // indirect
-	k8s.io/apimachinery v0.0.0-20190415132420-07d458fe0356
+	k8s.io/apimachinery v0.15.7
 	k8s.io/cli-runtime v0.0.0-20190415133733-52015cbe156a // indirect
 	k8s.io/cluster-bootstrap v0.0.0-20190415134033-d885a12fbbe4 // indirect
 	k8s.io/csi-translation-lib v0.0.0-20190415134207-82f1dfd98d10 // indirect
