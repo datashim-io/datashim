@@ -38,7 +38,7 @@ require (
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
-	golang.org/x/net v0.1.0
+	golang.org/x/net v0.7.0
 	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/genproto v0.0.0-20190404172233-64821d5d2107 // indirect
