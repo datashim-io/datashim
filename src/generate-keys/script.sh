@@ -59,6 +59,11 @@ EOF
 openssl req -new -key /tmp/dlf-keys/webhook-server-tls.key -config /tmp/dlf-keys/csr.conf | openssl x509 -req -CA /tmp/dlf-keys/ca.crt -CAkey /tmp/dlf-keys/ca.key -set_serial 01 -days 10000 -extensions v3_ext -extfile /tmp/dlf-keys/csr.conf -out /tmp/dlf-keys/webhook-server-tls.crt
 rm /tmp/dlf-keys/csr.conf
 
+# AP - exporting these variables is essential for the 
+# envsubst call to work
+export CA_PEM_B64="$(openssl base64 -A < "/tmp/dlf-keys/ca.crt")"
+export DATASET_OPERATOR_NAMESPACE="${DATASET_OPERATOR_NAMESPACE:-dlf}"
+
 kubectl -n $DATASET_OPERATOR_NAMESPACE create secret tls webhook-server-tls \
             --cert "/tmp/dlf-keys/webhook-server-tls.crt" \
             --key "/tmp/dlf-keys/webhook-server-tls.key" --dry-run -o yaml | kubectl apply -f -
