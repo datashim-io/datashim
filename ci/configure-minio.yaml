@@ -12,7 +12,7 @@ spec:
           - |
             mc config host add kindminio http://minio.default.svc:9000 ACCESS_KEY SECRET_KEY
             mc mb kindminio/first.bucket
-          image: minio/mc
+          image: quay.io/minio/mc
           name: minio-mc
       restartPolicy: Never
   backoffLimit: 1
