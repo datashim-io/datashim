@@ -122,6 +122,15 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return nil, status.Error(codes.InvalidArgument, "Bucket name not provided for mounting")
 	}
 
+	// srikumarv - this is a hack to support folders for the current csi-s3 implementation used in
+	// Datashim
+	folder := ""
+	if len(s3.cfg.Folder) != 0 {
+		folder = s3.cfg.Folder
+	} else {
+		glog.V(2).Infof("s3: no fspath found for bucket %s", bucketName)
+	}
+
 	//b, err := s3.getBucket(bucketName)
 	//if err != nil {
 	//	return nil, err
@@ -130,6 +139,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 
 	b := &bucket{
 		Name:    bucketName,
+		Folder:  folder,
 		Mounter: volContext[mounterTypeKey],
 	}
 

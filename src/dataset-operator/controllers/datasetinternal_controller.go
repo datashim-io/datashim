@@ -20,6 +20,7 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"strconv"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -407,7 +408,14 @@ func processLocalDatasetCOS(cr *datasets.DatasetInternal, rc *DatasetInternalRec
 	processLocalDatasetLogger.Info("Authentication info has been successfully retrieved", "Dataset.Name", cr.Name)
 
 	endpoint := cr.Spec.Local["endpoint"]
-	bucket := cr.Spec.Local["bucket"]
+	bucket, prefix, found := strings.Cut(cr.Spec.Local["bucket"], "/")
+
+	if !found {
+		processLocalDatasetLogger.Info("There was no prefix associated with the bucket for Dataset", "Dataset.Name", cr.Name, "bucket", bucket)
+	} else {
+		processLocalDatasetLogger.Info("Found a prefix associated with the bucket for Dataset", "Dataset.Name", cr.Name, "bucket", bucket, "prefix", prefix)
+	}
+
 	region := cr.Spec.Local["region"]
 
 	readonly := getBooleanStringForKeyInMap(processLocalDatasetLogger, "false", "readonly", cr.Spec.Local)
@@ -431,6 +439,7 @@ func processLocalDatasetCOS(cr *datasets.DatasetInternal, rc *DatasetInternalRec
 		"secretAccessKey":  secretAccessKey,
 		"endpoint":         endpoint,
 		"bucket":           bucket,
+		"folder":           prefix,
 		"region":           region,
 		"readonly":         readonly,
 		"extract":          extract,
@@ -445,6 +454,7 @@ func processLocalDatasetCOS(cr *datasets.DatasetInternal, rc *DatasetInternalRec
 	configData := map[string]string{
 		"endpoint": endpoint,
 		"bucket":   bucket,
+		"folder":   prefix,
 		"region":   region,
 	}
 
