@@ -22,6 +22,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,7 +30,12 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	datasetsv1alpha1 "github.com/datashim-io/datashim/src/dataset-operator/api/v1alpha1"
+	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/proto"
+	mock_driver "github.com/kubernetes-csi/csi-test/v5/driver"
+	mock_utils "github.com/kubernetes-csi/csi-test/v5/utils"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -39,6 +45,37 @@ import (
 var cfg *rest.Config
 var k8sClient client.Client
 var testEnv *envtest.Environment
+
+func TestMockCSIDriver(t *testing.T) {
+	m := gomock.NewController(&mock_utils.SafeGoroutineTester{})
+	defer m.finish()
+
+ 	driver := mock_driver.NewMockControllerServer(m)
+
+	defaultVolumeID := "vol1"
+	defaultNodeID := "node1"
+
+	defaultCaps := &csi.VolumeCapability{
+		AccessType: &csi.VolumeCapability_Mount{
+			Mount: &csi.VolumeCapability_MountVolume{},
+		},
+		AccessMode: &csi.VolumeCapability_AccessMode{
+			Mode: csi.VolumeCapability_AccessMode_MULTI_NODE_MULTI_WRITER,
+		},
+	}
+	
+	publishVolumeInfo := map[string]string{
+		"first": "foo",
+		"second": "bar",
+		"third": "baz",
+	}
+
+	defaultRequest := &csi.ControllerPublishVolumeRequest{
+		PublishContext: publishVolumeInfo,
+	}
+
+	driver.EXPECT().ControllerPublishVolume(gomock.Any(), pbMatch(default))
+}
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -68,6 +105,30 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
+})
+
+var _ = Describe("Create Dataset", func() {
+	BeforeEach(func() {
+		dataset = &datasetsv1alpha1.Dataset{
+			TypeMeta: v1.TypeMeta{
+				Kind:       "Dataset",
+				APIVersion: "com.ie.ibm.hpsys/v1alpha1",
+			},
+			ObjectMeta: v1.ObjectMeta{
+				Name:      "test-dataset",
+				Namespace: "default",
+			},
+			Spec:   datasetsv1alpha1.DatasetSpec{
+				Local:   map[string]string{
+					"type":    "HOST",
+					"path":    "/tmp/tmp123",
+					"hostPathType": "CreateNew"
+				},
+			},
+		}
+	})
+
+	
 })
 
 var _ = AfterSuite(func() {
