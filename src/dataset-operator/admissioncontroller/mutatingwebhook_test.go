@@ -208,4 +208,36 @@ var _ = DescribeTable("Pod is mutated correctly",
 			return patchArray
 		},
 	}),
+	Entry("Pod with no dataset volumes, 1 dataset label, useas mount, configmap -> 1 mount, 1 configmap for same dataset", &testPodLabels{
+		makeInputPodSpec: func() *corev1.Pod {
+			inputPod := testing.MakePod("test-1", "test").
+				AddLabelToPodMetadata("dataset.0.id", "testds").
+				AddLabelToPodMetadata("dataset.0.useas", "mount.configmap").
+				AddContainerToPod(testing.MakeContainer("foo").
+					Obj()).
+				Obj()
+			return &inputPod
+		},
+		makeOutputPatchOperations: func() []jsonpatch.JsonPatchOperation {
+			patchArray := []jsonpatch.JsonPatchOperation{
+				testing.MakeJSONPatchOperation().
+					SetOperation("add").
+					SetVolumeasPath(0).
+					SetPVCasValue("testds").
+					Obj(),
+				testing.MakeJSONPatchOperation().
+					SetOperation("add").
+					SetVolumeMountasPath("containers", 0, 0).
+					SetVolumeMountasValue("testds").
+					Obj(),
+				testing.MakeJSONPatchOperation().
+					SetOperation("add").
+					SetNewConfigMapRefasPath("containers", 0).
+					AddConfigMapRefsToValue([]string{"testds"}).
+					AddSecretRefsToValue([]string{"testds"}).
+					Obj(),
+			}
+			return patchArray
+		},
+	}),
 )
