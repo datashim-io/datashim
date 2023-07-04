@@ -20,7 +20,8 @@ import (
 )
 
 const (
-	prefixLabels = "dataset."
+	prefixLabels   = "dataset."
+	labelSeparator = "."
 )
 
 var (
@@ -118,7 +119,7 @@ func DatasetInputFromPod(pod *corev1.Pod) (map[int]*DatasetInput, error) {
 		log.V(1).Info("processing label", k, v)
 		if strings.HasPrefix(k, prefixLabels) {
 			log.V(1).Info("Dataset input label in pod")
-			datasetNameArray := strings.Split(k, ".")
+			datasetNameArray := strings.Split(k, labelSeparator)
 			if len(datasetNameArray) != 3 {
 				err_out := fmt.Errorf("label %s is not in the right format", k)
 				log.Error(err_out, "Format error in Dataset Labels", k, v)
@@ -148,21 +149,25 @@ func DatasetInputFromPod(pod *corev1.Pod) (map[int]*DatasetInput, error) {
 				}
 			case "useas":
 				isPresent := false
-				for _, u := range dataset.useas {
-					if u == v {
-						log.V(0).Info("Repeat declaration of useas in dataset label", k, v)
-						isPresent = true
+				uArray := strings.Split(v, labelSeparator)
+				log.V(1).Info("Dataset useas received", "useas", uArray)
+				for _, use := range uArray {
+
+					for _, u := range dataset.useas {
+						if u == strings.TrimSpace(use) {
+							log.V(0).Info("Repeat declaration of useas in dataset label", k, v)
+							isPresent = true
+						}
 					}
-				}
-				if !isPresent {
-					dataset = dataset.AddToUseas(v)
+					if !isPresent {
+						dataset = dataset.AddToUseas(strings.TrimSpace(use))
+					}
 				}
 			default:
 				err_out := fmt.Errorf("dataset label is in the wrong format %s", k)
 				log.Error(err_out, "Format error in Dataset label", k, v)
 				return nil, err_out
 			}
-
 			datasets[idx] = dataset
 		}
 	}
@@ -214,10 +219,14 @@ func patchPodWithDatasetLabels(pod *corev1.Pod) ([]jsonpatch.JsonPatchOperation,
 		ds := datasetInfo[idx]
 		log.V(1).Info("dataset label", "index", idx, "dataset", ds)
 		for _, u := range ds.useas {
+			log.V(1).Info("Processing", "useas", u)
 			switch u {
 			case "mount":
 				// The dataset is already mounted as a PVC no need to add it again
+				log.V(1).Info("doing", "useas", u)
+
 				if _, found := mountedPVCs[ds.name]; !found {
+					log.V(1).Info("Adding to volumes to mount", "dataset", ds.name)
 					datasets_tomount[d] = ds.name
 					d += 1
 				}
@@ -227,11 +236,13 @@ func patchPodWithDatasetLabels(pod *corev1.Pod) ([]jsonpatch.JsonPatchOperation,
 				c += 1
 			default:
 				//this is an error
-				log.V(1).Info("Error: The useas for this dataset is not recognized", idx, ds)
+				log.V(1).Info("Error: The useas for this dataset is not recognized", "index", idx, "dataset", ds)
 				return nil, fmt.Errorf("encountered an unknown useas")
 			}
 		}
 	}
+
+	log.V(1).Info("Num of patches", "mount", len(datasets_tomount), "configmaps", len(configs_toinject))
 
 	if len(datasets_tomount) > 0 {
 		log.V(1).Info("Patching volumes to Pod Spec", "datasets", datasets_tomount)
