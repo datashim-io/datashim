@@ -5,14 +5,17 @@ package admissioncontroller
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"reflect"
+	"sort"
+	"strconv"
 	"strings"
 
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 	corev1 "k8s.io/api/core/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -20,9 +23,13 @@ const (
 	prefixLabels = "dataset."
 )
 
+var (
+	log = ctrl.Log.WithName("datashim-webhook")
+)
+
 //following the kubebuilder example for the pod mutator
 
-//+kubebuilder:webhook:path=/mutate-v1-pod,mutating=true,failurePolicy=fail,groups="",resources=pods,verbs=create;update,versions=v1,name=mpod.datashim.io, admissionReviewVersions=v1,sideEffects=NoneOnDryRun
+// +kubebuilder:webhook:path=/mutate-v1-pod,mutating=true,failurePolicy=fail,groups="",resources=pods,verbs=create;update,versions=v1,name=mpod.datashim.io, admissionReviewVersions=v1,sideEffects=NoneOnDryRun
 type DatasetPodMutator struct {
 	Client  client.Client
 	decoder *admission.Decoder
@@ -30,7 +37,9 @@ type DatasetPodMutator struct {
 
 func (m *DatasetPodMutator) Handle(ctx context.Context, req admission.Request) admission.Response {
 	// Mutate mutates
-	log.Printf("recv: %s\n", string(req.String()))
+
+	log = logf.FromContext(ctx)
+	log.V(1).Info("webhook received", "request", req)
 
 	var err error
 	pod := &corev1.Pod{}
@@ -38,112 +47,20 @@ func (m *DatasetPodMutator) Handle(ctx context.Context, req admission.Request) a
 	err = m.decoder.Decode(req, pod)
 
 	if err != nil {
-		log.Fatalf("Could not decode pod ")
+		log.Error(fmt.Errorf("could not decode pod %s", pod.Name), "could not decode pod")
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	// Record the names of already mounted PVCs. Cross-check them with those referenced in
-	// a label. We only want to inject PVCs whose name is not in the mountedPVCs map.
+	patchops, err := patchPodWithDatasetLabels(pod)
 
-	// Format is {<dataset id:str>: 1} -- basically using the map as a set
-	mountedPVCs := make(map[string]int)
-	for _, v := range pod.Spec.Volumes {
-		if v.PersistentVolumeClaim != nil {
-			mountedPVCs[v.PersistentVolumeClaim.ClaimName] = 1
-		}
+	if err != nil {
+		return admission.Errored(http.StatusBadRequest, fmt.Errorf("useas for this dataset is not recognized"))
 	}
 
-	// Format is {"dataset.<index>": {"id": <str>, "useas": mount/configmap}
-	datasetInfo := map[string]map[string]string{}
-
-	for k, v := range pod.Labels {
-		log.Printf("key[%s] value[%s]\n", k, v)
-		if strings.HasPrefix(k, prefixLabels) {
-			datasetNameArray := strings.Split(k, ".")
-			datasetId := strings.Join([]string{datasetNameArray[0], datasetNameArray[1]}, ".")
-			if _, ok := datasetInfo[datasetId]; !ok {
-				datasetInfo[datasetId] = map[string]string{datasetNameArray[2]: v}
-			} else {
-				datasetInfo[datasetId][datasetNameArray[2]] = v
-			}
-		}
-	}
-	// Finally, don't inject those datasets which are already mounted as a PVC
-	for datasetIndex, info := range datasetInfo {
-		if info["useas"] == "mount" {
-			// The dataset is already mounted as a PVC no need to add it again
-			if _, found := mountedPVCs[info["id"]]; found {
-				delete(datasetInfo, datasetIndex)
-			}
-		}
-	}
-
-	if len(datasetInfo) == 0 {
+	if len(patchops) == 0 {
 		m := fmt.Sprintf("Pod %s/%s does not need to be mutated - skipping\n", pod.Namespace, pod.Name)
-		log.Printf(m)
+		log.V(0).Info("No datasets found", "Pod", pod)
 		return admission.Allowed(m)
-	}
-
-	existing_volumes_id := len(pod.Spec.Volumes)
-	datasets_tomount := []string{}
-	configs_toinject := []string{}
-
-	patchops := []jsonpatch.JsonPatchOperation{}
-
-	for k, v := range datasetInfo {
-		log.Printf("key[%s] value[%s]\n", k, v)
-
-		//TODO: currently, the useas and dataset types are not cross-checked
-		//e.g. useas configmap is not applicable to NFS shares.
-		//There may be future dataset backends (e.g. SQL queries) that may
-		//not be able to be mounted. This logic needs to be revisited
-		switch v["useas"] {
-		case "mount":
-			patchop := jsonpatch.JsonPatchOperation{
-				Operation: "add",
-				Path:      "/spec/volumes/" + fmt.Sprint(existing_volumes_id),
-				Value: map[string]interface{}{
-					"name":                  v["id"],
-					"persistentVolumeClaim": map[string]string{"claimName": v["id"]},
-				},
-			}
-			patchops = append(patchops, patchop)
-			datasets_tomount = append(datasets_tomount, v["id"])
-			existing_volumes_id += 1
-		case "configmap":
-			//by default, we will mount a config map inside the containers.
-			configs_toinject = append(configs_toinject, v["id"])
-		default:
-			//this is an error
-			log.Printf("Error: The useas for this dataset is not recognized")
-			return admission.Errored(http.StatusBadRequest, fmt.Errorf("The useas for this dataset is not recognized"))
-		}
-
-		init_containers := pod.Spec.InitContainers
-		main_containers := pod.Spec.Containers
-
-		log.Printf("There are %d init containers and %d main containers", len(init_containers), len(main_containers))
-
-		if len(datasets_tomount) > 0 {
-			log.Print("Adding Volumes to Init Containers")
-			patch_init := patchContainersWithDatasetVolumes(datasets_tomount, init_containers, true)
-			patchops = append(patchops, patch_init...)
-
-			log.Print("Adding Volumes to App Containers")
-			patch_main := patchContainersWithDatasetVolumes(datasets_tomount, main_containers, false)
-			patchops = append(patchops, patch_main...)
-		}
-
-		if len(configs_toinject) > 0 {
-			log.Print("Adding config maps to Init Containers")
-			config_patch_init := patchContainersWithDatasetMaps(configs_toinject, init_containers, true)
-			patchops = append(patchops, config_patch_init...)
-
-			log.Print("Adding config maps to App Containers")
-			config_patch_main := patchContainersWithDatasetMaps(configs_toinject, main_containers, false)
-			patchops = append(patchops, config_patch_main...)
-		}
-
 	}
 
 	return admission.Patched("added volumes to Pod in response to dataset", patchops...)
@@ -156,13 +73,236 @@ func (m *DatasetPodMutator) InjectDecoder(d *admission.Decoder) error {
 	return nil
 }
 
-func patchContainersWithDatasetVolumes(datasets []string, containers []corev1.Container, init bool) (patches []jsonpatch.JsonPatchOperation) {
+type DatasetInput struct {
+	name  string
+	useas []string
+}
+
+func NewDatasetInput() *DatasetInput {
+	return &DatasetInput{
+		name:  "",
+		useas: []string{},
+	}
+}
+
+func (d *DatasetInput) UseasContains(useas string) bool {
+	for _, u := range d.useas {
+		if u == useas {
+			return true
+		}
+	}
+	return false
+}
+
+func (d *DatasetInput) SetName(name string) *DatasetInput {
+	d.name = name
+	return d
+}
+
+func (d *DatasetInput) AddToUseas(useas string) *DatasetInput {
+	d.useas = append(d.useas, useas)
+	return d
+}
+
+func (d *DatasetInput) String() string {
+	return fmt.Sprintf("Dataset Input From Pod name: %s, useas: %v", d.name, d.useas)
+}
+
+func DatasetInputFromPod(pod *corev1.Pod) (map[int]*DatasetInput, error) {
+	// Format is {"id": {"index": <str>, "useas": mount/configmap}
+	log.V(1).Info("Pod labels", "labels", pod.Labels)
+
+	datasets := map[int]*DatasetInput{}
+
+	for k, v := range pod.Labels {
+		log.V(1).Info("processing label", k, v)
+		if strings.HasPrefix(k, prefixLabels) {
+			log.V(1).Info("Dataset input label in pod")
+			datasetNameArray := strings.Split(k, ".")
+			if len(datasetNameArray) != 3 {
+				err_out := fmt.Errorf("label %s is not in the right format", k)
+				log.Error(err_out, "Format error in Dataset Labels", k, v)
+				return nil, err_out
+			}
+
+			idx, err := strconv.Atoi(datasetNameArray[1])
+			if err != nil {
+				err_out := fmt.Errorf("could not convert dataset index %s to int", datasetNameArray[1])
+				log.Error(err_out, "Format error in Dataset label", k, v)
+				return nil, err_out
+			}
+
+			dataset, ok := datasets[idx]
+			if !ok {
+				log.V(1).Info("Did not find a dataset input for this index", "index", idx)
+				dataset = NewDatasetInput()
+			}
+			switch datasetNameArray[2] {
+			case "id":
+				if dataset.name != "" {
+					err_out := fmt.Errorf("repeat declaration of name %s for dataset %s", datasetNameArray[2], dataset.name)
+					log.Error(err_out, "Format error in Dataset label", k, v)
+					return nil, err_out
+				} else {
+					dataset = dataset.SetName(v)
+				}
+			case "useas":
+				isPresent := false
+				for _, u := range dataset.useas {
+					if u == v {
+						log.V(0).Info("Repeat declaration of useas in dataset label", k, v)
+						isPresent = true
+					}
+				}
+				if !isPresent {
+					dataset = dataset.AddToUseas(v)
+				}
+			default:
+				err_out := fmt.Errorf("dataset label is in the wrong format %s", k)
+				log.Error(err_out, "Format error in Dataset label", k, v)
+				return nil, err_out
+			}
+
+			datasets[idx] = dataset
+		}
+	}
+
+	log.V(1).Info("Pod spec contains datasets", "datasets", len(datasets))
+
+	return datasets, nil
+}
+
+func patchPodWithDatasetLabels(pod *corev1.Pod) ([]jsonpatch.JsonPatchOperation, error) {
+	patchops := []jsonpatch.JsonPatchOperation{}
+
+	datasetInfo, err := DatasetInputFromPod(pod)
+
+	if err != nil {
+		log.Error(err, "Error in parsing dataset labels", "Pod", pod)
+		return nil, err
+	}
+
+	if len(datasetInfo) == 0 {
+		log.V(1).Info("no datasets were present in pod", "pod", pod.ObjectMeta.Name)
+		return patchops, nil
+	}
+
+	// Record the names of already mounted PVCs. Cross-check them with those referenced in
+	// a label. We only want to inject PVCs whose name is not in the mountedPVCs map.
+	mountedPVCs := make(map[string]int)
+	for _, v := range pod.Spec.Volumes {
+		if v.PersistentVolumeClaim != nil {
+			mountedPVCs[v.PersistentVolumeClaim.ClaimName] = 1
+		}
+	}
+
+	datasets_tomount := map[int]string{}
+	configs_toinject := map[int]string{}
+	d, c := 0, 0
+	s_idx := make([]int, 0, len(datasetInfo))
+
+	for idx := range datasetInfo {
+		s_idx = append(s_idx, idx)
+	}
+	sort.Ints(s_idx)
+	for _, idx := range s_idx {
+
+		//TODO: currently, the useas and dataset types are not cross-checked
+		//e.g. useas configmap is not applicable to NFS shares.
+		//There may be future dataset backends (e.g. SQL queries) that may
+		//not be able to be mounted. This logic needs to be revisited
+		ds := datasetInfo[idx]
+		log.V(1).Info("dataset label", "index", idx, "dataset", ds)
+		for _, u := range ds.useas {
+			switch u {
+			case "mount":
+				// The dataset is already mounted as a PVC no need to add it again
+				if _, found := mountedPVCs[ds.name]; !found {
+					datasets_tomount[d] = ds.name
+					d += 1
+				}
+			case "configmap":
+				//by default, we will mount a config map inside the containers.
+				configs_toinject[c] = ds.name
+				c += 1
+			default:
+				//this is an error
+				log.V(1).Info("Error: The useas for this dataset is not recognized", idx, ds)
+				return nil, fmt.Errorf("encountered an unknown useas")
+			}
+		}
+	}
+
+	if len(datasets_tomount) > 0 {
+		log.V(1).Info("Patching volumes to Pod Spec", "datasets", datasets_tomount)
+		patch_ds := patchPodSpecWithDatasetPVCs(pod, datasets_tomount)
+		patchops = append(patchops, patch_ds...)
+	}
+
+	if len(configs_toinject) > 0 {
+		log.V(1).Info("Adding config maps to Init Containers", "configmaps", configs_toinject)
+		config_patch_init := patchContainersWithDatasetMaps(configs_toinject, pod.Spec.InitContainers, true)
+		patchops = append(patchops, config_patch_init...)
+
+		log.V(1).Info("Adding config maps to App Containers", "configmaps", configs_toinject)
+		config_patch_main := patchContainersWithDatasetMaps(configs_toinject, pod.Spec.Containers, false)
+		patchops = append(patchops, config_patch_main...)
+	}
+
+	return patchops, nil
+}
+
+func patchPodSpecWithDatasetPVCs(pod *corev1.Pod, datasets map[int]string) (patches []jsonpatch.JsonPatchOperation) {
+	patches = []jsonpatch.JsonPatchOperation{}
+
+	vol_id := len(pod.Spec.Volumes)
+	init_containers := pod.Spec.InitContainers
+	main_containers := pod.Spec.Containers
+	log.V(1).Info("Num items for patching", "datasets", len(datasets), "init containers", len(init_containers), "main containers", len(main_containers))
+
+	keys := make([]int, 0, len(datasets))
+	for k := range datasets {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
+	log.V(1).Info("dataset indices", "index", keys)
+
+	for d := range keys {
+		patch := jsonpatch.JsonPatchOperation{
+			Operation: "add",
+			Path:      "/spec/volumes/" + fmt.Sprint(vol_id),
+			Value: map[string]interface{}{
+				"name":                  datasets[d],
+				"persistentVolumeClaim": map[string]string{"claimName": datasets[d]},
+			},
+		}
+		patches = append(patches, patch)
+		vol_id += 1
+	}
+
+	if len(init_containers) != 0 {
+		log.V(1).Info("Patching init containers")
+		volPatches := patchContainersWithDatasetVolumes(pod, datasets, keys, init_containers, true)
+		patches = append(patches, volPatches...)
+	}
+
+	log.V(1).Info("Patching main containers")
+	volPatches := patchContainersWithDatasetVolumes(pod, datasets, keys, main_containers, false)
+	patches = append(patches, volPatches...)
+
+	return patches
+}
+
+func patchContainersWithDatasetVolumes(pod *corev1.Pod, datasets map[int]string, order []int, containers []corev1.Container, init bool) (patches []jsonpatch.JsonPatchOperation) {
 
 	patchOps := []jsonpatch.JsonPatchOperation{}
 
 	container_typ := "containers"
 	if init {
 		container_typ = "initContainers"
+		log.V(1).Info("Patching Init containers with datasets", "containers", containers, "datasets", datasets, "order", order)
+	} else {
+		log.V(1).Info("Patching Main containers with datasets", "containers", containers, "datasets", datasets, "order", order)
 	}
 
 	for container_idx, container := range containers {
@@ -174,16 +314,16 @@ func patchContainersWithDatasetVolumes(datasets []string, containers []corev1.Co
 		}
 		mount_idx := len(mounts)
 
-		for _, dataset_tomount := range datasets {
+		for o := range order {
 			//TODO: Check if the dataset reference exists in the API server
-			exists, _ := in_array(dataset_tomount, mount_names)
+			exists, _ := in_array(datasets[o], mount_names)
 			if !exists {
 				patch := jsonpatch.JsonPatchOperation{
 					Operation: "add",
 					Path:      "/spec/" + container_typ + "/" + fmt.Sprint(container_idx) + "/volumeMounts/" + fmt.Sprint(mount_idx),
 					Value: map[string]interface{}{
-						"name":      dataset_tomount,
-						"mountPath": "/mnt/datasets/" + dataset_tomount,
+						"name":      datasets[o],
+						"mountPath": "/mnt/datasets/" + datasets[o],
 					},
 				}
 				patchOps = append(patchOps, patch)
@@ -196,7 +336,7 @@ func patchContainersWithDatasetVolumes(datasets []string, containers []corev1.Co
 
 }
 
-func patchContainersWithDatasetMaps(datasets []string, containers []corev1.Container, init bool) (patches []jsonpatch.JsonPatchOperation) {
+func patchContainersWithDatasetMaps(datasets map[int]string, containers []corev1.Container, init bool) (patches []jsonpatch.JsonPatchOperation) {
 
 	patchOps := []jsonpatch.JsonPatchOperation{}
 
