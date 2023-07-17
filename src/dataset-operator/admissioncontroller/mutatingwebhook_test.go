@@ -1,29 +1,73 @@
 package admissioncontroller
 
 import (
+	"os"
+	"path/filepath"
+
+	datasetsv1alpha1 "github.com/datashim-io/datashim/src/dataset-operator/api/v1alpha1"
 	testing "github.com/datashim-io/datashim/src/dataset-operator/testing"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-// Test the mutation based on labels
-var _ = BeforeSuite(func() {
-	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
-})
+var cfg *rest.Config
+var k8sClient client.Client
+var testEnv *envtest.Environment
 
 type testPodLabels struct {
 	makeInputPodSpec          func() *corev1.Pod
 	makeOutputPatchOperations func() []jsonpatch.JsonPatchOperation
 }
 
+var _ = BeforeSuite(func() {
+	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+	By("bootstrapping test environment")
+
+	use_existing_cluster := true
+	if os.Getenv("TEST_USE_EXISTING_CLUSTER") == "true" {
+		testEnv = &envtest.Environment{
+			UseExistingCluster: &use_existing_cluster,
+		}
+	} else {
+		t := true
+		testEnv = &envtest.Environment{
+			CRDDirectoryPaths:     []string{filepath.Join("..", "chart", "templates", "crds")},
+			BinaryAssetsDirectory: "../../../bin/k8s/1.27.1-darwin-arm64",
+			ErrorIfCRDPathMissing: t,
+		}
+	}
+
+	cfg, err := testEnv.Start()
+	Expect(err).NotTo(HaveOccurred())
+	Expect(cfg).NotTo(BeNil())
+
+	err = datasetsv1alpha1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	//+kubebuilder:scaffold:scheme
+
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	Expect(err).NotTo(HaveOccurred())
+	Expect(k8sClient).NotTo(BeNil())
+
+})
 var _ = DescribeTable("Pod is mutated correctly",
 	func(tc *testPodLabels) {
 
-		Expect(patchPodWithDatasetLabels(tc.makeInputPodSpec())).Should(Equal(tc.makeOutputPatchOperations()))
+		pod := tc.makeInputPodSpec()
+		datasets, err := DatasetInputFromPod(pod)
+		Expect(err).ShouldNot(HaveOccurred())
+
+		Expect(PatchPodWithDatasetLabels(pod, datasets)).
+			Should(Equal(tc.makeOutputPatchOperations()))
 
 	},
 	Entry("Pod with no volumes, 1 dataset label, useas mount -> 1 volume mount", &testPodLabels{
@@ -241,3 +285,9 @@ var _ = DescribeTable("Pod is mutated correctly",
 		},
 	}),
 )
+
+var _ = AfterSuite(func() {
+	By("tearing down the test environment")
+	err := testEnv.Stop()
+	Expect(err).NotTo(HaveOccurred())
+})

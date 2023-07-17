@@ -1,4 +1,4 @@
-package admissioncontroller_test
+package admissioncontroller
 
 import (
 	"testing"

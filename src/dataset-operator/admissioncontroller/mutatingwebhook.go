@@ -11,8 +11,11 @@ import (
 	"strconv"
 	"strings"
 
+	datasetsv1alpha1 "github.com/datashim-io/datashim/src/dataset-operator/api/v1alpha1"
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -52,8 +55,21 @@ func (m *DatasetPodMutator) Handle(ctx context.Context, req admission.Request) a
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	patchops, err := patchPodWithDatasetLabels(pod)
+	datasets, err := DatasetInputFromPod(pod)
 
+	if err != nil {
+		log.Error(err, "could not retrieve datasets from pod spec", "pod", pod)
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	if err := RetrieveDatasetsFromAPIServer(ctx, m.Client, pod, datasets); err != nil {
+		log.Error(err, "Error in dataset specification", "pod", pod, "error", err)
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	log.V(1).Info("Pod spec contains datasets", "datasets", len(datasets))
+
+	patchops, err := PatchPodWithDatasetLabels(pod, datasets)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, fmt.Errorf("useas for this dataset is not recognized"))
 	}
@@ -75,19 +91,21 @@ func (m *DatasetPodMutator) InjectDecoder(d *admission.Decoder) error {
 }
 
 type DatasetInput struct {
-	name  string
-	useas []string
+	name        string
+	useasLabels []string
+	resource    *datasetsv1alpha1.Dataset
 }
 
 func NewDatasetInput() *DatasetInput {
 	return &DatasetInput{
-		name:  "",
-		useas: []string{},
+		name:        "",
+		useasLabels: []string{},
+		resource:    &datasetsv1alpha1.Dataset{},
 	}
 }
 
-func (d *DatasetInput) UseasContains(useas string) bool {
-	for _, u := range d.useas {
+func (d *DatasetInput) RequestedUseContains(useas string) bool {
+	for _, u := range d.useasLabels {
 		if u == useas {
 			return true
 		}
@@ -100,13 +118,13 @@ func (d *DatasetInput) SetName(name string) *DatasetInput {
 	return d
 }
 
-func (d *DatasetInput) AddToUseas(useas string) *DatasetInput {
-	d.useas = append(d.useas, useas)
+func (d *DatasetInput) AddToRequestedUse(useas string) *DatasetInput {
+	d.useasLabels = append(d.useasLabels, useas)
 	return d
 }
 
 func (d *DatasetInput) String() string {
-	return fmt.Sprintf("Dataset Input From Pod name: %s, useas: %v", d.name, d.useas)
+	return fmt.Sprintf("Dataset Input From Pod name: %s, useas: %v", d.name, d.useasLabels)
 }
 
 func DatasetInputFromPod(pod *corev1.Pod) (map[int]*DatasetInput, error) {
@@ -114,6 +132,7 @@ func DatasetInputFromPod(pod *corev1.Pod) (map[int]*DatasetInput, error) {
 	log.V(1).Info("Pod labels", "labels", pod.Labels)
 
 	datasets := map[int]*DatasetInput{}
+	unique_datasets := map[string]bool{}
 
 	for k, v := range pod.Labels {
 		log.V(1).Info("processing label", k, v)
@@ -144,8 +163,19 @@ func DatasetInputFromPod(pod *corev1.Pod) (map[int]*DatasetInput, error) {
 					err_out := fmt.Errorf("repeat declaration of name %s for dataset %s", datasetNameArray[2], dataset.name)
 					log.Error(err_out, "Format error in Dataset label", k, v)
 					return nil, err_out
+				} else if _, found := unique_datasets[v]; found {
+					// We do not want the following scenario
+					// dataset.0.id: "foo"
+					// dataset.0.id: "mount"
+					// dataset.1.id: "foo"
+					// ...
+					// In this case, we will have to process foo twice.
+					// This is a format error for the Dataset
+					err_out := fmt.Errorf("dataset name %s has been used in a previous label", v)
+					return nil, err_out
 				} else {
 					dataset = dataset.SetName(v)
+					unique_datasets[v] = true
 				}
 			case "useas":
 				isPresent := false
@@ -153,14 +183,14 @@ func DatasetInputFromPod(pod *corev1.Pod) (map[int]*DatasetInput, error) {
 				log.V(1).Info("Dataset useas received", "useas", uArray)
 				for _, use := range uArray {
 
-					for _, u := range dataset.useas {
+					for _, u := range dataset.useasLabels {
 						if u == strings.TrimSpace(use) {
 							log.V(0).Info("Repeat declaration of useas in dataset label", k, v)
 							isPresent = true
 						}
 					}
 					if !isPresent {
-						dataset = dataset.AddToUseas(strings.TrimSpace(use))
+						dataset = dataset.AddToRequestedUse(strings.TrimSpace(use))
 					}
 				}
 			default:
@@ -168,26 +198,47 @@ func DatasetInputFromPod(pod *corev1.Pod) (map[int]*DatasetInput, error) {
 				log.Error(err_out, "Format error in Dataset label", k, v)
 				return nil, err_out
 			}
+
 			datasets[idx] = dataset
 		}
 	}
 
-	log.V(1).Info("Pod spec contains datasets", "datasets", len(datasets))
-
 	return datasets, nil
 }
 
-func patchPodWithDatasetLabels(pod *corev1.Pod) ([]jsonpatch.JsonPatchOperation, error) {
-	patchops := []jsonpatch.JsonPatchOperation{}
+func RetrieveDatasetsFromAPIServer(ctx context.Context, client client.Client, pod *corev1.Pod, datasets map[int]*DatasetInput) error {
 
-	datasetInfo, err := DatasetInputFromPod(pod)
+	for _, dataset := range datasets {
+		log.V(1).Info("Checking dataset for validity", "Dataset", dataset)
 
-	if err != nil {
-		log.Error(err, "Error in parsing dataset labels", "Pod", pod)
-		return nil, err
+		ds := &datasetsv1alpha1.Dataset{}
+		nsName := types.NamespacedName{
+			Namespace: pod.Namespace,
+			Name:      dataset.name,
+		}
+		err := client.Get(context.TODO(), nsName, ds)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				log.Error(err, "Dataset not found in the namespace", dataset.name, pod.Namespace)
+				return fmt.Errorf("dataset %s not found in namespace %s", dataset.name, pod.Namespace)
+			} else {
+				//TODO: Other things we want to check out
+				// Does the Pod have the labels that is in the datasets allowed list
+				// Does the backend for the dataset support the selected useas method
+				log.V(1).Info("Found dataset", dataset)
+				// Store the dataset object
+				dataset.resource = ds
+			}
+		}
 	}
 
-	if len(datasetInfo) == 0 {
+	return nil
+}
+
+func PatchPodWithDatasetLabels(pod *corev1.Pod, datasets map[int]*DatasetInput) ([]jsonpatch.JsonPatchOperation, error) {
+	patchops := []jsonpatch.JsonPatchOperation{}
+
+	if len(datasets) == 0 {
 		log.V(1).Info("no datasets were present in pod", "pod", pod.ObjectMeta.Name)
 		return patchops, nil
 	}
@@ -204,9 +255,9 @@ func patchPodWithDatasetLabels(pod *corev1.Pod) ([]jsonpatch.JsonPatchOperation,
 	datasets_tomount := map[int]string{}
 	configs_toinject := map[int]string{}
 	d, c := 0, 0
-	s_idx := make([]int, 0, len(datasetInfo))
+	s_idx := make([]int, 0, len(datasets))
 
-	for idx := range datasetInfo {
+	for idx := range datasets {
 		s_idx = append(s_idx, idx)
 	}
 	sort.Ints(s_idx)
@@ -216,9 +267,9 @@ func patchPodWithDatasetLabels(pod *corev1.Pod) ([]jsonpatch.JsonPatchOperation,
 		//e.g. useas configmap is not applicable to NFS shares.
 		//There may be future dataset backends (e.g. SQL queries) that may
 		//not be able to be mounted. This logic needs to be revisited
-		ds := datasetInfo[idx]
+		ds := datasets[idx]
 		log.V(1).Info("dataset label", "index", idx, "dataset", ds)
-		for _, u := range ds.useas {
+		for _, u := range ds.useasLabels {
 			log.V(1).Info("Processing", "useas", u)
 			switch u {
 			case "mount":

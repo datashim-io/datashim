@@ -6,3 +6,4 @@ _tmp
 *Dockerfile.csi-s3
 *s3-secret.yaml
 .vscode/*
+bin/*
