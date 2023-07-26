@@ -1,5 +1,5 @@
 apiVersion: v2
-name: dlf-chart
+name: datashim-charts
 description: Dataset Lifecycle Framework chart
 type: application
 version: 0.1.0
