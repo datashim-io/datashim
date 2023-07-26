@@ -10,6 +10,7 @@ import (
 	admissioncontroller "github.com/datashim-io/datashim/src/dataset-operator/admissioncontroller"
 	datasetsv1alpha1 "github.com/datashim-io/datashim/src/dataset-operator/api/v1alpha1"
 	testutils "github.com/datashim-io/datashim/src/dataset-operator/testing"
+	"github.com/kubernetes-csi/csi-test/v5/pkg/sanity"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
@@ -45,6 +46,16 @@ var (
 func TestDatasetControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Admissioncontroller Suite")
+}
+
+func initialiseMockCSIDriver() {
+	_, err := testutils.NewMockCSIDriver()
+	Expect(err).To(BeNil())
+}
+
+func initialiseCSISanityDriver() {
+	testcfg := &sanity.TestConfig{}
+
 }
 
 func initialiseWebhookInEnvironment() {
