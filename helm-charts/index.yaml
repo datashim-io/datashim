@@ -1,0 +1,35 @@
+apiVersion: v1
+entries:
+  datashim-charts:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2023-07-26T20:31:30.353848+01:00"
+    dependencies:
+    - condition: csi-sidecars-rbac.enabled
+      name: csi-sidecars-rbac
+      repository: ""
+      version: 0.1.0
+    - condition: csi-nfs-chart.enabled
+      name: csi-nfs-chart
+      repository: ""
+      version: 0.1.0
+    - condition: csi-s3-chart.enabled
+      name: csi-s3-chart
+      repository: ""
+      version: 0.1.0
+    - condition: csi-h3-chart.enabled
+      name: csi-h3-chart
+      repository: ""
+      version: 0.1.0
+    - condition: dataset-operator-chart.enabled
+      name: dataset-operator-chart
+      repository: ""
+      version: 0.1.0
+    description: Dataset Lifecycle Framework chart
+    digest: e3836231c3417b7cf6cb4c88b949e6c6cce2aac389e08ad13a9705a63e904d34
+    name: datashim-charts
+    type: application
+    urls:
+    - https://datashim-io.github.io/datashim/helm-charts/datashim-charts-0.1.0.tgz
+    version: 0.1.0
+generated: "2023-07-26T20:31:30.352924+01:00"
