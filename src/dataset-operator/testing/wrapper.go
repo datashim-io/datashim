@@ -12,6 +12,43 @@ import (
 
 // basic idea for templating K8s objects to be used in tests comes
 // from https://github.com/kubernetes-sigs/jobset/blob/main/pkg/util/testing/wrappers.go
+type PVCWrapper struct {
+	corev1.PersistentVolumeClaim
+}
+
+func MakePVC(name string, namespace string) *PVCWrapper {
+	return &PVCWrapper{
+		corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+		},
+	}
+}
+
+func (p *PVCWrapper) Obj() corev1.PersistentVolumeClaim {
+	return p.PersistentVolumeClaim
+}
+
+type SecretWrapper struct {
+	corev1.Secret
+}
+
+func MakeSecret(name string, namespace string) *SecretWrapper {
+	return &SecretWrapper{
+		corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+		},
+	}
+}
+
+func (s *SecretWrapper) Obj() corev1.Secret {
+	return s.Secret
+}
 
 type DatasetWrapper struct {
 	datasetsv1alpha1.Dataset

@@ -54,7 +54,7 @@ func initialiseMockCSIDriver() {
 }
 
 func initialiseCSISanityDriver() {
-	testcfg := &sanity.TestConfig{}
+	_ = sanity.NewTestConfig()
 
 }
 
@@ -342,6 +342,7 @@ var _ = Describe("Test Dataset Creation", func() {
 	datasetNamespace := TEST_NS
 
 	BeforeEach(func() {
+
 		dataset = testutils.MakeDataset(datasetName, TEST_NS).ToS3Dataset("tests3", "https://", "secret", false).Obj()
 		err := k8sClient.Create(context.Background(), &dataset, &client.CreateOptions{})
 		Expect(err).ShouldNot(HaveOccurred())
