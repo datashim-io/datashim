@@ -34,6 +34,33 @@ func (c *ContainerWrapper) AddVolumeMount(mountPath, name string) *ContainerWrap
 	return c
 }
 
+func (c *ContainerWrapper) AddEnvFromConfigToContainer(source string) *ContainerWrapper {
+	c.EnvFrom = append(c.EnvFrom, corev1.EnvFromSource{
+		Prefix: source + "_",
+		ConfigMapRef: &corev1.ConfigMapEnvSource{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: source,
+			},
+		},
+	})
+
+	return c
+}
+
+func (c *ContainerWrapper) AddEnvFromSecretToContainer(source string) *ContainerWrapper {
+	c.EnvFrom = append(c.EnvFrom, corev1.EnvFromSource{
+		Prefix: source + "_",
+		SecretRef: &corev1.SecretEnvSource{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: source,
+			},
+			Optional: new(bool),
+		},
+	})
+
+	return c
+}
+
 func (c *ContainerWrapper) Obj() corev1.Container {
 	return c.Container
 }

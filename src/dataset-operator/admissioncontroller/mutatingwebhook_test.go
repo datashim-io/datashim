@@ -240,4 +240,35 @@ var _ = DescribeTable("Pod is mutated correctly",
 			return patchArray
 		},
 	}),
+	Entry("Pod with no dataset volumes, 1 dataset label, useas configmap, label present in envFrom -> no patch", &testPodLabels{
+		makeInputPodSpec: func() *corev1.Pod {
+			inputPod := testing.MakePod("test-1", "test").
+				AddLabelToPodMetadata("dataset.0.id", "testds").
+				AddLabelToPodMetadata("dataset.0.useas", "configmap").
+				AddContainerToPod(testing.MakeContainer("foo").
+					AddEnvFromConfigToContainer("testds").
+					Obj()).
+				Obj()
+			return &inputPod
+		},
+		makeOutputPatchOperations: func() []jsonpatch.JsonPatchOperation {
+			return []jsonpatch.JsonPatchOperation{}
+		},
+	}),
+
+	Entry("Pod with no dataset volumes, 1 dataset label, useas configmap, label present in envFrom Secret -> no patch", &testPodLabels{
+		makeInputPodSpec: func() *corev1.Pod {
+			inputPod := testing.MakePod("test-1", "test").
+				AddLabelToPodMetadata("dataset.0.id", "testds").
+				AddLabelToPodMetadata("dataset.0.useas", "configmap").
+				AddContainerToPod(testing.MakeContainer("foo").
+					AddEnvFromSecretToContainer("testds").
+					Obj()).
+				Obj()
+			return &inputPod
+		},
+		makeOutputPatchOperations: func() []jsonpatch.JsonPatchOperation {
+			return []jsonpatch.JsonPatchOperation{}
+		},
+	}),
 )
