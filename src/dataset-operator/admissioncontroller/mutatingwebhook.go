@@ -30,7 +30,7 @@ var (
 
 //following the kubebuilder example for the pod mutator
 
-// +kubebuilder:webhook:path=/mutate-v1-pod,mutating=true,failurePolicy=fail,groups="",resources=pods,verbs=create;update,versions=v1,name=mpod.datashim.io, admissionReviewVersions=v1,sideEffects=NoneOnDryRun
+// +kubebuilder:webhook:path=/mutate-v1-pod,mutating=true,failurePolicy=fail,groups="",resources=pods,verbs=create,versions=v1,name=mpod.datashim.io, admissionReviewVersions=v1,sideEffects=NoneOnDryRun
 type DatasetPodMutator struct {
 	Client  client.Client
 	decoder *admission.Decoder
@@ -278,6 +278,7 @@ func patchPodSpecWithDatasetPVCs(pod *corev1.Pod, datasets map[int]string) (patc
 	sort.Ints(keys)
 	log.V(1).Info("dataset indices", "index", keys)
 
+	//This is done to satisfy testing as it is impossible to set expected outputs when the patches appear in random order
 	for d := range keys {
 		patch := jsonpatch.JsonPatchOperation{
 			Operation: "add",
@@ -342,9 +343,7 @@ func patchContainersWithDatasetVolumes(pod *corev1.Pod, datasets map[int]string,
 			}
 		}
 	}
-
 	return patchOps
-
 }
 
 func patchContainersWithDatasetMaps(datasets map[int]string, containers []corev1.Container, init bool) (patches []jsonpatch.JsonPatchOperation) {
@@ -352,35 +351,78 @@ func patchContainersWithDatasetMaps(datasets map[int]string, containers []corev1
 	patchOps := []jsonpatch.JsonPatchOperation{}
 
 	container_typ := "containers"
+
 	if init {
 		container_typ = "initContainers"
+		log.V(1).Info("Patching Init containers with configmaps", "containers", containers, "configmaps", datasets)
+	} else {
+		log.V(1).Info("Patching Main containers with configmaps", "containers", containers, "configmaps", datasets)
 	}
 
+	var values []interface{}
+
 	for container_idx, container := range containers {
-		var values []interface{}
-		for _, config_toinject := range datasets {
-			//TODO: Check if the configmap reference exists in the API server
-
-			configmap_ref := map[string]interface{}{
-				"prefix": config_toinject + "_",
-				"configMapRef": map[string]interface{}{
-					"name": config_toinject,
-				},
+		if container.EnvFrom != nil && len(container.EnvFrom) != 0 {
+			// In this case, the envFrom path does exist in the PodSpec. So, we just append to
+			// the existing array (Notice the path value)
+			//Find existing configmap sources
+			// We still assume that the configmaps are the same name as the dataset
+			for _, d := range datasets {
+				var found bool = false
+				for _, env := range container.EnvFrom {
+					if (env.ConfigMapRef != nil && env.ConfigMapRef.LocalObjectReference.Name == d) ||
+						(env.SecretRef != nil && env.SecretRef.LocalObjectReference.Name == d) {
+						found = true
+						break
+					}
+				}
+				if !found {
+					cmPatchOp := jsonpatch.JsonPatchOperation{
+						Operation: "add",
+						Path:      "/spec/" + container_typ + "/" + fmt.Sprint(container_idx) + "/envFrom/-",
+						Value: map[string]interface{}{
+							"prefix": d + "_",
+							"configMapRef": map[string]interface{}{
+								"name": d,
+							},
+						},
+					}
+					patchOps = append(patchOps, cmPatchOp)
+					secretPatchOp := jsonpatch.JsonPatchOperation{
+						Operation: "add",
+						Path:      "/spec/" + container_typ + "/" + fmt.Sprint(container_idx) + "/envFrom/-",
+						Value: map[string]interface{}{
+							"prefix": d + "_",
+							"secretRef": map[string]interface{}{
+								"name": d,
+							},
+						},
+					}
+					patchOps = append(patchOps, secretPatchOp)
+				}
 			}
-			// We also have to inject the companion secret. We are using the convention followed
-			// in the controller where the names of the configmap and the secret are the same.
-			secret_ref := map[string]interface{}{
-				"prefix": config_toinject + "_",
-				"secretRef": map[string]interface{}{
-					"name": config_toinject,
-				},
+		} else {
+			for _, config_toinject := range datasets {
+				//TODO: Check if the configmap reference exists in the API server
+				// We also have to inject the companion secret. We are using the convention followed
+				// in the controller where the names of the configmap and the secret are the same.
+				configmap_ref := map[string]interface{}{
+					"prefix": config_toinject + "_",
+					"configMapRef": map[string]interface{}{
+						"name": config_toinject,
+					},
+				}
+				secret_ref := map[string]interface{}{
+					"prefix": config_toinject + "_",
+					"secretRef": map[string]interface{}{
+						"name": config_toinject,
+					},
+				}
+
+				values = append(values, configmap_ref)
+				values = append(values, secret_ref)
 			}
 
-			values = append(values, configmap_ref)
-			values = append(values, secret_ref)
-		}
-
-		if container.EnvFrom == nil || len(container.EnvFrom) == 0 {
 			// In this case, the envFrom path does not exist in the PodSpec. We are creating
 			// (initialising) this path with an array of configMapRef (RFC 6902)
 			patchOp := jsonpatch.JsonPatchOperation{
@@ -389,17 +431,6 @@ func patchContainersWithDatasetMaps(datasets map[int]string, containers []corev1
 				Value:     values,
 			}
 			patchOps = append(patchOps, patchOp)
-		} else {
-			// In this case, the envFrom path does exist in the PodSpec. So, we just append to
-			// the existing array (Notice the path value)
-			for _, val := range values {
-				patchOp := jsonpatch.JsonPatchOperation{
-					Operation: "add",
-					Path:      "/spec/" + container_typ + "/" + fmt.Sprint(container_idx) + "/envFrom/-",
-					Value:     val,
-				}
-				patchOps = append(patchOps, patchOp)
-			}
 		}
 
 	}
