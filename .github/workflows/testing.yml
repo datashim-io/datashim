@@ -1,4 +1,4 @@
-----
+---
 name: Test on KinD
 on:
   pull_request:
