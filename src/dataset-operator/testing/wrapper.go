@@ -2,7 +2,9 @@ package testing
 
 import (
 	"fmt"
+	"strconv"
 
+	datasetsv1alpha1 "github.com/datashim-io/datashim/src/dataset-operator/api/v1alpha1"
 	"gomodules.xyz/jsonpatch/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -10,6 +12,132 @@ import (
 
 // basic idea for templating K8s objects to be used in tests comes
 // from https://github.com/kubernetes-sigs/jobset/blob/main/pkg/util/testing/wrappers.go
+type PVCWrapper struct {
+	corev1.PersistentVolumeClaim
+}
+
+func MakePVC(name string, namespace string) *PVCWrapper {
+	return &PVCWrapper{
+		corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+		},
+	}
+}
+
+func (p *PVCWrapper) Obj() corev1.PersistentVolumeClaim {
+	return p.PersistentVolumeClaim
+}
+
+type SecretWrapper struct {
+	corev1.Secret
+}
+
+func MakeSecret(name string, namespace string) *SecretWrapper {
+	return &SecretWrapper{
+		corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+		},
+	}
+}
+
+func (s *SecretWrapper) Obj() corev1.Secret {
+	return s.Secret
+}
+
+type DatasetWrapper struct {
+	datasetsv1alpha1.Dataset
+}
+
+func MakeDataset(name string, namespace string) *DatasetWrapper {
+	return &DatasetWrapper{
+		Dataset: datasetsv1alpha1.Dataset{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Dataset",
+				APIVersion: "com.ie.ibm.hpsys/v1alpha1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+			Spec: datasetsv1alpha1.DatasetSpec{},
+		},
+	}
+}
+
+func (d *DatasetWrapper) ToS3Dataset(bucket, endpoint, secret string, readonly bool) *DatasetWrapper {
+	d.Spec = datasetsv1alpha1.DatasetSpec{
+		Local: map[string]string{
+			"type":        "COS",
+			"bucket":      bucket,
+			"endpoint":    endpoint,
+			"secret-name": secret,
+			"readonly":    strconv.FormatBool(readonly),
+		},
+	}
+	return d
+}
+
+func (d *DatasetWrapper) Obj() datasetsv1alpha1.Dataset {
+	return d.Dataset
+}
+
+type DatasetInternalWrapper struct {
+	datasetsv1alpha1.DatasetInternal
+}
+
+func MakeDatasetInternal(name, namespace string) *DatasetInternalWrapper {
+	return &DatasetInternalWrapper{
+		DatasetInternal: datasetsv1alpha1.DatasetInternal{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "DatasetInternal",
+				APIVersion: "com.ie.ibm.hpsys/v1alpha1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+		},
+	}
+}
+
+func InternalFromDataset(d datasetsv1alpha1.Dataset) *DatasetInternalWrapper {
+	return &DatasetInternalWrapper{
+		DatasetInternal: datasetsv1alpha1.DatasetInternal{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "DatasetInternal",
+				APIVersion: "com.ie.ibm.hpsys/v1alpha1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      d.Name,
+				Namespace: d.Namespace,
+			},
+			Spec: *d.Spec.DeepCopy(),
+		},
+	}
+}
+
+func (di *DatasetInternalWrapper) ToS3DatasetInternal(bucket, endpoint, secret string, readonly bool) *DatasetInternalWrapper {
+	di.Spec = datasetsv1alpha1.DatasetSpec{
+		Local: map[string]string{
+			"type":        "COS",
+			"bucket":      bucket,
+			"endpoint":    endpoint,
+			"secret-name": secret,
+			"readonly":    strconv.FormatBool(readonly),
+		},
+	}
+	return di
+}
+
+func (di *DatasetInternalWrapper) Obj() datasetsv1alpha1.DatasetInternal {
+	return di.DatasetInternal
+}
 
 type ContainerWrapper struct {
 	corev1.Container
