@@ -17,7 +17,7 @@ A Kubernetes Framework to provide easy access to S3 and NFS **Datasets** within 
 
 In order to quickly deploy DLF, based on your environment execute **one** of the following commands:
 
-- **Kubernetes/Minikube**
+- **Kubernetes/Minikube/kind**
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/datashim-io/datashim/master/release-tools/manifests/dlf.yaml
 ```
