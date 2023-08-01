@@ -55,21 +55,21 @@ func (m *DatasetPodMutator) Handle(ctx context.Context, req admission.Request) a
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	datasets, err := DatasetInputFromPod(pod)
+	datasetInputs, err := DatasetInputFromPod(pod)
 
 	if err != nil {
 		log.Error(err, "could not retrieve datasets from pod spec", "pod", pod)
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	if err := RetrieveDatasetsFromAPIServer(ctx, m.Client, pod, datasets); err != nil {
+	log.V(1).Info("Pod spec contains datasets", "datasets", len(datasetInputs))
+
+	if err := RetrieveDatasetsFromAPIServer(ctx, m.Client, pod, datasetInputs); err != nil {
 		log.Error(err, "Error in dataset specification", "pod", pod, "error", err)
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	log.V(1).Info("Pod spec contains datasets", "datasets", len(datasets))
-
-	patchops, err := PatchPodWithDatasetLabels(pod, datasets)
+	patchops, err := PatchPodWithDatasetLabels(pod, datasetInputs)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, fmt.Errorf("useas for this dataset is not recognized"))
 	}
@@ -92,6 +92,7 @@ func (m *DatasetPodMutator) InjectDecoder(d *admission.Decoder) error {
 
 type DatasetInput struct {
 	name        string
+	index       int
 	useasLabels []string
 	resource    *datasetsv1alpha1.Dataset
 }
@@ -115,6 +116,11 @@ func (d *DatasetInput) RequestedUseContains(useas string) bool {
 
 func (d *DatasetInput) SetName(name string) *DatasetInput {
 	d.name = name
+	return d
+}
+
+func (d *DatasetInput) SetIndex(idx int) *DatasetInput {
+	d.index = idx
 	return d
 }
 
@@ -207,7 +213,6 @@ func DatasetInputFromPod(pod *corev1.Pod) (map[int]*DatasetInput, error) {
 }
 
 func RetrieveDatasetsFromAPIServer(ctx context.Context, client client.Client, pod *corev1.Pod, datasets map[int]*DatasetInput) error {
-
 	for _, dataset := range datasets {
 		log.V(1).Info("Checking dataset for validity", "Dataset", dataset)
 
@@ -222,13 +227,16 @@ func RetrieveDatasetsFromAPIServer(ctx context.Context, client client.Client, po
 				log.Error(err, "Dataset not found in the namespace", dataset.name, pod.Namespace)
 				return fmt.Errorf("dataset %s not found in namespace %s", dataset.name, pod.Namespace)
 			} else {
-				//TODO: Other things we want to check out
-				// Does the Pod have the labels that is in the datasets allowed list
-				// Does the backend for the dataset support the selected useas method
-				log.V(1).Info("Found dataset", dataset)
-				// Store the dataset object
-				dataset.resource = ds
+				log.Error(err, "Could not query API server", dataset.name, pod.Namespace)
+				return fmt.Errorf("dataset %s could not be queried successfully", dataset.name)
 			}
+		} else {
+			//TODO: Other things we want to check out
+			// Does the Pod have the labels that is in the datasets allowed list
+			// Does the backend for the dataset support the selected useas method
+			log.V(1).Info("Found dataset", "Dataset.name", ds.Name, "Dataset.Spec", ds.Spec)
+			// Store the dataset object
+			dataset.resource = ds
 		}
 	}
 
@@ -252,7 +260,7 @@ func PatchPodWithDatasetLabels(pod *corev1.Pod, datasets map[int]*DatasetInput) 
 		}
 	}
 
-	datasets_tomount := map[int]string{}
+	datasets_tomount := map[int]*DatasetInput{}
 	configs_toinject := map[int]string{}
 	d, c := 0, 0
 	s_idx := make([]int, 0, len(datasets))
@@ -278,7 +286,7 @@ func PatchPodWithDatasetLabels(pod *corev1.Pod, datasets map[int]*DatasetInput) 
 
 				if _, found := mountedPVCs[ds.name]; !found {
 					log.V(1).Info("Adding to volumes to mount", "dataset", ds.name)
-					datasets_tomount[d] = ds.name
+					datasets_tomount[d] = ds
 					d += 1
 				}
 			case "configmap":
@@ -314,7 +322,7 @@ func PatchPodWithDatasetLabels(pod *corev1.Pod, datasets map[int]*DatasetInput) 
 	return patchops, nil
 }
 
-func patchPodSpecWithDatasetPVCs(pod *corev1.Pod, datasets map[int]string) (patches []jsonpatch.JsonPatchOperation) {
+func patchPodSpecWithDatasetPVCs(pod *corev1.Pod, datasets map[int]*DatasetInput) (patches []jsonpatch.JsonPatchOperation) {
 	patches = []jsonpatch.JsonPatchOperation{}
 
 	vol_id := len(pod.Spec.Volumes)
@@ -331,12 +339,28 @@ func patchPodSpecWithDatasetPVCs(pod *corev1.Pod, datasets map[int]string) (patc
 
 	//This is done to satisfy testing as it is impossible to set expected outputs when the patches appear in random order
 	for d := range keys {
+		var pvc map[string]interface{}
+		log.V(1).Info("Spec.Local", "spec.local", datasets[d].resource.Spec)
+		readonly, ok := datasets[d].resource.Spec.Local["readonly"]
+		ro := true
+		if ok && readonly == "true" {
+			log.V(1).Info("Read-only dataset", "name", datasets[d].name, "pod", pod.ObjectMeta.Name)
+			pvc = map[string]interface{}{
+				"claimName": datasets[d].name,
+				"readOnly":  &ro,
+			}
+		} else {
+			log.V(1).Info("Readwrite dataset", "name", datasets[d].name, "pod", pod.ObjectMeta.Name)
+			pvc = map[string]interface{}{
+				"claimName": datasets[d].name,
+			}
+		}
 		patch := jsonpatch.JsonPatchOperation{
 			Operation: "add",
 			Path:      "/spec/volumes/" + fmt.Sprint(vol_id),
 			Value: map[string]interface{}{
-				"name":                  datasets[d],
-				"persistentVolumeClaim": map[string]string{"claimName": datasets[d]},
+				"name":                  datasets[d].name,
+				"persistentVolumeClaim": pvc,
 			},
 		}
 		patches = append(patches, patch)
@@ -356,7 +380,7 @@ func patchPodSpecWithDatasetPVCs(pod *corev1.Pod, datasets map[int]string) (patc
 	return patches
 }
 
-func patchContainersWithDatasetVolumes(pod *corev1.Pod, datasets map[int]string, order []int, containers []corev1.Container, init bool) (patches []jsonpatch.JsonPatchOperation) {
+func patchContainersWithDatasetVolumes(pod *corev1.Pod, datasets map[int]*DatasetInput, order []int, containers []corev1.Container, init bool) (patches []jsonpatch.JsonPatchOperation) {
 
 	patchOps := []jsonpatch.JsonPatchOperation{}
 
@@ -378,15 +402,14 @@ func patchContainersWithDatasetVolumes(pod *corev1.Pod, datasets map[int]string,
 		mount_idx := len(mounts)
 
 		for o := range order {
-			//TODO: Check if the dataset reference exists in the API server
 			exists, _ := in_array(datasets[o], mount_names)
 			if !exists {
 				patch := jsonpatch.JsonPatchOperation{
 					Operation: "add",
 					Path:      "/spec/" + container_typ + "/" + fmt.Sprint(container_idx) + "/volumeMounts/" + fmt.Sprint(mount_idx),
 					Value: map[string]interface{}{
-						"name":      datasets[o],
-						"mountPath": "/mnt/datasets/" + datasets[o],
+						"name":      datasets[o].name,
+						"mountPath": "/mnt/datasets/" + datasets[o].name,
 					},
 				}
 				patchOps = append(patchOps, patch)
