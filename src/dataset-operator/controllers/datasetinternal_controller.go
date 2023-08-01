@@ -464,6 +464,13 @@ func processLocalDatasetCOS(cr *datasets.DatasetInternal, rc *DatasetInternalRec
 
 	storageClassName := "csi-s3"
 
+	var axs corev1.PersistentVolumeAccessMode
+	if readonly == "true" {
+		axs = corev1.ReadOnlyMany
+	} else {
+		axs = corev1.ReadWriteMany
+	}
+
 	newPVC := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name,
@@ -471,7 +478,7 @@ func processLocalDatasetCOS(cr *datasets.DatasetInternal, rc *DatasetInternalRec
 			Labels:    labels,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
-			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany},
+			AccessModes: []corev1.PersistentVolumeAccessMode{axs},
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceStorage: resource.MustParse("5Gi"),
