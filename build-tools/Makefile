@@ -39,8 +39,10 @@ push-csi-plugins:
 	docker push $(CSI_S3_IMAGE)-$(ARCH) ;\
 	docker push $(CSI_NFS_IMAGE)-$(ARCH)
 
-push-multiarch:
+push-multiarch-core:
 	$(call generate_push_multi_arch_manifest,$(DATASET_OPERATOR_IMAGE))
 	$(call generate_push_multi_arch_manifest,$(GENERATE_KEYS_IMAGE))
+
+push-multiarch-csi-plugins:
 	$(call generate_push_multi_arch_manifest,$(CSI_S3_IMAGE))
 	$(call generate_push_multi_arch_manifest,$(CSI_NFS_IMAGE))
