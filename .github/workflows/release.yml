@@ -87,6 +87,7 @@ jobs:
         with:
           charts_dir: chart
           skip_packaging: true
+          charts_repo_url: https://datashim-io.github.io/datashim
       
       - name: Create a release
         uses: marvinpinto/action-automatic-releases@latest
