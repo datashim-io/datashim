@@ -34,14 +34,14 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - name: Build and push Dataset operator image
-        run: |
-          cd src/dataset-operator
-          ./build_and_push_multiarch_dataset_operator.sh ${{ vars.REGISTRY_URL }} ${{ github.ref_name }}
-      - name: Build and push Generate Keys image 
-        run: |
-          cd src/generate-keys
-          ./build_and_push_multiarch_generate_keys.sh ${{ vars.REGISTRY_URL }} ${{ github.ref_name }}
+#      - name: Build and push Dataset operator image
+#        run: |
+#          cd src/dataset-operator
+#          ./build_and_push_multiarch_dataset_operator.sh ${{ vars.REGISTRY_URL }} ${{ github.ref_name }}
+#     - name: Build and push Generate Keys image 
+#        run: |
+#          cd src/generate-keys
+#          ./build_and_push_multiarch_generate_keys.sh ${{ vars.REGISTRY_URL }} ${{ github.ref_name }}
       
 #      - name: Build and push bundled CSI plugins
 #        run: |
