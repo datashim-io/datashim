@@ -73,7 +73,7 @@ jobs:
       - name: Create Helm package
         run: |
           cd chart
-          helm package --version ${{ github.ref_name }} -u -d ../.cr-release-packages
+          helm package --version ${{ github.ref_name }} -u -d ../.cr-release-packages .
 
       - name: Run chart releaser
         uses: helm/chart-releaser-action@v1.5.0
