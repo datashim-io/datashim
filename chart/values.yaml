@@ -36,13 +36,13 @@ csi-s3-chart:
     tag: "latest"
   sidecars: {} # in case you want to force override regardless of the csi-s3-chart/values.yaml
 
-csi-h3-chart:
-  baseRepo: "carvicsforth"
-# dockerRegistrySecret: "anothersecret"
-  csih3:
-    image: "csi-h3"
-    tag: "v1.2.0"
-  sidecars: {} 
+    #csi-h3-chart:
+    #  baseRepo: "carvicsforth"
+    ## dockerRegistrySecret: "anothersecret"
+    #  csih3:
+    #    image: "csi-h3"
+    #    tag: "v1.2.0"
+    #  sidecars: {} 
 dataset-operator-chart:
 #  baseRepo: "quay.io/datashim"
 # dockerRegistrySecret: "anothersecret"
