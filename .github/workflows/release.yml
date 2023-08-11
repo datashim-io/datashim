@@ -21,6 +21,12 @@ jobs:
         id: vars
         run: echo "sha_short=$(git rev-parse --short HEAD)" 
 
+      - name: Set Git user
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@user.noreply.github.com"
+          
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
