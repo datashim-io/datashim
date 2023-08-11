@@ -68,7 +68,7 @@ endef
 define generate_push_multi_arch_manifest
 	@export DOCKER_CLI_EXPERIMENTAL=enabled ;\
 	echo "generating multiarch for"+$(1) ;\
-	docker login -u=${DOCKER_USER} -p=${DOCKER_PASSWORD} quay.io ;\
+	docker login -u=${DOCKER_USER} -p=${DOCKER_PASSWORD} ${DOCKER_REGISTRY} ;\
 	docker manifest create $(1) $(1)-amd64 $(1)-arm64 $(1)-ppc64le ;\
 	docker manifest annotate $(1) $(1)-amd64 --arch amd64 ;\
 	docker manifest annotate $(1) $(1)-arm64 --arch arm64 ;\
