@@ -18,6 +18,6 @@ jobs:
         with:
            ref: gh-pages
            path: pages
-      - run: |
-           cp -v pages/index.yaml site/
+      #- run: |
+      #     cp -v pages/index.yaml site/
       - run: pipenv run ghp-import site -p --force
