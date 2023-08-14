@@ -1,4 +1,4 @@
-name: ci
+name: document
 on:
   push:
     branches:
@@ -7,10 +7,11 @@ jobs:
   deploy:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/setup-python@v2
         with:
           python-version: 3.6
       - run: python -m pip install --upgrade pipenv wheel
       - run: pipenv update
-      - run: pipenv run mkdocs gh-deploy --force
+      - run: pipenv run mkdocs build 
+      - run: pipenv ghp-import site -p -x site
