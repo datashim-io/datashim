@@ -11,6 +11,15 @@ jobs:
   package:
     runs-on: ubuntu-20.04
     steps:
+      - name: Maximise free space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/.ghcup
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
+      - name: Check free space
+        run: df -h
+
       - name: Checkout Datashim
         uses: actions/checkout@v3
         with:
@@ -48,16 +57,19 @@ jobs:
             #        run: |
             #          cd src/generate-keys
             #          ./build_and_push_multiarch_generate_keys.sh ${{ vars.REGISTRY_URL }} ${{ github.ref_name }}
+            #          docker buildx prune
      
       - name: Build and push bundled CSI S3
         run: |
           cd src/csi-s3
           ./build_and_push_multiarch_csis3.sh ${{ vars.REGISTRY_URL }} ${{ steps.vars.outputs.sha_short }}
+          docker buildx prune
 
       - name: Build and push bundled CSI NFS
         run: |
           cd src/csi-driver-nfs
           ./build_and_push_multiarch_csinfs.sh ${{ vars.REGISTRY_URL }} ${{ steps.vars.outputs.sha_short }}
+          docker buildx prune
  
       - name: Install Helm
         uses: azure/setup-helm@v3
