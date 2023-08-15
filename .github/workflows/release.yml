@@ -39,26 +39,26 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - name: Build and push Dataset operator image
-        run: |
-          cd src/dataset-operator
-          ./build_and_push_multiarch_dataset_operator.sh ${{ vars.REGISTRY_URL }} ${{ github.ref_name }}
-      - name: Build and push Generate Keys image 
-        run: |
-          cd src/generate-keys
-          ./build_and_push_multiarch_generate_keys.sh ${{ vars.REGISTRY_URL }} ${{ github.ref_name }}
+            #      - name: Build and push Dataset operator image
+            #        run: |
+            #          cd src/dataset-operator
+            #          ./build_and_push_multiarch_dataset_operator.sh ${{ vars.REGISTRY_URL }} ${{ github.ref_name }}
+            #
+            #      - name: Build and push Generate Keys image 
+            #        run: |
+            #          cd src/generate-keys
+            #          ./build_and_push_multiarch_generate_keys.sh ${{ vars.REGISTRY_URL }} ${{ github.ref_name }}
      
-      - name: Build and push bundled CSI plugins
+      - name: Build and push bundled CSI S3
         run: |
-          cd build-tools
-          make ARCH=amd64 COMMON_IMAGE_TAG=${{ steps.vars.outputs.sha_short }} build-csi-plugins
-          make ARCH=amd64 COMMON_IMAGE_TAG=${{ steps.vars.outputs.sha_short }} push-csi-plugins
-          make ARCH=arm64 COMMON_IMAGE_TAG=${{ steps.vars.outputs.sha_short }} build-csi-plugins
-          make ARCH=arm64 COMMON_IMAGE_TAG=${{ steps.vars.outputs.sha_short }} push-csi-plugins
-          make ARCH=ppc64le COMMON_IMAGE_TAG=${{ steps.vars.outputs.sha_short }} build-csi-plugins 
-          make ARCH=ppc64le COMMON_IMAGE_TAG=${{ steps.vars.outputs.sha_short }} push-csi-plugins 
-          make COMMON_IMAGE_TAG=${{ steps.vars.outputs.sha_short }}  push-multiarch-csi-plugins
+          cd src/csi-s3
+          ./build_and_push_multiarch_csis3.sh ${{ vars.REGISTRY_URL }} ${{ steps.vars.outputs.sha_short }}
 
+      - name: Build and push bundled CSI NFS
+        run: |
+          cd src/csi-driver-nfs
+          ./build_and_push_multiarch_csinfs.sh ${{ vars.REGISTRY_URL }} ${{ steps.vars.outputs.sha_short }}
+ 
       - name: Install Helm
         uses: azure/setup-helm@v3
       
