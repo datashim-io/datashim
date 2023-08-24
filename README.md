@@ -15,7 +15,13 @@ A Kubernetes Framework to provide easy access to S3 and NFS **Datasets** within 
 
 ## Quickstart
 
-In order to quickly deploy DLF, based on your environment execute **one** of the following commands:
+First, create the namespace for installing Datashim, if not present
+
+```bash
+kubectl create ns dlf
+```
+
+In order to quickly deploy Datashim, based on your environment execute **one** of the following commands:
 
 - **Kubernetes/Minikube/kind**
 ```bash
