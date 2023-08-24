@@ -13,7 +13,9 @@ manifests:
 	helm template $(HELM_CSI_OPTIONS) $(HELM_OPERATOR_OPTIONS) --set global.type="oc" --set csi-h3-chart.enabled="false" --namespace=$(DATASET_OPERATOR_NAMESPACE) --name-template=default chart/ > release-tools/manifests/dlf-oc.yaml
 undeployment:
 	kubectl delete -f ./release-tools/manifests/dlf.yaml
+	kubectl delete ns $(DATASET_OPERATOR_NAMESPACE)
 	kubectl label namespace default monitor-pods-datasets-
 deployment:
+	kubectl create ns $(DATASET_OPERATOR_NAMESPACE)
 	kubectl apply -f ./release-tools/manifests/dlf.yaml
 	kubectl label namespace default monitor-pods-datasets=enabled
