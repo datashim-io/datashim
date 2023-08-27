@@ -95,6 +95,34 @@ details as environment variables, change the `useas` line to `dataset.0.useas: "
 
 Feel free to explore our [other examples](./examples)
 
+## Helm Installation
+
+Starting with `0.4.0-alpha.1`, hosted Helm charts have been made available for installing Datashim. This is how you can do a Helm install:
+
+```bash
+helm repo add datashim https://datashim-io.github.io/datashim/
+```
+```bash
+helm repo update
+```
+This should produce an output of `...Successfully got an update from the "datashim" chart repository` in addition to the other Helm repositories you may have.
+To install, you need to pass `--devel` flag for now as we do not have a full release available for Helm yet
+
+```bash
+helm search repo datashim --devel
+```
+
+Pass the option to create namespace, if you are installing Datashim for the first time:
+```bash
+helm install --namespace=dlf --create-namespace datashim datashim/datashim-charts --devel
+```
+Do not forget to label the target namespace to support pod labels, as shown in the previous section
+
+To uninstall, use `helm uninstall` like so:
+```bash
+helm uninstall -n dlf datashim
+```
+
 ## Questions
 
 The wiki and [Frequently Asked Questions](https://datashim-io.github.io/datashim/FAQ) documents are a bit out of date. We recommend browsing [the issues](https://github.com/datashim-io/datashim/issues?q=is%3Aissue+label%3Aquestion) for previously answered questions. Please open an issue if you are not able to find the answers to your questions, or if you have discovered a bug. 
