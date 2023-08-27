@@ -3,6 +3,8 @@ name: Test on KinD
 on:
   pull_request:
     types: [ready_for_review, review_requested, opened, reopened, synchronize]
+    paths:
+     - 'src/**'
 
 jobs:
   integration-test:
