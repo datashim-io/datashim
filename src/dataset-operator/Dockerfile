@@ -1,48 +1,29 @@
-FROM ubuntu:16.04 as base
-RUN apt-get update && \
-  apt-get install -y \
-  git wget gcc make mercurial && \
-  rm -rf /var/lib/apt/lists/*
+# Build the manager binary
+FROM golang:1.19 as builder
 
-ARG ARCH
-
-ENV ARCH=$ARCH
-ENV GO_VERSION=1.14.10
-
-RUN echo $ARCH $GO_VERSION
-
-RUN wget -q https://dl.google.com/go/go$GO_VERSION.linux-$ARCH.tar.gz && \
-  tar -xf go$GO_VERSION.linux-$ARCH.tar.gz && \
-  rm go$GO_VERSION.linux-$ARCH.tar.gz && \
-  mv go /usr/local
-
-ENV GOROOT /usr/local/go
-ENV GOPATH /go
-ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
-ENV GOARCH $ARCH
-ENV GO111MODULE=on
-
-COPY go.mod .
-COPY go.sum .
-
+WORKDIR /dataset-operator
+# Copy the Go Modules manifests
+COPY go.mod go.mod
+COPY go.sum go.sum
+# cache deps before building and copying source so that we don't need to re-download as much
+# and so that source changes don't invalidate our downloaded layer
 RUN go mod download
 
-COPY . /dataset-operator
-WORKDIR /dataset-operator
-RUN go build -o /dataset-operator/build/_output/bin/dataset-operator /dataset-operator/cmd/manager
+# Copy the go source
+COPY main.go main.go
+COPY api/ api/
+COPY controllers/ controllers/
+COPY version/ version/
+COPY admissioncontroller/ admissioncontroller/
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+# Build
+RUN CGO_ENABLED=0 GOOS=linux go build -a -o manager main.go
 
-ENV OPERATOR=/usr/local/bin/dataset-operator \
-    USER_UID=1001 \
-    USER_NAME=dataset-operator
+# Use distroless as minimal base image to package the manager binary
+# Refer to https://github.com/GoogleContainerTools/distroless for more details
+FROM gcr.io/distroless/static:nonroot
+WORKDIR /
+COPY --from=builder /dataset-operator/manager .
+USER 65532:65532
 
-# install operator binary
-COPY --from=base /dataset-operator/build/_output/bin/dataset-operator ${OPERATOR}
-
-COPY build/bin /usr/local/bin
-RUN  /usr/local/bin/user_setup
-
-ENTRYPOINT ["/usr/local/bin/entrypoint"]
-
-USER ${USER_UID}
+ENTRYPOINT ["/manager"]

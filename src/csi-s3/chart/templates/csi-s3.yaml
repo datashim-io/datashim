@@ -63,7 +63,14 @@ spec:
       labels:
         {{- include "common.labels" . | nindent 8 }}
         app: csi-s3
+      {{- if or (hasKey .Values "clusterAutoscalerDSEviction") (hasKey .Values.global "clusterAutoscalerDSEviction") }}
+      annotations:
+        cluster-autoscaler.kubernetes.io/enable-ds-eviction: {{ .Values.clusterAutoscalerDSEviction | default .Values.global.clusterAutoscalerDSEviction | quote }}
+      {{- end}}
     spec:
+      {{- if or (.Values.priorityClassName) (.Values.global.priorityClassName) }}
+      priorityClassName: {{ .Values.priorityClassName | default .Values.global.priorityClassName }}
+      {{- end }}
       serviceAccountName: csi-s3
       {{- if or (.Values.dockerRegistrySecret) (.Values.global.dockerRegistrySecret) }}
       imagePullSecrets:
@@ -83,7 +90,7 @@ spec:
             # This is necessary only for systems with SELinux, where
             # non-privileged sidecar containers cannot access unix domain socket
             # created by privileged CSI driver container.
-            privileged: true
+            privileged: false
           env:
             - name: KUBE_NODE_NAME
               valueFrom:
@@ -96,7 +103,7 @@ spec:
             - mountPath: /registration
               name: registration-dir
         - name: csi-s3
-          image: "{{ $csiS3Properties.baseRepo }}/{{ $csiS3Properties.csis3.image }}:{{ $csiS3Properties.csis3.tag }}-{{ $csiS3Properties.arch }}"
+          image: "{{ $csiS3Properties.baseRepo }}/{{ $csiS3Properties.csis3.image }}:{{ $csiS3Properties.csis3.tag }}"
           imagePullPolicy: Always
           args:
             - "--v=5"

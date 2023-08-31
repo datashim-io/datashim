@@ -8,7 +8,7 @@ import (
 // Implements Mounter
 type s3fsMounter struct {
 	bucket        *bucket
-	readonly	  bool
+	readonly      bool
 	url           string
 	region        string
 	pwFileContent string
@@ -24,7 +24,7 @@ func newS3fsMounter(b *bucket, cfg *Config) (Mounter, error) {
 		url:           cfg.Endpoint,
 		region:        cfg.Region,
 		pwFileContent: cfg.AccessKeyID + ":" + cfg.SecretAccessKey,
-		readonly: 		 cfg.Readonly,
+		readonly:      cfg.Readonly,
 	}, nil
 }
 
@@ -49,8 +49,8 @@ func (s3fs *s3fsMounter) Mount(source string, target string) error {
 		"-o", "allow_other",
 		"-o", "umask=0000",
 	}
-	if(s3fs.readonly) {
-		args = append(args, "-o","ro")
+	if s3fs.readonly {
+		args = append(args, "-o", "ro")
 	}
 	return fuseMount(target, s3fsCmd, args)
 }

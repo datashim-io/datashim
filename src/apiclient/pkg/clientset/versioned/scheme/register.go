@@ -19,7 +19,7 @@ limitations under the License.
 package scheme
 
 import (
-	comv1alpha1 "github.com/datashim-io/datashim/src/dataset-operator/pkg/apis/com/v1alpha1"
+	comv1alpha1 "github.com/datashim-io/datashim/src/dataset-operator/api/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

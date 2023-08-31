@@ -32,6 +32,9 @@ spec:
       labels:
         app: csi-provisioner-s3
     spec:
+      {{- if or (.Values.priorityClassName) (.Values.global.priorityClassName) }}
+      priorityClassName: {{ .Values.priorityClassName | default .Values.global.priorityClassName }}
+      {{- end }}
       serviceAccountName: csi-provisioner
       {{- if or (.Values.dockerRegistrySecret) (.Values.global.dockerRegistrySecret) }}
       imagePullSecrets:

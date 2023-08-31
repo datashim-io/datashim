@@ -1,23 +1,26 @@
-apiVersion: admissionregistration.k8s.io/v1beta1
+apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   name: dlf-mutating-webhook-cfg
   labels:
     app.kubernetes.io/name: "dlf"
 webhooks:
-  - name: admission.webhook.dlf
-    reinvocationPolicy: IfNeeded
-    clientConfig:
-      service:
-        name: webhook-server
-        namespace: ${DATASET_OPERATOR_NAMESPACE}
-        path: "/mutate"
-      caBundle: ${CA_PEM_B64}
-    rules:
-      - operations: [ "CREATE", "UPDATE" ]
-        apiGroups: [""]
-        apiVersions: ["v1"]
-        resources: ["pods"]
-    namespaceSelector:
-      matchLabels:
-        monitor-pods-datasets: enabled
+- admissionReviewVersions:
+  - v1
+  name: mpod.datashim.io
+  reinvocationPolicy: IfNeeded
+  clientConfig:
+    service:
+      name: webhook-server
+      namespace: ${DATASET_OPERATOR_NAMESPACE}
+      path: "/mutate-v1-pod"
+    caBundle: ${CA_PEM_B64}
+  rules:
+  - operations: [ "CREATE" ]
+    apiGroups: [""]
+    apiVersions: ["v1"]
+    resources: ["pods"]
+  sideEffects: None
+  namespaceSelector:
+    matchLabels:
+      monitor-pods-datasets: enabled

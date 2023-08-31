@@ -1,4 +1,4 @@
-module ceph-cache-plugin
+module github.com/datashim-io/datashim/plugins/ceph-cache-plugin
 
 go 1.13
 
@@ -9,7 +9,7 @@ require (
 	github.com/operator-framework/operator-sdk v0.16.0
 	github.com/rook/rook v1.3.3
 	github.com/spf13/pflag v1.0.5
-	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975 // indirect
+	golang.org/x/crypto v0.1.0 // indirect
 	k8s.io/api v0.17.2
 	k8s.io/apimachinery v0.17.3
 	k8s.io/client-go v12.0.0+incompatible

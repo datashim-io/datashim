@@ -1,8 +1,0 @@
-{{if eq .Values.global.namespaceYaml true}}
-kind: Namespace
-apiVersion: v1
-metadata:
-  name: {{ .Release.Namespace }}
-  labels:
-  {{- include "common.labels" . | nindent 4 }}
-{{ end }}

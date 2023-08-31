@@ -19,6 +19,9 @@ spec:
         name: dataset-operator
         {{- include "common.labels" . | nindent 8 }}
     spec:
+      {{- if or (.Values.priorityClassName) (.Values.global.priorityClassName) }}
+      priorityClassName: {{ .Values.priorityClassName | default .Values.global.priorityClassName }}
+      {{- end }}
       serviceAccountName: dataset-operator
       {{- if or (.Values.dockerRegistrySecret) (.Values.global.dockerRegistrySecret) }}
       imagePullSecrets:
@@ -27,7 +30,7 @@ spec:
       initContainers:
         - name: generate-keys
           {{- with $datasetProperties}}
-          image: "{{ .baseRepo }}/{{ .generatekeys.image }}:{{ .generatekeys.tag }}-{{ .arch }}"
+          image: "{{ .baseRepo }}/{{ .generatekeys.image }}:{{ .generatekeys.tag }}"
           {{- end}}
           imagePullPolicy: Always
           env:
@@ -37,13 +40,13 @@ spec:
         - name: dataset-operator
           # Replace this with the built image name
           {{- with $datasetProperties}}
-          image: "{{ .baseRepo }}/{{ .datasetoperator.image }}:{{ .datasetoperator.tag }}-{{ .arch }}"
+          image: "{{ .baseRepo }}/{{ .datasetoperator.image }}:{{ .datasetoperator.tag }}"
           {{- end}}
           command:
-            - dataset-operator
+            - /manager
           imagePullPolicy: Always
           ports:
-            - containerPort: 8443
+            - containerPort: 9443
               name: webhook-api
           env:
             - name: WATCH_NAMESPACE
@@ -60,7 +63,7 @@ spec:
                   fieldPath: metadata.namespace
           volumeMounts:
             - name: webhook-tls-certs
-              mountPath: /run/secrets/tls
+              mountPath: /tmp/k8s-webhook-server/serving-certs
               readOnly: true
       volumes:
         - name: webhook-tls-certs
@@ -87,8 +90,10 @@ metadata:
   {{- include "common.labels" . | nindent 4 }}
   namespace: {{ .Release.Namespace }}
 spec:
-  selector:
-    name: dataset-operator
   ports:
     - port: 443
+      protocol: TCP
       targetPort: webhook-api
+  selector:
+    name: dataset-operator
+    

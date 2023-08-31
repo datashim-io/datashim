@@ -5,3 +5,5 @@ _tmp
 *Dockerfile.csi-driver-nfs
 *Dockerfile.csi-s3
 *s3-secret.yaml
+.vscode/*
+bin/*

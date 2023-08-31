@@ -1,9 +1,13 @@
 apiVersion: v2
-name: dlf-chart
-description: Dataset Lifecycle Framework chart
+name: datashim-charts
+description: Datashim chart
 type: application
 version: 0.1.0
 appVersion: 0.1.0
+icon: https://raw.githubusercontent.com/datashim-io/artwork/main/SVG/datashim-horizontal-color.svg
+maintainers:
+  - name: Srikumar Venugopal
+    
 
 dependencies:
   - name: csi-sidecars-rbac
@@ -15,9 +19,6 @@ dependencies:
   - name: csi-s3-chart
     version: 0.1.0
     condition: csi-s3-chart.enabled
-  - name: csi-h3-chart
-    version: 0.1.0
-    condition: csi-h3-chart.enabled
   - name: dataset-operator-chart
     version: 0.1.0
     condition: dataset-operator-chart.enabled

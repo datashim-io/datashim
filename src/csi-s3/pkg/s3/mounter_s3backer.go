@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"os/exec"
+	osexec "os/exec"
 	"path"
 
 	"github.com/golang/glog"
-	"k8s.io/kubernetes/pkg/util/mount"
+	mount "k8s.io/mount-utils"
+	"k8s.io/utils/exec"
 )
 
 // Implements Mounter
@@ -125,7 +126,7 @@ func (s3backer *s3backerMounter) writePasswd() error {
 }
 
 func formatFs(fsType string, device string) error {
-	diskMounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: mount.NewOsExec()}
+	diskMounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: exec.New()}
 	format, err := diskMounter.GetDiskFormat(device)
 	if err != nil {
 		return err
@@ -137,7 +138,7 @@ func formatFs(fsType string, device string) error {
 	args := []string{
 		device,
 	}
-	cmd := exec.Command("mkfs."+fsType, args...)
+	cmd := osexec.Command("mkfs."+fsType, args...)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {

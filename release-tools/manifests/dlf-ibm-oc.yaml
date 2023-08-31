@@ -1,36 +1,5 @@
 ---
-# Source: dlf-chart/templates/namespace.yaml
-kind: Namespace
-apiVersion: v1
-metadata:
-  name: dlf
-  labels:
-    app.kubernetes.io/name: "dlf"
----
-# Source: dlf-chart/charts/csi-h3-chart/templates/csi-controller-rbac.yaml
-# This YAML file contains RBAC API objects that are necessary to run external
-# CSI attacher for H3 adapter
-
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: csi-controller-h3
-  labels:
-    app.kubernetes.io/name: "dlf"
-  namespace: dlf
----
-# Source: dlf-chart/charts/csi-h3-chart/templates/csi-nodeplugin-rbac.yaml
-# This YAML defines all API objects to create RBAC roles for CSI node plugin
-
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: csi-nodeplugin-h3
-  labels:
-    app.kubernetes.io/name: "dlf"
-  namespace: dlf
----
-# Source: dlf-chart/charts/csi-nfs-chart/templates/csi-attacher-rbac.yaml
+# Source: datashim-charts/charts/csi-nfs-chart/templates/csi-attacher-rbac.yaml
 # This YAML file contains RBAC API objects that are necessary to run external
 # CSI attacher for nfs flex adapter
 
@@ -39,29 +8,44 @@ kind: ServiceAccount
 metadata:
   name: csi-attacher-nfs
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-nfs-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
   namespace: dlf
 ---
-# Source: dlf-chart/charts/csi-nfs-chart/templates/csi-nodeplugin-rbac.yaml
+# Source: datashim-charts/charts/csi-nfs-chart/templates/csi-nodeplugin-rbac.yaml
 # This YAML defines all API objects to create RBAC roles for CSI node plugin
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: csi-nodeplugin
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-nfs-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
   namespace: dlf
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/csi-s3.yaml
+# Source: datashim-charts/charts/csi-s3-chart/templates/csi-s3.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: csi-s3
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-s3-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
   namespace: dlf
 ---
-# Source: dlf-chart/charts/csi-sidecars-rbac/templates/attacher-rbac.yaml
+# Source: datashim-charts/charts/csi-sidecars-rbac/templates/attacher-rbac.yaml
 # This YAML file contains all RBAC objects that are necessary to run external
 # CSI attacher.
 #
@@ -79,9 +63,14 @@ metadata:
   # replace with non-default namespace name
   namespace: dlf
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-sidecars-rbac-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
 ---
-# Source: dlf-chart/charts/csi-sidecars-rbac/templates/provisioner-rbac.yaml
+# Source: datashim-charts/charts/csi-sidecars-rbac/templates/provisioner-rbac.yaml
 # This YAML file contains all RBAC objects that are necessary to run external
 # CSI provisioner.
 #
@@ -99,18 +88,28 @@ metadata:
   # replace with non-default namespace name
   namespace: dlf
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-sidecars-rbac-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
 ---
-# Source: dlf-chart/charts/dataset-operator-chart/templates/rbac/service_account.yaml
+# Source: datashim-charts/charts/dataset-operator-chart/templates/rbac/service_account.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: dataset-operator
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: dataset-operator-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
   namespace: dlf
 ---
-# Source: dlf-chart/charts/dataset-operator-chart/templates/secrets/server-tls.yaml
+# Source: datashim-charts/charts/dataset-operator-chart/templates/secrets/server-tls.yaml
 apiVersion: v1
 kind: Secret
 metadata:
@@ -123,22 +122,18 @@ data:
   tls.crt: YmFyCg==
   tls.key: YmFyCg==
 ---
-# Source: dlf-chart/charts/csi-h3-chart/templates/csi-h3-storageclass.yaml
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: h3
-  labels:
-    app.kubernetes.io/name: "dlf"
-provisioner: kubernetes.io/no-provisioner
----
-# Source: dlf-chart/charts/csi-s3-chart/templates/storageclass.yaml
+# Source: datashim-charts/charts/csi-s3-chart/templates/storageclass.yaml
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
   name: csi-s3
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-s3-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
 provisioner: ch.ctrox.csi.s3-driver
 parameters:
   # specify which mounter to use
@@ -158,14 +153,15 @@ parameters:
   csi.storage.k8s.io/node-publish-secret-name: ${pvc.name}
   csi.storage.k8s.io/node-publish-secret-namespace: ${pvc.namespace}
 ---
-# Source: dlf-chart/charts/dataset-operator-chart/templates/crds/com.ie.ibm.hpsys_datasetinternals_crd.yaml
+# Source: datashim-charts/charts/dataset-operator-chart/templates/crds/com.ie.ibm.hpsys_datasetinternals_crd.yaml
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
   name: datasetsinternal.com.ie.ibm.hpsys
 spec:
-  conversion:
-    strategy: None
   group: com.ie.ibm.hpsys
   names:
     kind: DatasetInternal
@@ -192,43 +188,77 @@ spec:
           metadata:
             type: object
           spec:
-            description: DatasetInternalSpec defines the desired state of DatasetInternal
+            description: DatasetSpec defines the desired state of Dataset
             properties:
+              extract:
+                type: string
+              format:
+                type: string
               local:
                 additionalProperties:
                   type: string
-                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                  Important: Run "operator-sdk generate k8s" to regenerate code after
-                  modifying this file Add custom validation using kubebuilder tags:
-                  https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
+                description: Foo is an example field of Dataset. Edit dataset_types.go
+                  to remove/update
                 type: object
-                x-kubernetes-preserve-unknown-fields: true
               remote:
                 additionalProperties:
                   type: string
                 type: object
-                x-kubernetes-preserve-unknown-fields: true
+              type:
+                description: TODO temp definition for archive
+                type: string
+              url:
+                type: string
             type: object
-            x-kubernetes-preserve-unknown-fields: true
           status:
             description: DatasetInternalStatus defines the observed state of DatasetInternal
+            properties:
+              caching:
+                properties:
+                  placements:
+                    properties:
+                      datalocations:
+                        items:
+                          properties:
+                            key:
+                              type: string
+                            value:
+                              type: string
+                          type: object
+                        type: array
+                      gateways:
+                        items:
+                          properties:
+                            key:
+                              type: string
+                            value:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                type: object
             type: object
-            x-kubernetes-preserve-unknown-fields: true
         type: object
-        x-kubernetes-preserve-unknown-fields: true
     served: true
     storage: true
     subresources:
       status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
 ---
-# Source: dlf-chart/charts/dataset-operator-chart/templates/crds/com.ie.ibm.hpsys_datasets_crd.yaml
+# Source: datashim-charts/charts/dataset-operator-chart/templates/crds/com.ie.ibm.hpsys_datasets_crd.yaml
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
   name: datasets.com.ie.ibm.hpsys
 spec:
-  conversion:
-    strategy: None
   group: com.ie.ibm.hpsys
   names:
     kind: Dataset
@@ -257,108 +287,68 @@ spec:
           spec:
             description: DatasetSpec defines the desired state of Dataset
             properties:
+              extract:
+                type: string
+              format:
+                type: string
               local:
                 additionalProperties:
                   type: string
-                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                  Important: Run "operator-sdk generate k8s" to regenerate code after
-                  modifying this file Add custom validation using kubebuilder tags:
-                  https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-                  Conf map[string]string `json:"conf,omitempty"`'
+                description: Foo is an example field of Dataset. Edit dataset_types.go
+                  to remove/update
                 type: object
-                x-kubernetes-preserve-unknown-fields: true
               remote:
                 additionalProperties:
                   type: string
                 type: object
-                x-kubernetes-preserve-unknown-fields: true
+              type:
+                description: TODO temp definition for archive
+                type: string
+              url:
+                type: string
             type: object
-            x-kubernetes-preserve-unknown-fields: true
           status:
             description: DatasetStatus defines the observed state of Dataset
             properties:
-              error:
-                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                  of cluster Important: Run "operator-sdk generate k8s" to regenerate
-                  code after modifying this file Add custom validation using kubebuilder
-                  tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
-                type: string
+              caching:
+                properties:
+                  info:
+                    type: string
+                  status:
+                    type: string
+                type: object
+              provision:
+                properties:
+                  info:
+                    type: string
+                  status:
+                    type: string
+                type: object
             type: object
-            x-kubernetes-preserve-unknown-fields: true
         type: object
-        x-kubernetes-preserve-unknown-fields: true
     served: true
     storage: true
     subresources:
       status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
 ---
-# Source: dlf-chart/charts/csi-h3-chart/templates/csi-controller-rbac.yaml
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: external-controller-h3
-  labels:
-    app.kubernetes.io/name: "dlf"
-rules:
-  - apiGroups: [""]
-    resources: ["persistentvolumes"]
-    verbs: ["get", "list", "watch", "update"]
-  - apiGroups: [""]
-    resources: ["nodes"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: ["csi.storage.k8s.io"]
-    resources: ["csinodeinfos"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: ["storage.k8s.io"]
-    resources: ["volumeattachments"]
-    verbs: ["get", "list", "watch", "update", "patch"]
----
-# Source: dlf-chart/charts/csi-h3-chart/templates/csi-controller-rbac.yaml
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: csi-cluster-driver-registrar-role-h3
-  labels:
-    app.kubernetes.io/name: "dlf"
-rules:
-  - apiGroups: ["csi.storage.k8s.io"]
-    resources: ["csidrivers"]
-    verbs: ["create", "delete"]
-  - apiGroups: ["apiextensions.k8s.io"]
-    resources: ["customresourcedefinitions"]
-    verbs: ["create", "list", "watch", "delete"]
----
-# Source: dlf-chart/charts/csi-h3-chart/templates/csi-nodeplugin-rbac.yaml
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: csi-nodeplugin-h3
-  labels:
-    app.kubernetes.io/name: "dlf"
-rules:
-  - apiGroups: [""]
-    resources: ["persistentvolumes"]
-    verbs: ["get", "list", "watch", "update"]
-  - apiGroups: [""]
-    resources: ["secrets","secret"]
-    verbs: ["get", "list"]
-  - apiGroups: [""]
-    resources: ["nodes"]
-    verbs: ["get", "list", "watch", "update"]
-  - apiGroups: ["storage.k8s.io"]
-    resources: ["volumeattachments"]
-    verbs: ["get", "list", "watch", "update"]
-  - apiGroups: [""]
-    resources: ["events"]
-    verbs: ["get", "list", "watch", "create", "update", "patch"]
----
-# Source: dlf-chart/charts/csi-nfs-chart/templates/csi-attacher-rbac.yaml
+# Source: datashim-charts/charts/csi-nfs-chart/templates/csi-attacher-rbac.yaml
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: external-attacher-runner-nfs
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-nfs-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
   namespace: dlf
 rules:
   - apiGroups: [""]
@@ -371,13 +361,18 @@ rules:
     resources: ["volumeattachments"]
     verbs: ["get", "list", "watch", "update", "patch"]
 ---
-# Source: dlf-chart/charts/csi-nfs-chart/templates/csi-nodeplugin-rbac.yaml
+# Source: datashim-charts/charts/csi-nfs-chart/templates/csi-nodeplugin-rbac.yaml
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: csi-nodeplugin
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-nfs-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
   namespace: dlf
 rules:
   - apiGroups: [""]
@@ -390,13 +385,18 @@ rules:
     resources: ["volumeattachments"]
     verbs: ["get", "list", "watch", "update"]
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/csi-s3.yaml
+# Source: datashim-charts/charts/csi-s3-chart/templates/csi-s3.yaml
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: csi-s3
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-s3-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
   namespace: dlf
 rules:
   - apiGroups: [""]
@@ -415,14 +415,19 @@ rules:
     resources: ["volumeattachments"]
     verbs: ["get", "list", "watch", "update","create"]
 ---
-# Source: dlf-chart/charts/csi-sidecars-rbac/templates/attacher-rbac.yaml
+# Source: datashim-charts/charts/csi-sidecars-rbac/templates/attacher-rbac.yaml
 # Attacher must be able to work with PVs, CSINodes and VolumeAttachments
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: external-attacher-runner
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-sidecars-rbac-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
 rules:
   - apiGroups: [""]
     resources: ["persistentvolumes"]
@@ -444,13 +449,18 @@ rules:
 #    resources: ["secrets"]
 #    verbs: ["get", "list"]
 ---
-# Source: dlf-chart/charts/csi-sidecars-rbac/templates/provisioner-rbac.yaml
+# Source: datashim-charts/charts/csi-sidecars-rbac/templates/provisioner-rbac.yaml
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: external-provisioner-runner
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-sidecars-rbac-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
   namespace: dlf
 rules:
   # The following rule should be uncommented for plugins that require secrets
@@ -490,14 +500,19 @@ rules:
     resources: ["volumeattachments"]
     verbs: ["get", "list", "watch","create"]
 ---
-# Source: dlf-chart/charts/dataset-operator-chart/templates/rbac/role.yaml
+# Source: datashim-charts/charts/dataset-operator-chart/templates/rbac/role.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
   name: dataset-operator
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: dataset-operator-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
   namespace: dlf
 rules:
 - apiGroups:
@@ -554,6 +569,7 @@ rules:
   resources:
   - '*'
   - datasetsinternal
+  - datasets
   verbs:
   - '*'
 - apiGroups:
@@ -578,64 +594,18 @@ rules:
   resources: ["jobs"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 ---
-# Source: dlf-chart/charts/csi-h3-chart/templates/csi-controller-rbac.yaml
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: csi-attacher-role-h3
-  labels:
-    app.kubernetes.io/name: "dlf"
-  namespace: dlf
-subjects:
-  - kind: ServiceAccount
-    name: csi-controller-h3
-    namespace: dlf
-roleRef:
-  kind: ClusterRole
-  name: external-controller-h3
-  apiGroup: rbac.authorization.k8s.io
----
-# Source: dlf-chart/charts/csi-h3-chart/templates/csi-controller-rbac.yaml
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: csi-cluster-driver-registrar-binding-h3
-  labels:
-    app.kubernetes.io/name: "dlf"
-  namespace: dlf
-subjects:
-  - kind: ServiceAccount
-    name: csi-controller-h3
-    namespace: dlf
-roleRef:
-  kind: ClusterRole
-  name: csi-cluster-driver-registrar-role-h3
-  apiGroup: rbac.authorization.k8s.io
----
-# Source: dlf-chart/charts/csi-h3-chart/templates/csi-nodeplugin-rbac.yaml
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: csi-nodeplugin-h3
-  labels:
-    app.kubernetes.io/name: "dlf"
-  namespace: dlf
-subjects:
-  - kind: ServiceAccount
-    name: csi-nodeplugin-h3
-    namespace: dlf
-roleRef:
-  kind: ClusterRole
-  name: csi-nodeplugin-h3
-  apiGroup: rbac.authorization.k8s.io
----
-# Source: dlf-chart/charts/csi-nfs-chart/templates/csi-attacher-rbac.yaml
+# Source: datashim-charts/charts/csi-nfs-chart/templates/csi-attacher-rbac.yaml
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: csi-attacher-role-nfs
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-nfs-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
   namespace: dlf
 subjects:
   - kind: ServiceAccount
@@ -646,13 +616,18 @@ roleRef:
   name: external-attacher-runner-nfs
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: dlf-chart/charts/csi-nfs-chart/templates/csi-nodeplugin-rbac.yaml
+# Source: datashim-charts/charts/csi-nfs-chart/templates/csi-nodeplugin-rbac.yaml
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: csi-nodeplugin
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-nfs-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
   namespace: dlf
 subjects:
   - kind: ServiceAccount
@@ -663,13 +638,18 @@ roleRef:
   name: csi-nodeplugin
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/csi-s3.yaml
+# Source: datashim-charts/charts/csi-s3-chart/templates/csi-s3.yaml
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: csi-s3
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-s3-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
   namespace: dlf
 subjects:
   - kind: ServiceAccount
@@ -680,13 +660,18 @@ roleRef:
   name: csi-s3
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: dlf-chart/charts/csi-sidecars-rbac/templates/attacher-rbac.yaml
+# Source: datashim-charts/charts/csi-sidecars-rbac/templates/attacher-rbac.yaml
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: csi-attacher-role
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-sidecars-rbac-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
 subjects:
   - kind: ServiceAccount
     name: csi-attacher
@@ -697,13 +682,18 @@ roleRef:
   name: external-attacher-runner
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: dlf-chart/charts/csi-sidecars-rbac/templates/provisioner-rbac.yaml
+# Source: datashim-charts/charts/csi-sidecars-rbac/templates/provisioner-rbac.yaml
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: csi-provisioner-role
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-sidecars-rbac-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
   namespace: dlf
 subjects:
   - kind: ServiceAccount
@@ -715,13 +705,18 @@ roleRef:
   name: external-provisioner-runner
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: dlf-chart/charts/dataset-operator-chart/templates/rbac/role_binding.yaml
+# Source: datashim-charts/charts/dataset-operator-chart/templates/rbac/role_binding.yaml
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: dataset-operator
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: dataset-operator-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
   namespace: dlf
 subjects:
 - kind: ServiceAccount
@@ -732,7 +727,7 @@ roleRef:
   name: dataset-operator
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: dlf-chart/charts/csi-sidecars-rbac/templates/attacher-rbac.yaml
+# Source: datashim-charts/charts/csi-sidecars-rbac/templates/attacher-rbac.yaml
 # Attacher must be able to work with configmaps or leases in the current namespace
 # if (and only if) leadership election is enabled
 kind: Role
@@ -742,13 +737,18 @@ metadata:
   namespace: dlf
   name: external-attacher-cfg
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-sidecars-rbac-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
 rules:
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]
     verbs: ["get", "watch", "list", "delete", "update", "create"]
 ---
-# Source: dlf-chart/charts/csi-sidecars-rbac/templates/provisioner-rbac.yaml
+# Source: datashim-charts/charts/csi-sidecars-rbac/templates/provisioner-rbac.yaml
 # Provisioner must be able to work with endpoints in current namespace
 # if (and only if) leadership election is enabled
 kind: Role
@@ -758,7 +758,12 @@ metadata:
   namespace: dlf
   name: external-provisioner-cfg
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-sidecars-rbac-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
 rules:
   # Only one of the following rules for endpoints or leases is required based on
   # what is set for `--leader-election-type`. Endpoints are deprecated in favor of Leases.
@@ -784,7 +789,7 @@ rules:
     resources: ["replicasets"]
     verbs: ["get"]
 ---
-# Source: dlf-chart/charts/csi-sidecars-rbac/templates/attacher-rbac.yaml
+# Source: datashim-charts/charts/csi-sidecars-rbac/templates/attacher-rbac.yaml
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -792,7 +797,12 @@ metadata:
   # replace with non-default namespace name
   namespace: dlf
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-sidecars-rbac-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
 subjects:
   - kind: ServiceAccount
     name: csi-attacher
@@ -803,7 +813,7 @@ roleRef:
   name: external-attacher-cfg
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: dlf-chart/charts/csi-sidecars-rbac/templates/provisioner-rbac.yaml
+# Source: datashim-charts/charts/csi-sidecars-rbac/templates/provisioner-rbac.yaml
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -811,7 +821,12 @@ metadata:
   # replace with non-default namespace name
   namespace: dlf
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-sidecars-rbac-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
 subjects:
   - kind: ServiceAccount
     name: csi-provisioner
@@ -822,7 +837,7 @@ roleRef:
   name: external-provisioner-cfg
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: dlf-chart/charts/csi-nfs-chart/templates/csi-attacher-nfsplugin.yaml
+# Source: datashim-charts/charts/csi-nfs-chart/templates/csi-attacher-nfsplugin.yaml
 # This YAML file contains attacher & csi driver API objects that are necessary
 # to run external CSI attacher for nfs
 kind: Service
@@ -832,7 +847,12 @@ metadata:
   namespace: dlf
   labels:
     app: csi-attacher-nfsplugin
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-nfs-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
 spec:
   selector:
     app: csi-attacher-nfsplugin
@@ -840,7 +860,7 @@ spec:
     - name: dummy
       port: 12345
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/attacher.yaml
+# Source: datashim-charts/charts/csi-s3-chart/templates/attacher.yaml
 # needed for StatefulSet
 kind: Service
 apiVersion: v1
@@ -849,7 +869,12 @@ metadata:
   namespace: dlf
   labels:
     app: csi-attacher-s3
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-s3-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
 spec:
   selector:
     app: csi-attacher-s3
@@ -857,7 +882,7 @@ spec:
     - name: dummy
       port: 12345
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner.yaml
+# Source: datashim-charts/charts/csi-s3-chart/templates/provisioner.yaml
 kind: Service
 apiVersion: v1
 metadata:
@@ -865,7 +890,12 @@ metadata:
   namespace: dlf
   labels:
     app: csi-provisioner-s3
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-s3-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
 spec:
   selector:
     app: csi-provisioner-s3
@@ -873,108 +903,28 @@ spec:
     - name: dummy
       port: 12345
 ---
-# Source: dlf-chart/charts/dataset-operator-chart/templates/apps/operator.yaml
+# Source: datashim-charts/charts/dataset-operator-chart/templates/apps/operator.yaml
 apiVersion: v1
 kind: Service
 metadata:
   name: webhook-server
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: dataset-operator-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
   namespace: dlf
 spec:
-  selector:
-    name: dataset-operator
   ports:
     - port: 443
+      protocol: TCP
       targetPort: webhook-api
----
-# Source: dlf-chart/charts/csi-h3-chart/templates/csi-nodeplugin-h3.yaml
-# This YAML file contains driver-registrar & csi driver nodeplugin API objects
-# that are necessary to run CSI nodeplugin for H3
-kind: DaemonSet
-apiVersion: apps/v1
-metadata:
-  name: csi-nodeplugin-h3
-  labels:
-    app.kubernetes.io/name: "dlf"
-  namespace: dlf
-spec:
   selector:
-    matchLabels:
-      app: csi-nodeplugin-h3
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: "dlf"
-        app: csi-nodeplugin-h3
-    spec:
-      serviceAccountName: csi-nodeplugin-h3
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
-      containers:
-        - name: node-driver-registrar
-          image: "quay.io/k8scsi/csi-node-driver-registrar:v1.2.0"
-          lifecycle:
-            preStop:
-              exec:
-                command: ["/bin/sh", "-c", "rm -rf /registration/csi-h3 /registration/csi-h3-reg.sock"]
-          args:
-            - --v=5
-            - --csi-address=/plugin/csi.sock
-            - --kubelet-registration-path=/var/lib/kubelet/plugins/csi-h3/csi.sock
-          env:
-            - name: KUBE_NODE_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
-          volumeMounts:
-            - name: plugin-dir
-              mountPath: /plugin
-            - name: registration-dir
-              mountPath: /registration
-        - name: h3
-          securityContext:
-            privileged: true
-            capabilities:
-              add: ["SYS_ADMIN"]
-            allowPrivilegeEscalation: true
-          image: "carvicsforth/csi-h3:v1.2.0"
-          args:
-            - "--nodeid=$(NODE_ID)"
-            - "--endpoint=$(CSI_ENDPOINT)"
-          env:
-            - name: NODE_ID
-              valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
-            - name: CSI_ENDPOINT
-              value: unix://plugin/csi.sock
-          # imagePullPolicy: "Always"
-          lifecycle:
-            postStart:
-              exec:
-                command: ["/bin/sh", "-c", "mount -t fuse.h3fuse | while read -r mount; do umount $(echo $mount | awk '{print $3}') ; done"]
-          volumeMounts:
-            - name: plugin-dir
-              mountPath: /plugin
-            - name: pods-mount-dir
-              mountPath: /var/lib/kubelet/pods
-              mountPropagation: "Bidirectional"
-      volumes:
-        - name: plugin-dir
-          hostPath:
-            path: /var/lib/kubelet/plugins/csi-h3
-            type: DirectoryOrCreate
-        - name: pods-mount-dir
-          hostPath:
-            path: /var/lib/kubelet/pods
-            type: Directory
-        - hostPath:
-            path: /var/lib/kubelet/plugins_registry
-            type: DirectoryOrCreate
-          name: registration-dir
+    name: dataset-operator
 ---
-# Source: dlf-chart/charts/csi-nfs-chart/templates/csi-nodeplugin-nfsplugin.yaml
+# Source: datashim-charts/charts/csi-nfs-chart/templates/csi-nodeplugin-nfsplugin.yaml
 # This YAML file contains driver-registrar & csi driver nodeplugin API objects
 # that are necessary to run CSI nodeplugin for nfs
 kind: DaemonSet
@@ -982,7 +932,12 @@ apiVersion: apps/v1
 metadata:
   name: csi-nodeplugin-nfsplugin
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-nfs-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
   namespace: dlf
 spec:
   selector:
@@ -991,7 +946,12 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: "dlf"
+        helm.sh/chart: csi-nfs-chart-0.1.0
+        app.kubernetes.io/name: datashim
+        app.kubernetes.io/instance: default
+        app.kubernetes.io/managed-by: Helm
+        meta.helm.sh/release-name: default
+        meta.helm.sh/release-namespace: dlf
         app: csi-nodeplugin-nfsplugin
     spec:
       serviceAccountName: csi-nodeplugin
@@ -1023,7 +983,7 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: "quay.io/datashim/csi-nfs:latest-amd64"
+          image: "quay.io/datashim-io/csi-nfs:latest"
           args :
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
@@ -1055,13 +1015,18 @@ spec:
             type: Directory
           name: registration-dir
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/csi-s3.yaml
+# Source: datashim-charts/charts/csi-s3-chart/templates/csi-s3.yaml
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
   name: csi-s3
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-s3-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
   namespace: dlf
 spec:
   selector:
@@ -1070,7 +1035,12 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: "dlf"
+        helm.sh/chart: csi-s3-chart-0.1.0
+        app.kubernetes.io/name: datashim
+        app.kubernetes.io/instance: default
+        app.kubernetes.io/managed-by: Helm
+        meta.helm.sh/release-name: default
+        meta.helm.sh/release-namespace: dlf
         app: csi-s3
     spec:
       serviceAccountName: csi-s3
@@ -1086,7 +1056,7 @@ spec:
             # This is necessary only for systems with SELinux, where
             # non-privileged sidecar containers cannot access unix domain socket
             # created by privileged CSI driver container.
-            privileged: true
+            privileged: false
           env:
             - name: KUBE_NODE_NAME
               valueFrom:
@@ -1099,7 +1069,7 @@ spec:
             - mountPath: /registration
               name: registration-dir
         - name: csi-s3
-          image: "quay.io/datashim/csi-s3:latest-amd64"
+          image: "quay.io/datashim-io/csi-s3:latest"
           imagePullPolicy: Always
           args:
             - "--v=5"
@@ -1165,13 +1135,18 @@ spec:
             type: Directory
           name: dev-dir
 ---
-# Source: dlf-chart/charts/dataset-operator-chart/templates/apps/operator.yaml
+# Source: datashim-charts/charts/dataset-operator-chart/templates/apps/operator.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dataset-operator
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: dataset-operator-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
   namespace: dlf
 spec:
   replicas: 1
@@ -1184,12 +1159,17 @@ spec:
         sidecar.istio.io/inject: "false"
       labels:
         name: dataset-operator
-        app.kubernetes.io/name: "dlf"
+        helm.sh/chart: dataset-operator-chart-0.1.0
+        app.kubernetes.io/name: datashim
+        app.kubernetes.io/instance: default
+        app.kubernetes.io/managed-by: Helm
+        meta.helm.sh/release-name: default
+        meta.helm.sh/release-namespace: dlf
     spec:
       serviceAccountName: dataset-operator
       initContainers:
         - name: generate-keys
-          image: "quay.io/datashim/generate-keys:latest-amd64"
+          image: "quay.io/datashim-io/generate-keys:latest"
           imagePullPolicy: Always
           env:
             - name: DATASET_OPERATOR_NAMESPACE
@@ -1197,12 +1177,12 @@ spec:
       containers:
         - name: dataset-operator
           # Replace this with the built image name
-          image: "quay.io/datashim/dataset-operator:latest-amd64"
+          image: "quay.io/datashim-io/dataset-operator:latest"
           command:
-            - dataset-operator
+            - /manager
           imagePullPolicy: Always
           ports:
-            - containerPort: 8443
+            - containerPort: 9443
               name: webhook-api
           env:
             - name: WATCH_NAMESPACE
@@ -1219,89 +1199,26 @@ spec:
                   fieldPath: metadata.namespace
           volumeMounts:
             - name: webhook-tls-certs
-              mountPath: /run/secrets/tls
+              mountPath: /tmp/k8s-webhook-server/serving-certs
               readOnly: true
       volumes:
         - name: webhook-tls-certs
           secret:
             secretName: webhook-server-tls
 ---
-# Source: dlf-chart/charts/csi-h3-chart/templates/csi-controller-h3.yaml
-# This YAML file contains attacher & csi driver API objects that are necessary
-# to run external CSI attacher for H3
-kind: StatefulSet
-apiVersion: apps/v1
-metadata:
-  name: csi-controller-h3
-  labels:
-    app.kubernetes.io/name: "dlf"
-  namespace: dlf
-spec:
-  serviceName: "csi-controller-h3"
-  replicas: 1
-  selector:
-    matchLabels:
-      app: csi-controller-h3
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: "dlf"
-        app: csi-controller-h3
-    spec:
-      serviceAccountName: csi-controller-h3
-      containers:
-        - name: csi-attacher
-          image: "quay.io/k8scsi/csi-attacher:v2.2.0"
-          args:
-            - "--v=5"
-            - "--csi-address=$(ADDRESS)"
-          env:
-            - name: ADDRESS
-              value: /csi/csi.sock
-          # imagePullPolicy: "Always"
-          volumeMounts:
-            - name: socket-dir
-              mountPath: /csi
-        - name: csi-cluster-driver-registrar
-          image: "quay.io/k8scsi/csi-cluster-driver-registrar:v1.0.1"
-          args:
-            - "--v=5"
-            - "--pod-info-mount-version=\"v1\""
-            - "--csi-address=$(ADDRESS)"
-          env:
-            - name: ADDRESS
-              value: /csi/csi.sock
-          volumeMounts:
-            - name: socket-dir
-              mountPath: /csi
-        - name: h3
-          image: "carvicsforth/csi-h3:v1.2.0"
-          args :
-            - "--nodeid=$(NODE_ID)"
-            - "--endpoint=$(CSI_ENDPOINT)"
-          env:
-            - name: NODE_ID
-              valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
-            - name: CSI_ENDPOINT
-              value: unix://plugin/csi.sock
-          # imagePullPolicy: "Always"
-          volumeMounts:
-            - name: socket-dir
-              mountPath: /plugin
-      volumes:
-        - name: socket-dir
-          emptyDir:
----
-# Source: dlf-chart/charts/csi-nfs-chart/templates/csi-attacher-nfsplugin.yaml
+# Source: datashim-charts/charts/csi-nfs-chart/templates/csi-attacher-nfsplugin.yaml
 kind: StatefulSet
 apiVersion: apps/v1
 metadata:
   name: csi-attacher-nfsplugin
   namespace: dlf
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-nfs-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
 spec:
   selector:
     matchLabels:
@@ -1311,7 +1228,12 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: "dlf"
+        helm.sh/chart: csi-nfs-chart-0.1.0
+        app.kubernetes.io/name: datashim
+        app.kubernetes.io/instance: default
+        app.kubernetes.io/managed-by: Helm
+        meta.helm.sh/release-name: default
+        meta.helm.sh/release-namespace: dlf
         app: csi-attacher-nfsplugin
     spec:
       serviceAccountName: csi-attacher-nfs
@@ -1329,7 +1251,7 @@ spec:
             - name: socket-dir
               mountPath: /csi
         - name: nfs
-          image: "quay.io/datashim/csi-nfs:latest-amd64"
+          image: "quay.io/datashim-io/csi-nfs:latest"
           args :
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
@@ -1348,14 +1270,19 @@ spec:
         - name: socket-dir
           emptyDir: {}
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/attacher.yaml
+# Source: datashim-charts/charts/csi-s3-chart/templates/attacher.yaml
 kind: StatefulSet
 apiVersion: apps/v1
 metadata:
   name: csi-attacher-s3
   namespace: dlf
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-s3-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
 spec:
   serviceName: "csi-attacher-s3"
   replicas: 1
@@ -1365,7 +1292,12 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: "dlf"
+        helm.sh/chart: csi-s3-chart-0.1.0
+        app.kubernetes.io/name: datashim
+        app.kubernetes.io/instance: default
+        app.kubernetes.io/managed-by: Helm
+        meta.helm.sh/release-name: default
+        meta.helm.sh/release-namespace: dlf
         app: csi-attacher-s3
     spec:
       serviceAccountName: csi-attacher
@@ -1391,13 +1323,18 @@ spec:
             type: DirectoryOrCreate
           name: socket-dir
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/provisioner.yaml
+# Source: datashim-charts/charts/csi-s3-chart/templates/provisioner.yaml
 kind: StatefulSet
 apiVersion: apps/v1
 metadata:
   name: csi-provisioner-s3
   labels:
-    app.kubernetes.io/name: "dlf"
+    helm.sh/chart: csi-s3-chart-0.1.0
+    app.kubernetes.io/name: datashim
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: default
+    meta.helm.sh/release-namespace: dlf
   namespace: dlf
 spec:
   serviceName: "csi-provisioner-s3"
@@ -1433,7 +1370,7 @@ spec:
             type: DirectoryOrCreate
           name: socket-dir
 ---
-# Source: dlf-chart/charts/csi-s3-chart/templates/driver.yaml
+# Source: datashim-charts/charts/csi-s3-chart/templates/driver.yaml
 apiVersion: storage.k8s.io/v1
 kind: CSIDriver
 metadata:
@@ -1441,14 +1378,17 @@ metadata:
 spec:
   attachRequired: false
   podInfoOnMount: false
+  volumeLifecycleModes:
+    - Persistent
+#    - Ephemeral
 ---
-# Source: dlf-chart/charts/dataset-operator-chart/templates/apps/webhook-definition.yaml
+# Source: datashim-charts/charts/dataset-operator-chart/templates/apps/webhook-definition.yaml
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   name: dlf-mutating-webhook-cfg
 ---
-# Source: dlf-chart/charts/csi-sidecars-rbac/templates/scc.yaml
+# Source: datashim-charts/charts/csi-sidecars-rbac/templates/scc.yaml
 kind: SecurityContextConstraints
 apiVersion: security.openshift.io/v1
 metadata:

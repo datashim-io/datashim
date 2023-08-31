@@ -1,0 +1,18 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: configure-minio
+spec:
+  template:
+    spec:
+      containers:
+        - command:
+          - /bin/sh
+          - -c
+          - |
+            mc config host add kindminio http://minio.default.svc:9000 ACCESS_KEY SECRET_KEY
+            mc mb kindminio/first.bucket
+          image: minio/mc
+          name: minio-mc
+      restartPolicy: Never
+  backoffLimit: 1
