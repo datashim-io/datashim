@@ -54,9 +54,9 @@ type DatasetReconciler struct {
 	Clientset *kubernetes.Clientset
 }
 
-//+kubebuilder:rbac:groups=com.ie.ibm.hpsys,resources=datasets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=com.ie.ibm.hpsys,resources=datasets/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=com.ie.ibm.hpsys,resources=datasets/finalizers,verbs=update
+//+kubebuilder:rbac:groups=datashim.io,resources=datasets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=datashim.io,resources=datasets/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=datashim.io,resources=datasets/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

@@ -160,9 +160,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: datasetsinternal.com.ie.ibm.hpsys
+  name: datasetsinternal.datashim.io
 spec:
-  group: com.ie.ibm.hpsys
+  group: datashim.io
   names:
     kind: DatasetInternal
     listKind: DatasetInternalList
@@ -257,9 +257,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: datasets.com.ie.ibm.hpsys
+  name: datasets.datashim.io
 spec:
-  group: com.ie.ibm.hpsys
+  group: datashim.io
   names:
     kind: Dataset
     listKind: DatasetList
@@ -565,7 +565,7 @@ rules:
   verbs:
   - get
 - apiGroups:
-  - com.ie.ibm.hpsys
+  - datashim.io
   resources:
   - '*'
   - datasetsinternal

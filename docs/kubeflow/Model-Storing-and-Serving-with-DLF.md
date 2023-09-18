@@ -31,7 +31,7 @@ Otherwise follow the instructions in [Configure IBM COS Storage](https://github.
 
 Now we need to create a dataset to point to the newly created bucket. Create a file that looks like this:
 ``` yaml
-apiVersion: com.ie.ibm.hpsys/v1alpha1
+apiVersion: datashim.io/v1alpha1
 kind: Dataset
 metadata:
   name: your-dataset

@@ -30,7 +30,7 @@ type ComV1alpha1Interface interface {
 	DatasetInternalsGetter
 }
 
-// ComV1alpha1Client is used to interact with features provided by the com.ie.ibm.hpsys group.
+// ComV1alpha1Client is used to interact with features provided by the datashim.io group.
 type ComV1alpha1Client struct {
 	restClient rest.Interface
 }

@@ -5,9 +5,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: datasets.com.ie.ibm.hpsys
+  name: datasets.datashim.io
 spec:
-  group: com.ie.ibm.hpsys
+  group: datashim.io
   names:
     kind: Dataset
     listKind: DatasetList

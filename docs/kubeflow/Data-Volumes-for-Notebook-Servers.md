@@ -12,7 +12,7 @@ In this guide, we assume that your data are already stored in a remote s3 bucket
 Let's assume that you will launch your notebook server on the namespace `{my-namespace}`
 
 ``` yaml
-apiVersion: com.ie.ibm.hpsys/v1alpha1
+apiVersion: datashim.io/v1alpha1
 kind: Dataset
 metadata:
   name: your-dataset

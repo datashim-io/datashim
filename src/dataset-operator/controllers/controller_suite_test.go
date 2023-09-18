@@ -145,7 +145,7 @@ func initialiseRolesAndBindings(k8sClient client.Client) error {
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
-				APIGroups: []string{"com.ie.ibm.hpsys"},
+				APIGroups: []string{"datashim.io"},
 				Verbs:     []string{"*"},
 				Resources: []string{"*",
 					"datasets", "datasetsinternal"},
@@ -319,11 +319,11 @@ var _ = BeforeSuite(func() {
 
 	//Check if we can retrieve Dataset CRDs
 	crd := &apiextensionsv1.CustomResourceDefinition{}
-	err = k8sClient.Get(context.TODO(), types.NamespacedName{Name: "datasets.com.ie.ibm.hpsys"}, crd)
+	err = k8sClient.Get(context.TODO(), types.NamespacedName{Name: "datasets.datashim.io"}, crd)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(crd.Spec.Names.Kind).To(Equal("Dataset"))
 
-	err = k8sClient.Get(context.TODO(), types.NamespacedName{Name: "datasetsinternal.com.ie.ibm.hpsys"}, crd)
+	err = k8sClient.Get(context.TODO(), types.NamespacedName{Name: "datasetsinternal.datashim.io"}, crd)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(crd.Spec.Names.Kind).To(Equal("DatasetInternal"))
 })
@@ -387,7 +387,7 @@ var _ = Describe("Test Dataset Creation", func() {
 			err := k8sClient.Get(context.TODO(), nsName, di_out)
 			return err
 		}, time.Minute, time.Second).ShouldNot(MatchError(errors.NewNotFound(
-			schema.GroupResource{Group: "com.ie.ibm.hpsys",
+			schema.GroupResource{Group: "datashim.io",
 				Resource: "datasetsinternal"},
 			"NotFound")))
 

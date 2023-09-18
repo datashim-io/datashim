@@ -13,7 +13,7 @@ We will just how you can adopt the examples located in [contrib/volume_ops](http
 
 First you need to create a Dataset to point to the bucket you want to use. Create a file that looks like this:
 ``` yaml
-apiVersion: com.ie.ibm.hpsys/v1alpha1
+apiVersion: datashim.io/v1alpha1
 kind: Dataset
 metadata:
   name: your-dataset
@@ -138,7 +138,7 @@ def volume_op_dag():
 def get_dataset_yaml(name,accessKey,secretAccessKey,endpoint,bucket,region):
     print(region)
     dataset_spec = f"""
-    apiVersion: com.ie.ibm.hpsys/v1alpha1
+    apiVersion: datashim.io/v1alpha1
     kind: Dataset
     metadata:
       name: {name}

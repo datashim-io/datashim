@@ -7,3 +7,9 @@ _tmp
 *s3-secret.yaml
 .vscode/*
 bin/*
+chart/Chart.lock
+chart/values.yaml.orig
+example-dummy.yaml
+example-pod.yaml
+src/dataset-operator/testing/csi_test_suite.go
+src/dataset-operator/testing/csi_test_utils.go

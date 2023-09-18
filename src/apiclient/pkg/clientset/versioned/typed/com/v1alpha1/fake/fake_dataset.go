@@ -36,9 +36,9 @@ type FakeDatasets struct {
 	ns   string
 }
 
-var datasetsResource = schema.GroupVersionResource{Group: "com.ie.ibm.hpsys", Version: "v1alpha1", Resource: "datasets"}
+var datasetsResource = schema.GroupVersionResource{Group: "datashim.io", Version: "v1alpha1", Resource: "datasets"}
 
-var datasetsKind = schema.GroupVersionKind{Group: "com.ie.ibm.hpsys", Version: "v1alpha1", Kind: "Dataset"}
+var datasetsKind = schema.GroupVersionKind{Group: "datashim.io", Version: "v1alpha1", Kind: "Dataset"}
 
 // Get takes name of the dataset, and returns the corresponding dataset object, and an error if there is any.
 func (c *FakeDatasets) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Dataset, err error) {

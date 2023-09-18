@@ -49,7 +49,7 @@ minio-7979c89d5c-khncd              0/1     Running     0          3m
 Now we can create a Dataset based on a remote archive as follows:
 ```yaml
 cat <<EOF | kubectl apply -f -
-apiVersion: com.ie.ibm.hpsys/v1alpha1
+apiVersion: datashim.io/v1alpha1
 kind: Dataset
 metadata:
   name: example-dataset
