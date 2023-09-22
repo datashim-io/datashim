@@ -42,10 +42,10 @@ kubectl apply -f https://raw.githubusercontent.com/datashim-io/datashim/master/r
 
 Wait for all the pods to be ready :)
 ```bash
-kubectl wait --for=condition=ready pods -l app.kubernetes.io/name=dlf -n dlf
+kubectl wait --for=condition=ready pods -l app.kubernetes.io/name=datashim -n dlf
 ```
 
-As an **optional** step, label the namespace(or namespaces) you want in order have the pods labelling functionality (see below).
+As an **optional** step, label the namespace(or namespaces) you want in order have the pods labelling functionality (see below for an example with default namespace).
 ```bash
 kubectl label namespace default monitor-pods-datasets=enabled
 ```
