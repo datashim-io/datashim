@@ -20,6 +20,7 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"strconv"
+  "time"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -401,7 +402,7 @@ func processLocalDatasetCOS(cr *datasets.DatasetInternal, rc *DatasetInternalRec
 	if !authProvided {
 		err := errors.NewBadRequest("No useable secret provided for authentication")
 		processLocalDatasetLogger.Error(err, "Failed to initialise", "Dataset.Name", cr.Name)
-		return reconcile.Result{}, err
+		return reconcile.Result{Requeue: true, RequeueAfter: 5 * time.Second}, err
 	}
 
 	processLocalDatasetLogger.Info("Authentication info has been successfully retrieved", "Dataset.Name", cr.Name)
