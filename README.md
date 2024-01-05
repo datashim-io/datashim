@@ -15,9 +15,15 @@ A Kubernetes Framework to provide easy access to S3 and NFS **Datasets** within 
 
 ## Quickstart
 
-In order to quickly deploy DLF, based on your environment execute **one** of the following commands:
+First, create the namespace for installing Datashim, if not present
 
-- **Kubernetes/Minikube**
+```bash
+kubectl create ns dlf
+```
+
+In order to quickly deploy Datashim, based on your environment execute **one** of the following commands:
+
+- **Kubernetes/Minikube/kind**
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/datashim-io/datashim/master/release-tools/manifests/dlf.yaml
 ```
@@ -36,10 +42,10 @@ kubectl apply -f https://raw.githubusercontent.com/datashim-io/datashim/master/r
 
 Wait for all the pods to be ready :)
 ```bash
-kubectl wait --for=condition=ready pods -l app.kubernetes.io/name=dlf -n dlf
+kubectl wait --for=condition=ready pods -l app.kubernetes.io/name=datashim -n dlf
 ```
 
-As an **optional** step, label the namespace(or namespaces) you want in order have the pods labelling functionality (see below).
+As an **optional** step, label the namespace(or namespaces) you want in order have the pods labelling functionality (see below for an example with default namespace).
 ```bash
 kubectl label namespace default monitor-pods-datasets=enabled
 ```
@@ -88,6 +94,34 @@ details as environment variables, change the `useas` line to `dataset.0.useas: "
 **Note:** We recommend using secrets to pass your S3/Object Storage Service credentials to Datashim, as shown in [this example](./examples/templates/example-dataset-s3-provision.yaml).
 
 Feel free to explore our [other examples](./examples)
+
+## Helm Installation
+
+Starting with `0.4.0-alpha.1`, hosted Helm charts have been made available for installing Datashim. This is how you can do a Helm install:
+
+```bash
+helm repo add datashim https://datashim-io.github.io/datashim/
+```
+```bash
+helm repo update
+```
+This should produce an output of `...Successfully got an update from the "datashim" chart repository` in addition to the other Helm repositories you may have.
+To install, you need to pass `--devel` flag for now as we do not have a full release available for Helm yet
+
+```bash
+helm search repo datashim --devel
+```
+
+Pass the option to create namespace, if you are installing Datashim for the first time:
+```bash
+helm install --namespace=dlf --create-namespace datashim datashim/datashim-charts --devel
+```
+Do not forget to label the target namespace to support pod labels, as shown in the previous section
+
+To uninstall, use `helm uninstall` like so:
+```bash
+helm uninstall -n dlf datashim
+```
 
 ## Questions
 

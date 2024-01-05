@@ -1,4 +1,4 @@
-ARG ARCH
+ARG TARGETARCH
 FROM golang:1.18-alpine3.15 as base
 
 ARG S3BACKER_VERSION=1.5.0
@@ -26,11 +26,10 @@ RUN ls -l && \
 # goofys cannot be built.
 # This instruction can be safely removed once
 # https://github.com/kahing/goofys/issues/740 has been fixed
+# Update: Aug '23 - the fix is merged https://github.com/kahing/goofys/pull/744
 WORKDIR /go/src
 RUN git clone https://github.com/kahing/goofys.git && \
     cd goofys && \
-    git checkout e903e56038fe0325e4538007b6acc064af8164c7 && \ 
-    sed -i -e '/require/ a \\tgolang.org/x/text v0.3.7' go.mod && \
     go mod tidy && \
     go build -o /go/bin/goofys
 

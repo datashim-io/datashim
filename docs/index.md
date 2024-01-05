@@ -87,20 +87,4 @@ details as environment variables, change the `useas` line to `dataset.0.useas: "
 
 Feel free to explore our [examples](./examples)
 
-## Roadmap
 
-Have a look on our wiki for [Roadmap](https://github.com/IBM/dataset-lifecycle-framework/wiki/Roadmap)
-
-## Contact
-
-Reach out to us via email:
-- Yiannis Gkoufas, <yiannisg@ie.ibm.com>
-- Christian Pinto, <christian.pinto@ibm.com>
-- Srikumar Venugopal, <srikumarv@ie.ibm.com>
-
-## Acknowledgements
-This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement No 825061.
-
-[H2020 evolve](https://www.evolve-h2020.eu/).
-
-<img src="./pictures/evolve-logo.png" alt="H2020 evolve logo" width="150" height="24.07">

@@ -3,7 +3,7 @@ global:
   baseRepo: "quay.io/datashim-io"
   arch: "amd64"
   type: "k8s"
-  namespaceYaml: false
+  namespaceYaml: true
 
   sidecars:
     kubeletPath: "/var/lib/kubelet"
@@ -22,6 +22,7 @@ global:
 csi-nfs-chart:
 # baseRepo: "anotherrepo"
 # dockerRegistrySecret: "anothersecret"
+  enabled: true
   csinfs:
     image: "csi-nfs"
     tag: "latest"
@@ -31,18 +32,21 @@ csi-s3-chart:
 # baseRepo: "anotherrepo"
 # dockerRegistrySecret: "anothersecret"
 # mounter: "goofys"
+  enabled: true
   csis3:
     image: "csi-s3"
     tag: "latest"
   sidecars: {} # in case you want to force override regardless of the csi-s3-chart/values.yaml
 
 csi-h3-chart:
-  baseRepo: "carvicsforth"
-# dockerRegistrySecret: "anothersecret"
+#  baseRepo: "carvicsforth"
+## dockerRegistrySecret: "anothersecret"
+  enabled: false
   csih3:
     image: "csi-h3"
     tag: "v1.2.0"
   sidecars: {} 
+  
 dataset-operator-chart:
 #  baseRepo: "quay.io/datashim"
 # dockerRegistrySecret: "anothersecret"

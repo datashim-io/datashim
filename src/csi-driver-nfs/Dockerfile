@@ -1,13 +1,12 @@
-FROM ubuntu:16.04 as base
+FROM ubuntu:20.04 as base
 RUN apt-get update && \
   apt-get install -y \
   git wget gcc make mercurial && \
   rm -rf /var/lib/apt/lists/*
 
-ARG ARCH
-
-ENV ARCH=$ARCH
-ENV GO_VERSION=1.12.17
+ARG TARGETARCH
+ENV ARCH=$TARGETARCH
+ENV GO_VERSION=1.19
 
 RUN echo $ARCH $GO_VERSION
 
