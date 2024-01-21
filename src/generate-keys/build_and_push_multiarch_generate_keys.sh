@@ -32,7 +32,7 @@ then
     fi
 else
     echo "Docker command found"
-    cmd_type = $(type -t ${DOCKERCMD})
+    cmd_type=$(type -t ${DOCKERCMD})
     if [ $cmd_type == "alias" ]
     then
         echo "${DOCKERCMD} is an alias, switching to ${ALTDOCKERCMD}"
