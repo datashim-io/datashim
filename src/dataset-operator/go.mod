@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/akolb1/gometastore v0.0.0-20221218020403-aaa7217ecd00
 	github.com/go-logr/logr v1.2.4
+	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.0
 	github.com/kubernetes-csi/csi-test/v5 v5.0.0
 	github.com/onsi/ginkgo/v2 v2.11.0

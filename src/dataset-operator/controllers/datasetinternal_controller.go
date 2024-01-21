@@ -339,16 +339,14 @@ func processLocalDatasetH3(cr *datasets.DatasetInternal, rc *DatasetInternalReco
 		}
 	}
 	return reconcile.Result{}, nil
-
 }
 
-func processLocalDatasetCOS(cr *datasets.DatasetInternal, rc *DatasetInternalReconciler) (reconcile.Result, error) {
-	processLocalDatasetLogger := logi.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processLocalDataset")
-
+func checkAndExtractObjectStorageAccess(cr *datasets.DatasetInternal, rc *DatasetInternalReconciler) (accessKeyID, secretAccessKey string, authError error) {
+	checkObjectStorageLogger := logi.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "checkAndExtractObjectStorageAccess")
 	authProvided := false
 	secretOK := false
 
-	var secretName, secretNamespace, accessKeyID, secretAccessKey string
+	var secretName, secretNamespace string
 	var ok = false
 
 	if secretName, ok = cr.Spec.Local["secret-name"]; ok {
@@ -356,13 +354,13 @@ func processLocalDatasetCOS(cr *datasets.DatasetInternal, rc *DatasetInternalRec
 		//16/12 - We will limit secrets to the same namespace as the dataset to fix #146
 		if secretNamespace, ok = cr.Spec.Local["secret-namespace"]; ok {
 			if secretNamespace == cr.ObjectMeta.Namespace {
-				processLocalDatasetLogger.Info("Error: secret namespace is same as dataset namespace, allowed", "Dataset.Name", cr.ObjectMeta.Name)
+				checkObjectStorageLogger.Info("Secret namespace is same as dataset namespace, allowed", "Dataset.Name", cr.ObjectMeta.Name)
 				secretOK = true
 			} else {
-				processLocalDatasetLogger.Info("Error: secret namespace is different from dataset namespace, not allowed", "Dataset.Name", cr.ObjectMeta.Name)
+				checkObjectStorageLogger.Info("Error: secret namespace is different from dataset namespace, not allowed", "Dataset.Name", cr.ObjectMeta.Name)
 			}
 		} else {
-			processLocalDatasetLogger.Info("No secret namespace provided - using dataset namespace for secret", "Dataset Name", cr.ObjectMeta.Name, "Namespace", cr.ObjectMeta.Namespace)
+			checkObjectStorageLogger.Info("No secret namespace provided - using dataset namespace for secret", "Dataset Name", cr.ObjectMeta.Name, "Namespace", cr.ObjectMeta.Namespace)
 			secretNamespace = cr.ObjectMeta.Namespace
 			secretOK = true
 		}
@@ -374,7 +372,7 @@ func processLocalDatasetCOS(cr *datasets.DatasetInternal, rc *DatasetInternalRec
 		err := rc.Client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: secretNamespace}, cosSecret)
 
 		if err != nil && errors.IsNotFound(err) {
-			processLocalDatasetLogger.Error(err, "Provided secret not found! ", "Dataset.Name", cr.Name)
+			checkObjectStorageLogger.Error(err, "Provided secret not found! ", "Dataset.Name", cr.Name)
 			authProvided = false
 		} else {
 			_, accessIDPresent := cosSecret.Data["accessKeyID"]
@@ -384,14 +382,14 @@ func processLocalDatasetCOS(cr *datasets.DatasetInternal, rc *DatasetInternalRec
 				secretAccessKey = string(cosSecret.Data["secretAccessKey"])
 				authProvided = true
 			} else {
-				processLocalDatasetLogger.Error(nil, "Secret does not have access Key or secret Access Key", "Dataset.Name", cr.Name)
+				checkObjectStorageLogger.Error(nil, "Secret does not have access Key or secret Access Key", "Dataset.Name", cr.Name)
 				authProvided = false
 			}
 		}
 	} else {
 		if accessKeyID, ok = cr.Spec.Local["accessKeyID"]; ok {
 			if secretAccessKey, ok = cr.Spec.Local["secretAccessKey"]; !ok {
-				processLocalDatasetLogger.Error(nil, "Secret Key not provided with the access key", "Dataset.Name", cr.Name)
+				checkObjectStorageLogger.Error(nil, "Secret Key not provided with the access key", "Dataset.Name", cr.Name)
 				authProvided = false
 			} else {
 				authProvided = true
@@ -400,14 +398,28 @@ func processLocalDatasetCOS(cr *datasets.DatasetInternal, rc *DatasetInternalRec
 	}
 
 	if !authProvided {
-		err := errors.NewBadRequest("No useable secret provided for authentication")
-		processLocalDatasetLogger.Error(err, "Failed to initialise", "Dataset.Name", cr.Name)
-		return reconcile.Result{}, err
+		authError := errors.NewBadRequest("No useable secret provided for authentication")
+		checkObjectStorageLogger.Error(authError, "Failed to initialise", "Dataset.Name", cr.Name)
+		return "", "", authError
 	}
 
-	processLocalDatasetLogger.Info("Authentication info has been successfully retrieved", "Dataset.Name", cr.Name)
+	return accessKeyID, secretAccessKey, nil
+}
+
+func processLocalDatasetCOS(cr *datasets.DatasetInternal, rc *DatasetInternalReconciler) (reconcile.Result, error) {
+	processLocalDatasetLogger := logi.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processLocalDataset")
+
+	// Sri - 18/1 - the validation of the dataset fields should be done in a validating admission controller
+
+	accessKeyID, secretAccessKey, err := checkAndExtractObjectStorageAccess(cr, rc)
+	if err != nil {
+		return reconcile.Result{}, err
+	} else {
+		processLocalDatasetLogger.Info("Authentication info has been successfully retrieved", "Dataset.Name", cr.Name)
+	}
 
 	endpoint := cr.Spec.Local["endpoint"]
+	// Sri - we assume that the first substring is the bucket name and the rest is the prefix (or folder)
 	bucket, prefix, found := strings.Cut(cr.Spec.Local["bucket"], "/")
 
 	if !found {
@@ -416,7 +428,12 @@ func processLocalDatasetCOS(cr *datasets.DatasetInternal, rc *DatasetInternalRec
 		processLocalDatasetLogger.Info("Found a prefix associated with the bucket for Dataset", "Dataset.Name", cr.Name, "bucket", bucket, "prefix", prefix)
 	}
 
-	region := cr.Spec.Local["region"]
+	region, ok := cr.Spec.Local["region"]
+	if ok {
+		processLocalDatasetLogger.Info("Region extracted from Dataset", "Dataset.Name", cr.Name, "bucket", bucket, "region", region)
+	} else {
+		processLocalDatasetLogger.Info("No region information was provided for Dataset", "Dataset.Name", cr.Name, "bucket", bucket)
+	}
 
 	readonly := getBooleanStringForKeyInMap(processLocalDatasetLogger, "false", "readonly", cr.Spec.Local)
 	provision := getBooleanStringForKeyInMap(processLocalDatasetLogger, "false", "provision", cr.Spec.Local)
@@ -499,7 +516,7 @@ func processLocalDatasetCOS(cr *datasets.DatasetInternal, rc *DatasetInternalRec
 	}
 
 	foundPVC := &corev1.PersistentVolumeClaim{}
-	err := rc.Client.Get(context.TODO(), types.NamespacedName{Name: newPVC.Name, Namespace: newPVC.Namespace}, foundPVC)
+	err = rc.Client.Get(context.TODO(), types.NamespacedName{Name: newPVC.Name, Namespace: newPVC.Namespace}, foundPVC)
 	if err != nil && errors.IsNotFound(err) {
 		processLocalDatasetLogger.Info("Creating new pvc", "PVC.Namespace", newPVC.Namespace, "PVC.Name", newPVC.Name)
 		err = rc.Client.Create(context.TODO(), newPVC)
@@ -592,6 +609,7 @@ func processLocalDatasetNFS(cr *datasets.DatasetInternal, rc *DatasetInternalRec
 		"share":        share,
 		"createDirPVC": createDirPVC,
 	}
+
 	pvSource := &corev1.CSIPersistentVolumeSource{
 		Driver:           csiDriverName,
 		VolumeHandle:     csiVolumeHandle,
@@ -1082,7 +1100,7 @@ func getBooleanStringForKeyInMap(reqLogger logr.Logger, defaultValue string, key
 		if err == nil {
 			toret = strconv.FormatBool(valueBool)
 		} else {
-			reqLogger.Info("Value set to be " + valueString + " rejected since it has to be true/false, using default " + defaultValue)
+			reqLogger.Info("Value set to§ be " + valueString + " rejected since it has to be true/false, using default " + defaultValue)
 		}
 	}
 	return toret
