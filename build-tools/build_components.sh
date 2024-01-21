@@ -30,12 +30,14 @@ do
     esac
 done
 
+
+if [ $CREATE_NEW_BUILDX_CONTEXT = "yes" ]; then
+    docker buildx create --use
+fi
+
 if [ $BUILD_AND_PUSH = "yes" ]; then
       if [ $SKIP_LOGIN = "no" ]; then
             echo $REGISTRY_PASSWORD | docker login -u $REGISTRY_USERNAME --password-stdin $REGISTRY_URL
-      fi
-      if [ $CREATE_NEW_BUILDX_CONTEXT = "yes" ]; then
-            docker buildx create --use
       fi
       (cd ../src/dataset-operator && ./build_multiarch_dataset_operator.sh -p $REGISTRY_URL)
       (cd ../src/generate-keys && ./build_multiarch_generate_keys.sh -p $REGISTRY_URL)
