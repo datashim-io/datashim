@@ -1,20 +1,47 @@
 #!/bin/bash
+set -e 
+
+print_usage() {
+    echo "usage: $0 [-p] <REGISTRY_URL> <VERSION>"
+    echo "Use -p to build and push multiarch images"
+}
+
+PUSH="false"
+while getopts 'p' flag; do
+case "$flag" in
+    p) 
+        PUSH="true"
+        ;;
+    ?) 
+        print_usage >&2
+        exit 1
+        ;;
+esac
+done
+
+shift $((OPTIND-1))
+
+REGISTRY_URL="${1:-quay.io/datashim-io}"
+VERSION="${2:-latest}"
+
+echo $REGISTRY_URL
+echo $VERSION
 
 docker_build () {
-    docker buildx build --platform linux/amd64,linux/arm64,linux/ppc64le -t ${REGISTRY_URL}/dataset-operator:${VERSION} .
+    docker buildx build --platform linux/amd64,linux/arm64 -t ${REGISTRY_URL}/generate-keys:${VERSION} .
 }
 
 docker_build_and_push () {
-    docker buildx build --platform linux/amd64,linux/arm64,linux/ppc64le --push -t ${REGISTRY_URL}/dataset-operator:${VERSION} .
+    docker buildx build --platform linux/amd64,linux/arm64 --push -t ${REGISTRY_URL}/generate-keys:${VERSION} .
 }
 
 podman_build () {
-    podman manifest create ${REGISTRY_URL}/dataset-operator:${VERSION}
-    podman buildx build --platform linux/amd64,linux/arm64  --manifest ${REGISTRY_URL}/dataset-operator:${VERSION} .
+    podman manifest create ${REGISTRY_URL}/generate-keys:${VERSION}
+    podman buildx build --platform linux/amd64,linux/arm64  --manifest ${REGISTRY_URL}/generate-keys:${VERSION} .
 }
 
 podman_push () {
-    podman manifest push ${REGISTRY_URL}/dataset-operator:${VERSION} 
+    podman manifest push ${REGISTRY_URL}/generate-keys:${VERSION} 
  
 }
 
@@ -39,18 +66,6 @@ else
         DOCKERCMD=${ALTDOCKERCMD}  
     fi
 fi 
-
-REGISTRY_URL="${1:-quay.io/datashim-io}"
-VERSION="${2:-latest}"
-
-PUSH="true"
-for arg in "$@"; do
-    if [ $arg == "--nopush" ]
-    then
-        echo "the images should not be pushed to the registry"
-        PUSH="false"
-    fi
-done
 
 if [ $PUSH == "true" ]
 then
