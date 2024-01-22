@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 print_usage() {
     echo "usage: $0 [-p] <REGISTRY_URL> <VERSION>"
