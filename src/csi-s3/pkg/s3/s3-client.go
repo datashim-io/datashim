@@ -20,6 +20,7 @@ type s3Client struct {
 
 type bucket struct {
 	Name    string
+	Folder  string
 	Mounter string
 }
 
@@ -54,6 +55,7 @@ func newS3ClientFromSecrets(secrets map[string]string) (*s3Client, error) {
 		Region:          secrets["region"],
 		Endpoint:        secrets["endpoint"],
 		Bucket:          secrets["bucket"],
+		Folder:          secrets["folder"],
 		Readonly:        readonly,
 		Provision:       provision,
 		RemoveOnDelete:  removeOnDelete,
@@ -127,7 +129,7 @@ func (client *s3Client) emptyBucket(bucketName string) error {
 //	return err
 //}
 
-//TODO is it not used at all?
+// TODO is it not used at all?
 func (client *s3Client) metadataExist(bucketName string) bool {
 	opts := minio.GetObjectOptions{}
 	_, err := client.minio.GetObject(bucketName, metadataName, opts)
