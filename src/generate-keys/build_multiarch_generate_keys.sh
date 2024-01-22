@@ -26,7 +26,7 @@ VERSION="${2:-latest}"
 
 docker_build () {
     docker buildx build --platform linux/amd64 -t ${REGISTRY_URL}/generate-keys:${VERSION} .
-    docker buildx build --load -t ${REGISTRY_URL}/dataset-operator:${VERSION} .
+    docker buildx build --load -t ${REGISTRY_URL}/generate-keys:${VERSION} .
 }
 
 docker_build_and_push () {
