@@ -97,7 +97,7 @@ Feel free to explore our [other examples](./examples)
 
 ## Helm Installation
 
-Starting with `0.4.0-alpha.1`, hosted Helm charts have been made available for installing Datashim. This is how you can do a Helm install:
+Hosted Helm charts have been made available for installing Datashim. This is how you can do a Helm install:
 
 ```bash
 helm repo add datashim https://datashim-io.github.io/datashim/
@@ -106,21 +106,37 @@ helm repo add datashim https://datashim-io.github.io/datashim/
 helm repo update
 ```
 This should produce an output of `...Successfully got an update from the "datashim" chart repository` in addition to the other Helm repositories you may have.
-To install, you need to pass `--devel` flag for now as we do not have a full release available for Helm yet
+
+To install, search for the latest stable release
+
+```bash
+helm search repo datashim
+```
+
+Pass the option to create namespace, if you are installing Datashim for the first time:
+```bash
+helm install --namespace=dlf --create-namespace datashim datashim/datashim-charts
+```
+Do not forget to label the target namespace to support pod labels, as shown in the previous section
+
+### Uninstalling through Helm
+
+To uninstall, use `helm uninstall` like so:
+```bash
+helm uninstall -n datashim datashim
+```
+
+### Installing intermediate releases
+
+You can query the Helm repo for intermediate releases (`.alpha`, `.beta`, etc). To do this, you need to pass `--devel` flag to Helm repo search, like so:
 
 ```bash
 helm search repo datashim --devel
 ```
 
-Pass the option to create namespace, if you are installing Datashim for the first time:
+To install an intermediate version, 
 ```bash
 helm install --namespace=dlf --create-namespace datashim datashim/datashim-charts --devel
-```
-Do not forget to label the target namespace to support pod labels, as shown in the previous section
-
-To uninstall, use `helm uninstall` like so:
-```bash
-helm uninstall -n dlf datashim
 ```
 
 ## Questions
