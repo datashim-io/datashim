@@ -25,7 +25,8 @@ REGISTRY_URL="${1:-quay.io/datashim-io}"
 VERSION="${2:-latest}"
 
 docker_build () {
-    docker buildx build --platform linux/amd64,linux/arm64,linux/ppc64le -t ${REGISTRY_URL}/dataset-operator:${VERSION} .
+    docker buildx build --platform linux/amd64 -t ${REGISTRY_URL}/dataset-operator:${VERSION} .
+    docker buildx build --load -t ${REGISTRY_URL}/dataset-operator:${VERSION} .
 }
 
 docker_build_and_push () {
