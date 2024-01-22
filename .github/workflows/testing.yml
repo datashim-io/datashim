@@ -13,6 +13,7 @@ jobs:
       - name: Clone Datashim
         uses: actions/checkout@v2
       - name: Build components
+        shell: bash
         run: |
           cd build-tools
           ./build_components.sh

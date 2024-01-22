@@ -30,16 +30,42 @@ do
     esac
 done
 
+DOCKERCMD="docker"
+ALTDOCKERCMD="podman"
+if !(command -v ${DOCKERCMD} &> /dev/null)
+then
+    echo "Docker command not found"
+    if !(command -v ${ALTDOCKERCMD} &> /dev/null)
+    then
+        echo "Neither ${DOCKERCMD} nor ${ALTDOCKERCMD} commands found.. cannot build "
+        exit 1
+    else
+        DOCKERCMD=${ALTDOCKERCMD}  
+    fi
+else
+    echo "Docker command found"
+    cmd_type=$(type -t ${DOCKERCMD})
+    if [ $cmd_type == "alias" ]
+    then
+        echo "${DOCKERCMD} is an alias, switching to ${ALTDOCKERCMD}"
+        DOCKERCMD=${ALTDOCKERCMD}  
+    fi
+fi 
+
+if [ ${DOCKERCMD} == "docker" ]
+then 
+    if [ $CREATE_NEW_BUILDX_CONTEXT = "yes" ]; then
+        docker buildx create --use
+    fi
+fi
+
 if [ $BUILD_AND_PUSH = "yes" ]; then
       if [ $SKIP_LOGIN = "no" ]; then
             echo $REGISTRY_PASSWORD | docker login -u $REGISTRY_USERNAME --password-stdin $REGISTRY_URL
       fi
-      if [ $CREATE_NEW_BUILDX_CONTEXT = "yes" ]; then
-            docker buildx create --use
-      fi
-      (cd ../src/dataset-operator && ./build_and_push_multiarch_dataset_operator.sh $REGISTRY_URL)
-      (cd ../src/generate-keys && ./build_and_push_multiarch_generate_keys.sh $REGISTRY_URL)
+      (cd ../src/dataset-operator && ./build_multiarch_dataset_operator.sh -p $REGISTRY_URL)
+      (cd ../src/generate-keys && ./build_multiarch_generate_keys.sh -p $REGISTRY_URL)
 else
-      (cd ../src/dataset-operator && ./build_dataset_operator.sh $REGISTRY_URL)
-      (cd ../src/generate-keys && ./build_generate_keys.sh $REGISTRY_URL)
+      (cd ../src/dataset-operator && ./build_multiarch_dataset_operator.sh $REGISTRY_URL)
+      (cd ../src/generate-keys && ./build_multiarch_generate_keys.sh $REGISTRY_URL)
 fi
