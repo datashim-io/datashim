@@ -24,9 +24,6 @@ shift $((OPTIND-1))
 REGISTRY_URL="${1:-quay.io/datashim-io}"
 VERSION="${2:-latest}"
 
-echo $REGISTRY_URL
-echo $VERSION
-
 docker_build () {
     docker buildx build --platform linux/amd64,linux/arm64 -t ${REGISTRY_URL}/generate-keys:${VERSION} .
 }

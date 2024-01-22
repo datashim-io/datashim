@@ -30,6 +30,11 @@ do
     esac
 done
 
+shift $((OPTIND-1))
+
+REGISTRY_URL="${1:-quay.io/datashim-io}"
+VERSION="${2:-latest}"
+
 DOCKERCMD="docker"
 ALTDOCKERCMD="podman"
 if !(command -v ${DOCKERCMD} &> /dev/null)
@@ -63,9 +68,9 @@ if [ $BUILD_AND_PUSH = "yes" ]; then
       if [ $SKIP_LOGIN = "no" ]; then
             echo $REGISTRY_PASSWORD | docker login -u $REGISTRY_USERNAME --password-stdin $REGISTRY_URL
       fi
-      (cd ../src/dataset-operator && ./build_multiarch_dataset_operator.sh -p $REGISTRY_URL)
-      (cd ../src/generate-keys && ./build_multiarch_generate_keys.sh -p $REGISTRY_URL)
+      (cd ../src/dataset-operator && ./build_multiarch_dataset_operator.sh -p $REGISTRY_URL $VERSION)
+      (cd ../src/generate-keys && ./build_multiarch_generate_keys.sh -p $REGISTRY_URL $VERSION)
 else
-      (cd ../src/dataset-operator && ./build_multiarch_dataset_operator.sh $REGISTRY_URL)
-      (cd ../src/generate-keys && ./build_multiarch_generate_keys.sh $REGISTRY_URL)
+      (cd ../src/dataset-operator && ./build_multiarch_dataset_operator.sh $REGISTRY_URL $VERSION)
+      (cd ../src/generate-keys && ./build_multiarch_generate_keys.sh $REGISTRY_URL $VERSION)
 fi
