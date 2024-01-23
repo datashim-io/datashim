@@ -13,6 +13,12 @@
 A Kubernetes Framework to provide easy access to S3 and NFS **Datasets** within pods. Orchestrates the provisioning of
 **Persistent Volume Claims** and **ConfigMaps** needed for each **Dataset**. Find more details in our [FAQ](https://datashim-io.github.io/datashim/FAQ/)
 
+## Alert (23 Jan 2024) - Group Name Change
+
+__If you have an existing installation of Datashim, please DO NOT follow the instructions below to upgrade it to version `0.4.0` or latest__. The group name of the Dataset and DatasetInternal CRDs (objects) is changing from `com.ie.ibm.hpsys` to `datashim.io`. An upgrade in place will invalidate your Dataset definitions and will cause problems in your installation. You can upgrade up to version `0.3.2` without any problems. 
+
+To upgrade to `0.4.0` and beyond, please a) delete all datasets safely; b) uninstall Datashim; and c) reinstall Datashim either through Helm or using the manifest file as follows.
+
 ## Quickstart
 
 First, create the namespace for installing Datashim, if not present
@@ -112,10 +118,18 @@ To install, search for the latest stable release
 ```bash
 helm search repo datashim
 ```
+which will result in:
+```
+NAME                    	CHART VERSION	APP VERSION	DESCRIPTION
+datashim/datashim-charts	0.3.2        	0.3.2      	Datashim chart
+```
+
+__Note:__Version `0.3.2` still has `com.ie.ibm.hpsys` as the apiGroup name. So, please proceed with caution. It is fine for upgrading from an existing Datashim installation but going forward the apiGroup will be `datashim.io` 
+
 
 Pass the option to create namespace, if you are installing Datashim for the first time:
 ```bash
-helm install --namespace=dlf --create-namespace datashim datashim/datashim-charts
+helm install --namespace=dlf --create-namespace datashim datashim/datashim-charts --version <version_string>
 ```
 Do not forget to label the target namespace to support pod labels, as shown in the previous section
 
@@ -123,7 +137,7 @@ Do not forget to label the target namespace to support pod labels, as shown in t
 
 To uninstall, use `helm uninstall` like so:
 ```bash
-helm uninstall -n datashim datashim
+helm uninstall -n dlf datashim
 ```
 
 ### Installing intermediate releases
@@ -136,7 +150,7 @@ helm search repo datashim --devel
 
 To install an intermediate version, 
 ```bash
-helm install --namespace=dlf --create-namespace datashim datashim/datashim-charts --devel
+helm install --namespace=dlf --create-namespace datashim datashim/datashim-charts --devel --version <version_name>
 ```
 
 ## Questions
