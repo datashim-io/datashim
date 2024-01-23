@@ -25,7 +25,7 @@ jobs:
       - name: Build and push Dataset Operator
         run: |
           cd src/dataset-operator
-          ./build_and_push_multiarch_dataset_operator.sh ${{ vars.REGISTRY_URL }}
+          ./build_multiarch_dataset_operator.sh -p ${{ vars.REGISTRY_URL }}
   generate-keys:
     runs-on: ubuntu-latest
     steps:
@@ -44,4 +44,4 @@ jobs:
       - name: Build and push Generate Keys
         run: |
           cd src/generate-keys
-          ./build_and_push_multiarch_generate_keys.sh ${{ vars.REGISTRY_URL }}
+          ./build_multiarch_generate_keys.sh -p ${{ vars.REGISTRY_URL }}
