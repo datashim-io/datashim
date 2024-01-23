@@ -57,7 +57,7 @@ rules:
   verbs:
   - get
 - apiGroups:
-  - com.ie.ibm.hpsys
+  - datashim.io
   resources:
   - '*'
   - datasetsinternal

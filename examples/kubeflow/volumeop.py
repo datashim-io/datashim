@@ -62,7 +62,7 @@ def volume_op_dag():
 def get_dataset_yaml(name,accessKey,secretAccessKey,endpoint,bucket,region):
     print(region)
     dataset_spec = f"""
-    apiVersion: com.ie.ibm.hpsys/v1alpha1
+    apiVersion: datashim.io/v1alpha1
     kind: Dataset
     metadata:
       name: {name}

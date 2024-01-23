@@ -50,7 +50,7 @@ and populate it with data._
 We will create now a Dataset named `example-dataset` pointing to your S3 bucket.
 ```yaml
 cat <<EOF | kubectl apply -f -
-apiVersion: com.ie.ibm.hpsys/v1alpha1
+apiVersion: datashim.io/v1alpha1
 kind: Dataset
 metadata:
   name: example-dataset

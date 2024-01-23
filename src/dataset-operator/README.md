@@ -7,7 +7,7 @@ to a k8s cluster and allows you to create objects like the example
 in [dataset_cr](deploy/crds/com_v1alpha1_dataset_cr.yaml)
 
 ```
-apiVersion: com.ie.ibm.hpsys/v1alpha1
+apiVersion: datashim.io/v1alpha1
 kind: Dataset
 metadata:
   name: example-dataset
@@ -47,7 +47,7 @@ dataset-operator-644f8d854-dct95   1/1     Running   0          15s
 
 Now you can do `kubectl create -f dataset.yaml` with a yaml which looks like this:
 ```
-apiVersion: com.ie.ibm.hpsys/v1alpha1
+apiVersion: datashim.io/v1alpha1
 kind: Dataset
 metadata:
   name: example-dataset

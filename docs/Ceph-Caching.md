@@ -86,7 +86,7 @@ dataset-operator-7b8f65f7d4-hg8n5   1/1     Running   0          6s
 ```
 Create an s3 dataset by replacing the values and invoking `kubectl create -f my-dataset.yaml`
 ``` yaml
-apiVersion: com.ie.ibm.hpsys/v1alpha1
+apiVersion: datashim.io/v1alpha1
 kind: Dataset
 metadata:
   name: example-dataset

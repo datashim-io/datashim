@@ -59,7 +59,7 @@ func MakeDataset(name string, namespace string) *DatasetWrapper {
 		Dataset: datasetsv1alpha1.Dataset{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Dataset",
-				APIVersion: "com.ie.ibm.hpsys/v1alpha1",
+				APIVersion: "datashim.io/v1alpha1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
@@ -96,7 +96,7 @@ func MakeDatasetInternal(name, namespace string) *DatasetInternalWrapper {
 		DatasetInternal: datasetsv1alpha1.DatasetInternal{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "DatasetInternal",
-				APIVersion: "com.ie.ibm.hpsys/v1alpha1",
+				APIVersion: "datashim.io/v1alpha1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
@@ -111,7 +111,7 @@ func InternalFromDataset(d datasetsv1alpha1.Dataset) *DatasetInternalWrapper {
 		DatasetInternal: datasetsv1alpha1.DatasetInternal{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "DatasetInternal",
-				APIVersion: "com.ie.ibm.hpsys/v1alpha1",
+				APIVersion: "datashim.io/v1alpha1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      d.Name,

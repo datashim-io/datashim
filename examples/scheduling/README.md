@@ -113,7 +113,7 @@ First lets create a dataset
 ```
 $ cat <<EOF | kubectl apply -f -
 ---
-apiVersion: com.ie.ibm.hpsys/v1alpha1
+apiVersion: datashim.io/v1alpha1
 kind: Dataset
 metadata:
   name: example-dataset

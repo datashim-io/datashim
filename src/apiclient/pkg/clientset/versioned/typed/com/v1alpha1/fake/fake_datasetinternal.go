@@ -35,9 +35,9 @@ type FakeDatasetInternal struct {
 	ns   string
 }
 
-var datasetinternalsResource = schema.GroupVersionResource{Group: "com.ie.ibm.hpsys", Version: "v1alpha1", Resource: "datasetinternals"}
+var datasetinternalsResource = schema.GroupVersionResource{Group: "datashim.io", Version: "v1alpha1", Resource: "datasetinternals"}
 
-var datasetinternalsKind = schema.GroupVersionKind{Group: "com.ie.ibm.hpsys", Version: "v1alpha1", Kind: "DatasetInternal"}
+var datasetinternalsKind = schema.GroupVersionKind{Group: "datashim.io", Version: "v1alpha1", Kind: "DatasetInternal"}
 
 // Get takes name of the datasetInternal, and returns the corresponding datasetInternal object, and an error if there is any.
 func (c *FakeDatasetInternal) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.DatasetInternal, err error) {
