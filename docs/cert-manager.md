@@ -75,5 +75,16 @@ After provisioning the new certificate, we need to ensure the webhook server
 picks up the new secret. We can do this by running:
 
 ```commandline
-kubectl delete pod -l name=dataset-operator
+kubectl delete pod -n dlf -l name=dataset-operator
+```
+
+## Patching the MutatingWebhookConfiguration
+
+As the `MutatingWebhookConfiguration` contains the CA used to create the
+certificate, we need sync it with the one that cert-manager has used. Simply
+run:
+
+```commandline
+CABUNDLE=$(oc get secret -n dlf webhook-server-tls -o jsonpath='{.data.tls\.crt}')
+kubectl patch mutatingwebhookconfiguration -n dlf dlf-mutating-webhook-cfg --type='json' -p="[{'op': 'replace', 'path': '/webhooks/0/clientConfig/caBundle', 'value': \"$CABUNDLE\"}]"
 ```
