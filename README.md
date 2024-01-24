@@ -116,15 +116,16 @@ This should produce an output of `...Successfully got an update from the "datash
 To install, search for the latest stable release
 
 ```bash
-helm search repo datashim
+helm search repo datashim --versions
 ```
 which will result in:
 ```
 NAME                    	CHART VERSION	APP VERSION	DESCRIPTION
+datashim/datashim-charts	0.4.0        	0.4.0      	Datashim chart
 datashim/datashim-charts	0.3.2        	0.3.2      	Datashim chart
 ```
 
-__Note:__Version `0.3.2` still has `com.ie.ibm.hpsys` as the apiGroup name. So, please proceed with caution. It is fine for upgrading from an existing Datashim installation but going forward the apiGroup will be `datashim.io` 
+__Note:__ Version `0.3.2` still has `com.ie.ibm.hpsys` as the apiGroup name. So, please proceed with caution. It is fine for upgrading from an existing Datashim installation but going forward the apiGroup will be `datashim.io` 
 
 
 Pass the option to create namespace, if you are installing Datashim for the first time:
