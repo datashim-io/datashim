@@ -85,6 +85,6 @@ certificate, we need sync it with the one that cert-manager has used. Simply
 run:
 
 ```commandline
-CABUNDLE=$(oc get secret -n dlf webhook-server-tls -o jsonpath='{.data.tls\.crt}')
+CABUNDLE=$(kubectl get secret -n dlf webhook-server-tls -o jsonpath='{.data.ca\.crt}')
 kubectl patch mutatingwebhookconfiguration -n dlf dlf-mutating-webhook-cfg --type='json' -p="[{'op': 'replace', 'path': '/webhooks/0/clientConfig/caBundle', 'value': \"$CABUNDLE\"}]"
 ```
