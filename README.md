@@ -13,11 +13,12 @@
 A Kubernetes Framework to provide easy access to S3 and NFS **Datasets** within pods. Orchestrates the provisioning of
 **Persistent Volume Claims** and **ConfigMaps** needed for each **Dataset**. Find more details in our [FAQ](https://datashim-io.github.io/datashim/FAQ/)
 
-## Alert (23 Jan 2024) - Group Name Change
-
-__If you have an existing installation of Datashim, please DO NOT follow the instructions below to upgrade it to version `0.4.0` or latest__. The group name of the Dataset and DatasetInternal CRDs (objects) is changing from `com.ie.ibm.hpsys` to `datashim.io`. An upgrade in place will invalidate your Dataset definitions and will cause problems in your installation. You can upgrade up to version `0.3.2` without any problems. 
-
-To upgrade to `0.4.0` and beyond, please a) delete all datasets safely; b) uninstall Datashim; and c) reinstall Datashim either through Helm or using the manifest file as follows.
+> [!WARNING]
+> 🚨 (23 Jan 2024) - Group Name Change
+> 
+> __If you have an existing installation of Datashim, please DO NOT follow the instructions below to upgrade it to version `0.4.0` or latest__. The group name of the Dataset and DatasetInternal CRDs (objects) is changing from `com.ie.ibm.hpsys` to `datashim.io`. An upgrade in place will invalidate your Dataset definitions and will cause problems in your installation. You can upgrade up to version `0.3.2` without any problems. 
+>
+>To upgrade to `0.4.0` and beyond, please a) delete all datasets safely; b) uninstall Datashim; and c) reinstall Datashim either through Helm or using the manifest file as follows.
 
 ## Quickstart
 
@@ -56,8 +57,9 @@ As an **optional** step, label the namespace(or namespaces) you want in order ha
 kubectl label namespace default monitor-pods-datasets=enabled
 ```
 
-_In case don't have an existing S3 Bucket follow our wiki to [deploy an Object Store](https://github.com/datashim-io/datashim/wiki/Deployment-and-Usage-of-S3-Object-Stores)
-and populate it with data._
+> [!TIP]
+> In case don't have an existing S3 Bucket follow our wiki to [deploy an Object Store](https://github.com/datashim-io/datashim/wiki/Deployment-and-Usage-of-S3-Object-Stores)
+and populate it with data.
 
 We will create now a Dataset named `example-dataset` pointing to your S3 bucket.
 ```yaml
@@ -97,9 +99,13 @@ spec:
 As a convention the Dataset will be mounted in `/mnt/datasets/example-dataset`. If instead you wish to pass the connection
 details as environment variables, change the `useas` line to `dataset.0.useas: "configmap"`
 
-**Note:** We recommend using secrets to pass your S3/Object Storage Service credentials to Datashim, as shown in [this example](./examples/templates/example-dataset-s3-provision.yaml).
-
 Feel free to explore our [other examples](./examples)
+
+> [!IMPORTANT]
+> We recommend using secrets to pass your S3/Object Storage Service credentials to Datashim, as shown in [this example](./examples/templates/example-dataset-s3-provision.yaml).
+
+> [!NOTE]
+> Datashim uses a Mutating Webhook which uses a self-signed certificate. We recommend the use of `cert-manager` to manage this certificate. Please take a look at [this note](docs/cert-manager.md) for instructions to do this. 
 
 ## Helm Installation
 
@@ -125,7 +131,8 @@ datashim/datashim-charts	0.4.0        	0.4.0      	Datashim chart
 datashim/datashim-charts	0.3.2        	0.3.2      	Datashim chart
 ```
 
-__Note:__ Version `0.3.2` still has `com.ie.ibm.hpsys` as the apiGroup name. So, please proceed with caution. It is fine for upgrading from an existing Datashim installation but going forward the apiGroup will be `datashim.io` 
+> [!CAUTION]
+> Version `0.3.2` still has `com.ie.ibm.hpsys` as the apiGroup name. So, please proceed with caution. It is fine for upgrading from an existing Datashim installation but going forward the apiGroup will be `datashim.io` 
 
 
 Pass the option to create namespace, if you are installing Datashim for the first time:
