@@ -6,3 +6,4 @@ csinfs: {}
 # dockerRegistrySecret: "anothersecret"
 
 tolerations: []
+affinity: {}

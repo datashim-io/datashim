@@ -7,3 +7,4 @@ csis3: {}
 mounter: "goofys"
 
 tolerations: []
+affinity: {}
