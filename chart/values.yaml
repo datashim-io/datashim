@@ -4,6 +4,16 @@ global:
   arch: "amd64"
   type: "k8s"
   namespaceYaml: true
+  # affinity configuration for Datashim deployments. Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity
+  # affinity:
+  #   nodeAffinity:
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+  #       nodeSelectorTerms:
+  #       - matchExpressions:
+  #         - key: kubernetes.io/os
+  #           operator: In
+  #           values:
+  #           - linux
   affinity: {}
   sidecars:
     kubeletPath: "/var/lib/kubelet"
