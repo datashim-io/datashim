@@ -41,7 +41,14 @@ To access our data, we must first create a `Secret` containing the credentials t
 > kubectl label namespace datashim-demo monitor-pods-datasets=enabled
 > ```
 
-We can `kubectly apply` the following YAML:
+Run
+
+```commandline
+kubectl apply -f minio-secret.yaml
+kubectl apply -f minio-dataset.yaml
+```
+
+To apply the following:
 
 ```yaml
 ---
@@ -68,14 +75,20 @@ spec:
 
 ## (OPTIONAL) Adding a model in the object storage
 
-In this tutorial we will use the [FLAN-T5-Base model](https://huggingface.co/google/flan-t5-base) as our set of weights to be loaded. To load them in our MinIO instance we can `kubectl apply` the following YAML: 
+In this tutorial we will use the [FLAN-T5-Base model](https://huggingface.co/google/flan-t5-base) as our set of weights to be loaded. To load them in our MinIO instance we can run:
 
+```
+kubectl apply -f download-flan-t5-base-to-minio.yaml
+kubectl wait --for=condition=complete job/download-flan --timeout=-1s
+```
+
+To create a download `Job` and wait for its completion:
 
 ```yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: download
+  name: download-flan
 spec:
   template:
     metadata:
@@ -97,7 +110,13 @@ spec:
 
 ## Creating the TGI pod
 
-As anticipated, we will use TGI to serve the model. Just `kubectl apply` the following to create the `Pod` and `Service`:
+As anticipated, we will use TGI to serve the model. Run
+
+```
+kubectl apply tgi+service.yaml
+```
+
+To create the following `Pod` and `Service`:
 
 ```yaml
 apiVersion: v1

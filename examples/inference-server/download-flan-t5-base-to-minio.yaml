@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: download-flan
+  namespace: datashim-test
+spec:
+  template:
+    metadata:
+      labels:
+        dataset.0.id: "model-weights"
+        dataset.0.useas: "mount"
+    spec:
+      containers:
+      - image: alpine/git
+        command: ["git"]
+        args:
+          - "clone"
+          - "https://huggingface.co/google/flan-t5-base/"
+          - "/mnt/datasets/model-weights/flan-t5-base/"
+        imagePullPolicy: IfNotPresent
+        name: git
+      restartPolicy: Never
