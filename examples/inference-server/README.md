@@ -33,7 +33,8 @@ update the values in the YAMLs, as they will all reference the setup we provide.
 The YAML we provide provisions a local MinIO instance using hardcoded
 credentials.
 
-> [!CAUTION] > **Do not use this for any real production workloads!**
+> [!CAUTION]
+> **Do not use this for any real production workloads!**
 
 From this folder, simply run:
 
@@ -48,7 +49,8 @@ To access our data, we must first create a `Secret` containing the credentials
 to access the bucket that holds our data, and then a `Dataset` object that links
 configuration information to the access credentials.
 
-> [!IMPORTANT] Make sure your active namespace is labelled with
+> [!IMPORTANT] 
+> Make sure your active namespace is labelled with
 > `monitor-pods-datasets=enabled` so that Datashim can mount volumes in the pods
 > during the tutorial. Using `datashim-demo` as the namespace, run:
 >
