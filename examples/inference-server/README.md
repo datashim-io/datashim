@@ -41,6 +41,7 @@ From this folder, simply run:
 ```commandline
 kubectl create namespace minio
 kubectl apply -f minio.yaml
+kubectl wait pod --for=condition=Ready -n minio --timeout=-1s minio 
 ```
 
 ## Creating a Dataset
@@ -65,7 +66,7 @@ kubectl apply -f minio-secret.yaml
 kubectl apply -f minio-dataset.yaml
 ```
 
-To apply the following:
+It will apply the following:
 
 ```yaml
 ---
@@ -109,6 +110,7 @@ kind: Job
 metadata:
   name: download-flan
 spec:
+  backoffLimit: 0
   template:
     metadata:
       labels:
@@ -117,22 +119,27 @@ spec:
     spec:
       containers:
         - image: alpine/git
-          command: ["git"]
+          command: ["sh", "-c"]
           args:
-            - "clone"
-            - "https://huggingface.co/google/flan-t5-base/"
-            - "/mnt/datasets/model-weights/flan-t5-base/"
+            - cd /tmp && git clone https://huggingface.co/google/flan-t5-base/
+              && cp -r flan-t5-base /mnt/datasets/model-weights/flan-t5-base/
           imagePullPolicy: IfNotPresent
           name: git
       restartPolicy: Never
 ```
+
+> [!NOTE]  
+> Using git to clone directly in `/mnt/datasets/model-weights/flan-t5-base/`
+> would fail on OpenShift due to the default security policies.
+> Errors such as `cp: can't preserve permissions` you might see in the pod
+> logs can be safely ignored.
 
 ## Creating the TGI pod
 
 As anticipated, we will use TGI to serve the model. Run
 
 ```
-kubectl apply tgi+service.yaml
+kubectl apply -f tgi+service.yaml
 ```
 
 To create the following `Pod` and `Service`:
@@ -237,7 +244,7 @@ kubectl port-forward --address localhost pod/text-generation-inference 8888:8080
 And run an inference request against it with:
 
 ```bash
- curl -s http://localhost:8888/generate -X POST -d '{"inputs":"The square root of x is the cube root of y. What is y to the power of 2, if x = 4?", "parameters":{"max_new_tokens":1000}}'  -H 'Content-Type: application/json' | jq -r .generated_text
+curl -s http://localhost:8888/generate -X POST -d '{"inputs":"The square root of x is the cube root of y. What is y to the power of 2, if x = 4?", "parameters":{"max_new_tokens":1000}}'  -H 'Content-Type: application/json' | jq -r .generated_text
 ```
 
 We should see the following output:

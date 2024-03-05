@@ -2,8 +2,9 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: download-flan
-  namespace: datashim-test
+  namespace: datashim-demo
 spec:
+  backoffLimit: 0
   template:
     metadata:
       labels:
@@ -11,12 +12,11 @@ spec:
         dataset.0.useas: "mount"
     spec:
       containers:
-      - image: alpine/git
-        command: ["git"]
-        args:
-          - "clone"
-          - "https://huggingface.co/google/flan-t5-base/"
-          - "/mnt/datasets/model-weights/flan-t5-base/"
-        imagePullPolicy: IfNotPresent
-        name: git
+        - image: alpine/git
+          command: ["sh", "-c"]
+          args:
+            - cd /tmp && git clone https://huggingface.co/google/flan-t5-base/
+              && cp -r flan-t5-base /mnt/datasets/model-weights/flan-t5-base/
+          imagePullPolicy: IfNotPresent
+          name: git
       restartPolicy: Never

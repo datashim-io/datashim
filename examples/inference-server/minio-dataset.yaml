@@ -2,7 +2,7 @@ apiVersion: datashim.io/v1alpha1
 kind: Dataset
 metadata:
   name: model-weights
-  namespace: datashim-test
+  namespace: datashim-demo
 spec:
   local:
     provision: "true"

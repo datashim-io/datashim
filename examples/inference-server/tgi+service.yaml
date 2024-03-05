@@ -6,7 +6,7 @@ metadata:
     run: text-generation-inference
     dataset.0.id: "model-weights"
     dataset.0.useas: "mount"
-  namespace: datashim-test
+  namespace: datashim-demo
 spec:
   containers:
     - name: text-generation-inference
@@ -38,7 +38,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: text-generation-inference
-  namespace: datashim-test
+  namespace: datashim-demo
 spec:
   ports:
   - port: 8080
