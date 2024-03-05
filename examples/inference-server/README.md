@@ -195,11 +195,11 @@ spec:
 ```
 
 The key lines are the labels starting with `dataset.0.` which define the
-`model_weights` dataset as an input to the TGI pod and the command arguments
-`"--weights-cache-override"` which indicates to TGI to load the model weights
+`model-weights` Dataset as an input to the TGI pod and the command arguments
+`"--model-id"` which indicates to TGI to load the model weights
 from a specific directory. In this example, the directory location points to the
 volume where the bucket will eventually be mounted
-(`/mnt/datasets/model_weights`) and where the model weights will be found.
+(`/mnt/datasets/model-weights`) and where the model weights will be found.
 
 We can wait for TGI to be ready using the command:
 
