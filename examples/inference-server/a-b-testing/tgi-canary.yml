@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: text-generation-inference-canary
+  labels:
+    run: text-generation-inference
+    type: canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: text-generation-inference
+      type: canary
+  template:
+    metadata:
+      labels:
+        run: text-generation-inference
+        type: canary
+        dataset.0.id: "model-weights"
+        dataset.0.useas: "mount"
+    spec:
+      containers:
+        - name: text-generation-inference
+          image: ghcr.io/huggingface/text-generation-inference:1.3.4
+          env:
+            - name: RUST_BACKTRACE
+              value: "1"
+          command:
+            - "text-generation-launcher"
+            - "--model-id"
+            - "/mnt/datasets/model-weights/flan-t5-base-v2/"
+            - "--sharded"
+            - "false"
+            - "--port"
+            - "8080"
+            - "--huggingface-hub-cache"
+            - "/tmp"
+          resources:
+            limits:
+              cpu: "16"
+              memory: "32Gi"
+          ports:
+            - containerPort: 8080
+              name: http
+      nodeSelector:
+        nvidia.com/gpu.product: ${GPU_TYPE}
+      restartPolicy: Always
