@@ -2,10 +2,10 @@ apiVersion: datashim.io/v1alpha1
 kind: Dataset
 metadata:
   name: model-weights
-  namespace: development
+  namespace: staging
 spec:
   local:
-    bucket: my-model-development
+    bucket: my-model-staging
     endpoint: https://s3.us-east.cloud-object-storage.appdomain.cloud
-    secret-name: my-model-development-credentials
+    secret-name: my-model-staging-credentials
     type: COS
