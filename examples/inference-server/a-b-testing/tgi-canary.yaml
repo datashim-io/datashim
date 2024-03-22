@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: text-generation-inference-canary
+  namespace: datashim-demo
   labels:
     run: text-generation-inference
     type: canary
@@ -28,7 +29,7 @@ spec:
           command:
             - "text-generation-launcher"
             - "--model-id"
-            - "/mnt/datasets/model-weights/flan-t5-base-v2/"
+            - "/mnt/datasets/model-weights/flan-t5-base/"
             - "--sharded"
             - "false"
             - "--port"
@@ -42,6 +43,9 @@ spec:
           ports:
             - containerPort: 8080
               name: http
-      nodeSelector:
-        nvidia.com/gpu.product: ${GPU_TYPE}
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
       restartPolicy: Always
