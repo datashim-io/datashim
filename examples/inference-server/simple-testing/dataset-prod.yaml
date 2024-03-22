@@ -1,0 +1,11 @@
+apiVersion: datashim.io/v1alpha1
+kind: Dataset
+metadata:
+  name: model-weights
+  namespace: production
+spec:
+  local:
+    bucket: my-model-production
+    endpoint: https://s3.us-east.cloud-object-storage.appdomain.cloud
+    secret-name: my-model-production-credentials
+    type: COS

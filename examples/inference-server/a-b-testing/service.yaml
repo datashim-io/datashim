@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: text-generation-inference
+  namespace: datashim-demo
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    run: text-generation-inference
+  type: ClusterIP
