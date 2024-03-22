@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: download-flan
+  namespace: staging
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        dataset.0.id: "model-weights"
+        dataset.0.useas: "mount"
+    spec:
+      containers:
+        - image: alpine/git
+          command: ["sh", "-c"]
+          args:
+            - cd /tmp && git clone https://huggingface.co/google/flan-t5-base/
+              && cp -r flan-t5-base /mnt/datasets/model-weights/my-model/
+          imagePullPolicy: IfNotPresent
+          name: git
+      restartPolicy: Never
