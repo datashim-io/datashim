@@ -28,7 +28,7 @@ func getPodDataDownload(dataset *datasets.Dataset, operatorNamespace string) (*b
 			"aws s3 cp /data/" + podId + " s3://" + podId + " --recursive --endpoint-url $ENDPOINT && " +
 			"rm -rf /data",
 	}
-	if extract == false {
+	if !extract {
 		command = []string{
 			"/bin/sh", "-c",
 			"wget " + fileUrl + " -P" + " /tmp && " +
