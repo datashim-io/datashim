@@ -22,7 +22,7 @@ jobs:
       - name: Update manifests to use local images
         run: "sed -i 's/Always/IfNotPresent/g' release-tools/manifests/dlf.yaml"
       - name: Create k8s Kind Cluster
-        uses: helm/kind-action@v1.4.0
+        uses: helm/kind-action@v1.9.0
       - name: Install and configure MinIO
         run: |
           kubectl create -f ci/minio.yaml

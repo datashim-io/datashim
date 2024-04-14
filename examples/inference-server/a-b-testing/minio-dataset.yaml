@@ -1,0 +1,12 @@
+apiVersion: datashim.io/v1alpha1
+kind: Dataset
+metadata:
+  name: model-weights
+  namespace: datashim-demo
+spec:
+  local:
+    provision: "true"
+    bucket: my-model
+    endpoint: http://minio.minio.svc.cluster.local:9000
+    secret-name: model-weights-secret
+    type: COS

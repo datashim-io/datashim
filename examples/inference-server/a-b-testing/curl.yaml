@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: curl
+  namespace: datashim-demo
+spec:
+  containers:
+    - name: curl
+      image: nicolaka/netshoot
+      command:
+        - "sleep"
+      args:
+        - "infinity"
+  restartPolicy: Never
