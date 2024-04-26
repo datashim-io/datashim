@@ -279,7 +279,7 @@ func (j *JSONPatchOperationWrapper) SetVolumeMountasPath(cont_typ string, cont_i
 func (j *JSONPatchOperationWrapper) SetPVCasValue(pvc string) *JSONPatchOperationWrapper {
 	j.Value = map[string]interface{}{
 		"name":                  pvc,
-		"persistentVolumeClaim": map[string]string{"claimName": pvc},
+		"persistentVolumeClaim": map[string]interface{}{"claimName": pvc},
 	}
 	return j
 }

@@ -36,6 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/datashim-io/datashim/src/dataset-operator/admissioncontroller"
 	datasetsv1alpha1 "github.com/datashim-io/datashim/src/dataset-operator/api/v1alpha1"
@@ -131,7 +132,9 @@ func main() {
 	webhookServer := mgr.GetWebhookServer()
 
 	setupLog.Info("Registering mutating webhook")
-	webhookServer.Register("/mutate-v1-pod", &webhook.Admission{Handler: &admissioncontroller.DatasetPodMutator{Client: mgr.GetClient()}})
+	webhookServer.Register("/mutate-v1-pod",
+		&webhook.Admission{Handler: &admissioncontroller.DatasetPodMutator{Client: mgr.GetClient(),
+			Decoder: admission.NewDecoder(mgr.GetScheme())}})
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
