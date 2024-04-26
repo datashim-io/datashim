@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
+	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -313,6 +314,24 @@ var _ = DescribeTable("Pod is mutated correctly",
 		},
 	}),
 )
+
+type testAdmissionRequest struct {
+	inputRequest func() *admissionv1.AdmissionRequest
+	outResponse  func() *admissionv1.AdmissionResponse
+}
+
+var _ = DescribeTable("Mutation operation happens correctly",
+	func(ts *testAdmissionRequest) {
+
+	},
+	Entry("", &testAdmissionRequest{
+		inputRequest: func() *admissionv1.AdmissionRequest {
+			return nil
+		},
+		outResponse: func() *admissionv1.AdmissionResponse {
+			return nil
+		},
+	}))
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
