@@ -275,12 +275,8 @@ var _ = BeforeSuite(func() {
 	Expect(clientset).NotTo(BeNil())
 
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:             scheme.Scheme,
-		Host:               testEnv.WebhookInstallOptions.LocalServingHost,
-		Port:               testEnv.WebhookInstallOptions.LocalServingPort,
-		CertDir:            testEnv.WebhookInstallOptions.LocalServingCertDir,
-		LeaderElection:     false,
-		MetricsBindAddress: "0",
+		Scheme:         scheme.Scheme,
+		LeaderElection: false,
 	})
 	Expect(err).ToNot(HaveOccurred())
 

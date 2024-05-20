@@ -40,6 +40,9 @@ jobs:
           kind load docker-image -n chart-testing quay.io/datashim-io/generate-keys:latest
       - name: Install Datashim
         run: make deployment
+      - name: Wait for Datashim
+        run: |
+          kubectl wait --for=condition=ready -n dlf pod -l name=dataset-operator --timeout=2m || (kubectl get all -n dlf && exit 1)
       - name: Create sample Dataset
         run: |
           cat <<EOF | kubectl apply -f -
@@ -79,7 +82,8 @@ jobs:
                 restartPolicy: Never
             backoffLimit: 1
           EOF
-          kubectl wait --for=condition=complete job/ds-write --timeout=2m
+          kubectl wait --for=condition=complete job/ds-write --timeout=2m || (kubectl get all -n dlf && kubectl describe job ds-write && kubectl logs -n dlf deployment/dataset-operator -c dataset-operator && kubectl describe -n dlf svc/webhook-server && exit 1)
+          
       - name: Read from Dataset
         run: |
           cat <<EOF | kubectl apply -f -
