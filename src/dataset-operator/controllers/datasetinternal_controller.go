@@ -76,18 +76,17 @@ func (r *DatasetInternalReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	reqLogger.Info("Reconciling DatasetInternal")
 
 	result := ctrl.Result{}
-	var err error = nil
 
 	// Fetch the Dataset instance
 	instance := &datasets.DatasetInternal{}
-	err = r.Client.Get(context.TODO(), req.NamespacedName, instance)
+	err := r.Client.Get(context.TODO(), req.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
 			reqLogger.Info("Dataset is not found")
-			return ctrl.Result{}, nil
+			return ctrl.Result{}, err
 		}
 		// Error reading the object - requeue the request.
 		return ctrl.Result{}, err
@@ -114,8 +113,12 @@ func (r *DatasetInternalReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			err := r.Client.Get(context.TODO(), req.NamespacedName, foundPVC)
 			if err == nil {
 				reqLogger.Info("COS-related PVC still exists, deleting...")
-				r.Client.Delete(context.TODO(), foundPVC)
-				return reconcile.Result{Requeue: true}, nil
+				delErr := r.Client.Delete(context.TODO(), foundPVC)
+				if delErr != nil {
+					//What happens when we cannot delete the PVC ?
+					reqLogger.Info("Could not delete the PVC", delErr)
+				}
+				return reconcile.Result{Requeue: true}, delErr
 			} else if !errors.IsNotFound(err) {
 				reqLogger.Info("COS-related PVC error")
 				reqLogger.Error(err, "COS-related PVC unexpected error")
@@ -141,7 +144,7 @@ func (r *DatasetInternalReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 				return reconcile.Result{}, err
 			}
 		}
-		return reconcile.Result{}, nil
+		return reconcile.Result{}, err
 	}
 
 	reqLogger.Info("All good, proceed")
@@ -150,14 +153,21 @@ func (r *DatasetInternalReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		datasetType := instance.Spec.Local["type"]
 		if f, ok := datasetLocalProcessTable[datasetType]; ok {
 			result, err = f(instance, r)
+			if err != nil {
+				reqLogger.Info("Dataset could not be created", "Dataset Name", instance.Name, "Dataset Type", datasetType, "Error", err)
+				err = errors.NewBadRequest("Dataset could not be created")
+			} else {
+				reqLogger.Info("Dataset created", "Dataset Name", instance.Name, "Dataset Type", datasetType)
+				err = nil
+			}
 		} else {
-			reqLogger.Error(err, "Dataset type %s not supported", datasetType)
+			reqLogger.Info("Dataset type not supported", "Dataset Name", instance.Name, "Dataset Type", datasetType)
 			err = errors.NewBadRequest("Dataset type not supported")
 		}
 	} else if instance.Spec.Remote != nil {
 		result, err = processRemoteDataset(instance, r)
 		if err != nil {
-			reqLogger.Error(err, "Could not process remote dataset entry: %v", instance.Name)
+			reqLogger.Info("Could not process remote dataset entry", "Dataset Name", instance.Name, "error", err)
 			err = errors.NewBadRequest("Could not process remote dataset")
 		}
 	} else {
@@ -165,7 +175,7 @@ func (r *DatasetInternalReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		err = errors.NewBadRequest("Dataset type not supported")
 	}
 
-	return result, nil
+	return result, err
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -209,7 +219,7 @@ func processLocalDatasetH3(cr *datasets.DatasetInternal, rc *DatasetInternalReco
 	 * I am assuming the validity of its value is checked sometime later when
 	 * the PVC is bound to a pod.
 	 */
-	if storageUri, _ = cr.Spec.Local["storageUri"]; len(storageUri) == 0 {
+	if storageUri = cr.Spec.Local["storageUri"]; len(storageUri) == 0 {
 		err := errors.NewBadRequest("storageUri missing or not valid")
 		processLocalDatasetLogger.Error(err, "storageUri missing or not valid")
 		return reconcile.Result{}, err
@@ -316,10 +326,9 @@ func processLocalDatasetH3(cr *datasets.DatasetInternal, rc *DatasetInternalReco
 			AccessModes:      []corev1.PersistentVolumeAccessMode{permissions},
 			VolumeName:       cr.Name,
 			StorageClassName: &storageClassName,
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceStorage: resource.MustParse("1Pi"),
-				},
+			Resources: corev1.VolumeResourceRequirements{
+				Limits:   map[corev1.ResourceName]resource.Quantity{},
+				Requests: map[corev1.ResourceName]resource.Quantity{},
 			},
 			Selector: &labelSelector,
 		},
@@ -347,23 +356,26 @@ func checkAndExtractObjectStorageAccess(cr *datasets.DatasetInternal, rc *Datase
 	secretOK := false
 
 	var secretName, secretNamespace string
-	var ok = false
+	var ok bool
 
 	if secretName, ok = cr.Spec.Local["secret-name"]; ok {
-
 		//16/12 - We will limit secrets to the same namespace as the dataset to fix #146
-		if secretNamespace, ok = cr.Spec.Local["secret-namespace"]; ok {
+		if secretNamespace, ok = cr.Spec.Local["secret-namespace"]; !ok {
+			checkObjectStorageLogger.Info("No secret namespace provided - using dataset namespace for secret", "Dataset Name", cr.ObjectMeta.Name, "Namespace", cr.ObjectMeta.Namespace)
+			secretNamespace = cr.ObjectMeta.Namespace
+			secretOK = true
+		} else {
 			if secretNamespace == cr.ObjectMeta.Namespace {
 				checkObjectStorageLogger.Info("Secret namespace is same as dataset namespace, allowed", "Dataset.Name", cr.ObjectMeta.Name)
 				secretOK = true
 			} else {
-				checkObjectStorageLogger.Info("Error: secret namespace is different from dataset namespace, not allowed", "Dataset.Name", cr.ObjectMeta.Name)
+				checkObjectStorageLogger.Info("Error: secret namespace is different from dataset namespace, not allowed", "Secret", secretName, "Dataset.Name", cr.ObjectMeta.Name)
+				secretOK = false
 			}
-		} else {
-			checkObjectStorageLogger.Info("No secret namespace provided - using dataset namespace for secret", "Dataset Name", cr.ObjectMeta.Name, "Namespace", cr.ObjectMeta.Namespace)
-			secretNamespace = cr.ObjectMeta.Namespace
-			secretOK = true
 		}
+	} else {
+		checkObjectStorageLogger.Info("No secret was provided with the spec", cr.Name)
+		secretOK = false
 	}
 
 	if secretOK {
@@ -372,7 +384,7 @@ func checkAndExtractObjectStorageAccess(cr *datasets.DatasetInternal, rc *Datase
 		err := rc.Client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: secretNamespace}, cosSecret)
 
 		if err != nil && errors.IsNotFound(err) {
-			checkObjectStorageLogger.Error(err, "Provided secret not found! ", "Dataset.Name", cr.Name)
+			checkObjectStorageLogger.Info("Provided secret not found! ", "Dataset.Name", cr.Name, "secret name", secretName)
 			authProvided = false
 		} else {
 			_, accessIDPresent := cosSecret.Data["accessKeyID"]
@@ -382,7 +394,7 @@ func checkAndExtractObjectStorageAccess(cr *datasets.DatasetInternal, rc *Datase
 				secretAccessKey = string(cosSecret.Data["secretAccessKey"])
 				authProvided = true
 			} else {
-				checkObjectStorageLogger.Error(nil, "Secret does not have access Key or secret Access Key", "Dataset.Name", cr.Name)
+				checkObjectStorageLogger.Info("Secret does not have access Key or secret Access Key", "Dataset.Name", cr.Name)
 				authProvided = false
 			}
 		}
@@ -399,7 +411,7 @@ func checkAndExtractObjectStorageAccess(cr *datasets.DatasetInternal, rc *Datase
 
 	if !authProvided {
 		authError := errors.NewBadRequest("No useable secret provided for authentication")
-		checkObjectStorageLogger.Error(authError, "Failed to initialise", "Dataset.Name", cr.Name)
+		checkObjectStorageLogger.Info("Failed to initialise", "Dataset.Name", cr.Name)
 		return "", "", authError
 	}
 
@@ -476,7 +488,7 @@ func processLocalDatasetCOS(cr *datasets.DatasetInternal, rc *DatasetInternalRec
 	}
 
 	if _, err := createConfigMapforDataset(configData, cr, rc); err != nil {
-		processLocalDatasetLogger.Error(err, "Could not create ConfigMap for dataset", "Dataset.Name", cr.Name)
+		processLocalDatasetLogger.Info("Could not create ConfigMap for dataset", "Dataset.Name", cr.Name)
 		return reconcile.Result{}, err
 	}
 
@@ -506,7 +518,7 @@ func processLocalDatasetCOS(cr *datasets.DatasetInternal, rc *DatasetInternalRec
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{axs},
-			Resources: corev1.ResourceRequirements{
+			Resources: corev1.VolumeResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceStorage: resource.MustParse("5Gi"),
 				},
@@ -659,7 +671,7 @@ func processLocalDatasetNFS(cr *datasets.DatasetInternal, rc *DatasetInternalRec
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany},
-			Resources: corev1.ResourceRequirements{
+			Resources: corev1.VolumeResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceStorage: resource.MustParse("5Gi"), //TODO: use proper size
 				},
@@ -702,7 +714,7 @@ func processLocalDatasetHOST(cr *datasets.DatasetInternal, rc *DatasetInternalRe
 	 * I am assuming the validity of its value is checked sometime later when
 	 * the PVC is bound to a pod.
 	 */
-	if path, _ = cr.Spec.Local["path"]; len(path) == 0 {
+	if path = cr.Spec.Local["path"]; len(path) == 0 {
 		err := errors.NewBadRequest("path missing or not valid")
 		processLocalDatasetLogger.Error(err, "path missing or not valid")
 		return reconcile.Result{}, err
@@ -741,7 +753,7 @@ func processLocalDatasetHOST(cr *datasets.DatasetInternal, rc *DatasetInternalRe
 			hostpathType = corev1.HostPathDirectory
 		default:
 			err := errors.NewBadRequest("HostPath type not supported")
-			processLocalDatasetLogger.Error(err, "HostPath type %s not supported", hostpath_type_string)
+			processLocalDatasetLogger.Info("HostPath type %s not supported", hostpath_type_string)
 			return reconcile.Result{}, err
 		}
 	}
@@ -799,7 +811,7 @@ func processLocalDatasetHOST(cr *datasets.DatasetInternal, rc *DatasetInternalRe
 			AccessModes:      []corev1.PersistentVolumeAccessMode{permissions},
 			VolumeName:       cr.Name,
 			StorageClassName: &storageClassName,
-			Resources: corev1.ResourceRequirements{
+			Resources: corev1.VolumeResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceStorage: resource.MustParse("5Gi"), //TODO: use proper size
 				},
@@ -828,7 +840,7 @@ func processRemoteDataset(cr *datasets.DatasetInternal, rc *DatasetInternalRecon
 
 	processRemoteDatasetLogger := logi.WithValues("Dataset.Namespace", cr.Namespace, "Dataset.Name", cr.Name, "Method", "processRemoteDataset")
 	result := reconcile.Result{}
-	var err error = nil
+	var err error
 
 	entryType := cr.Spec.Remote["type"]
 	switch entryType {
@@ -858,7 +870,7 @@ func processRemoteDataset(cr *datasets.DatasetInternal, rc *DatasetInternalRecon
 			err = rc.Client.Get(context.TODO(), types.NamespacedName{Name: catalogSvcName, Namespace: catalogSvcNamespace}, svc)
 
 			if err != nil {
-				processRemoteDatasetLogger.Error(err, "Could not obtain any catalogs in the current cluster")
+				processRemoteDatasetLogger.Info("Could not obtain any catalogs in the current cluster")
 				err = errors.NewBadRequest("no catalogURI provided")
 				return result, err
 			} else {
@@ -1069,7 +1081,7 @@ func createPVCforObjectStorage(cr *datasets.DatasetInternal, rc *DatasetInternal
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-			Resources: corev1.ResourceRequirements{
+			Resources: corev1.VolumeResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceStorage: resource.MustParse("5Gi"),
 				},

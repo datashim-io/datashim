@@ -9,17 +9,15 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
+	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-var cfg *rest.Config
-var k8sClient client.Client
 var testEnv *envtest.Environment
 
 type testPodLabels struct {
@@ -54,7 +52,7 @@ var _ = BeforeSuite(func() {
 
 	//+kubebuilder:scaffold:scheme
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	k8sClient, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
@@ -316,6 +314,24 @@ var _ = DescribeTable("Pod is mutated correctly",
 		},
 	}),
 )
+
+type testAdmissionRequest struct {
+	inputRequest func() *admissionv1.AdmissionRequest
+	outResponse  func() *admissionv1.AdmissionResponse
+}
+
+var _ = DescribeTable("Mutation operation happens correctly",
+	func(ts *testAdmissionRequest) {
+
+	},
+	Entry("", &testAdmissionRequest{
+		inputRequest: func() *admissionv1.AdmissionRequest {
+			return nil
+		},
+		outResponse: func() *admissionv1.AdmissionResponse {
+			return nil
+		},
+	}))
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")

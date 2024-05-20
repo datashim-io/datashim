@@ -36,7 +36,7 @@ var (
 // +kubebuilder:webhook:path=/mutate-v1-pod,mutating=true,failurePolicy=fail,groups="",resources=pods,verbs=create,versions=v1,name=mpod.datashim.io, admissionReviewVersions=v1,sideEffects=NoneOnDryRun
 type DatasetPodMutator struct {
 	Client  client.Client
-	decoder *admission.Decoder
+	Decoder admission.Decoder
 }
 
 func (m *DatasetPodMutator) Handle(ctx context.Context, req admission.Request) admission.Response {
@@ -45,10 +45,9 @@ func (m *DatasetPodMutator) Handle(ctx context.Context, req admission.Request) a
 	log = logf.FromContext(ctx)
 	log.V(1).Info("webhook received", "request", req)
 
-	var err error
 	pod := &corev1.Pod{}
 
-	err = m.decoder.Decode(req, pod)
+	err := m.Decoder.Decode(req, pod)
 
 	if err != nil {
 		log.Error(fmt.Errorf("could not decode pod %s", pod.Name), "could not decode pod")
@@ -85,8 +84,8 @@ func (m *DatasetPodMutator) Handle(ctx context.Context, req admission.Request) a
 }
 
 // InjectDecoder injects the decoder.
-func (m *DatasetPodMutator) InjectDecoder(d *admission.Decoder) error {
-	m.decoder = d
+func (m *DatasetPodMutator) InjectDecoder(d admission.Decoder) error {
+	m.Decoder = d
 	return nil
 }
 
