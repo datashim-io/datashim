@@ -12,11 +12,12 @@ import (
 	"strings"
 
 	datasetsv1alpha1 "github.com/datashim-io/datashim/src/dataset-operator/api/v1alpha1"
+	"github.com/go-logr/logr"
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
+	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -28,7 +29,7 @@ const (
 )
 
 var (
-	log = ctrl.Log.WithName("datashim-webhook")
+	log = logf.Log.WithName("datashim-webhook")
 )
 
 //following the kubebuilder example for the pod mutator
@@ -41,9 +42,12 @@ type DatasetPodMutator struct {
 
 func (m *DatasetPodMutator) Handle(ctx context.Context, req admission.Request) admission.Response {
 	// Mutate mutates
-
-	log = logf.FromContext(ctx)
+	log = log.WithValues("admission pod request", req)
 	log.V(1).Info("webhook received", "request", req)
+
+	if req.Operation != admissionv1.Create {
+		return admission.Allowed(fmt.Sprintf("No Pod mutation required for operation %v.", req.Operation))
+	}
 
 	pod := &corev1.Pod{}
 
@@ -134,6 +138,7 @@ func (d *DatasetInput) String() string {
 
 func DatasetInputFromPod(pod *corev1.Pod) (map[int]*DatasetInput, error) {
 	// Format is {"id": {"index": <str>, "useas": mount/configmap}
+	//log = log.WithName("dataset-label-processing")
 	log.V(1).Info("Pod labels", "labels", pod.Labels)
 
 	datasets := map[int]*DatasetInput{}
@@ -243,6 +248,7 @@ func RetrieveDatasetsFromAPIServer(ctx context.Context, client client.Client, po
 }
 
 func PatchPodWithDatasetLabels(pod *corev1.Pod, datasets map[int]*DatasetInput) ([]jsonpatch.JsonPatchOperation, error) {
+	//log = log.WithName("pod-patcher")
 	patchops := []jsonpatch.JsonPatchOperation{}
 
 	if len(datasets) == 0 {
@@ -304,7 +310,7 @@ func PatchPodWithDatasetLabels(pod *corev1.Pod, datasets map[int]*DatasetInput) 
 
 	if len(datasets_tomount) > 0 {
 		log.V(1).Info("Patching volumes to Pod Spec", "datasets", datasets_tomount)
-		patch_ds := patchPodSpecWithDatasetPVCs(pod, datasets_tomount)
+		patch_ds := patchPodSpecWithDatasetPVCs(pod, datasets_tomount, log)
 		patchops = append(patchops, patch_ds...)
 	}
 
@@ -321,7 +327,7 @@ func PatchPodWithDatasetLabels(pod *corev1.Pod, datasets map[int]*DatasetInput) 
 	return patchops, nil
 }
 
-func patchPodSpecWithDatasetPVCs(pod *corev1.Pod, datasets map[int]*DatasetInput) (patches []jsonpatch.JsonPatchOperation) {
+func patchPodSpecWithDatasetPVCs(pod *corev1.Pod, datasets map[int]*DatasetInput, log logr.Logger) (patches []jsonpatch.JsonPatchOperation) {
 	patches = []jsonpatch.JsonPatchOperation{}
 
 	vol_id := len(pod.Spec.Volumes)
@@ -401,8 +407,9 @@ func patchContainersWithDatasetVolumes(pod *corev1.Pod, datasets map[int]*Datase
 		mount_idx := len(mounts)
 
 		for o := range order {
-			exists, _ := in_array(datasets[o], mount_names)
+			exists, _ := in_array(datasets[o].name, mount_names)
 			if !exists {
+				log.V(1).Info("Dataset is not already mounted", "dataset", datasets[o], "pod", pod.Name)
 				patch := jsonpatch.JsonPatchOperation{
 					Operation: "add",
 					Path:      "/spec/" + container_typ + "/" + fmt.Sprint(container_idx) + "/volumeMounts/" + fmt.Sprint(mount_idx),
@@ -413,6 +420,8 @@ func patchContainersWithDatasetVolumes(pod *corev1.Pod, datasets map[int]*Datase
 				}
 				patchOps = append(patchOps, patch)
 				mount_idx += 1
+			} else {
+				log.V(1).Info("Dataset is already mounted", "dataset", datasets[o], "pod", pod.Name)
 			}
 		}
 	}

@@ -113,10 +113,11 @@ func (r *DatasetInternalReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			err := r.Client.Get(context.TODO(), req.NamespacedName, foundPVC)
 			if err == nil {
 				reqLogger.Info("COS-related PVC still exists, deleting...")
+				//TODO - check before deletion if the UsedBy field for the PVC is empty
 				delErr := r.Client.Delete(context.TODO(), foundPVC)
 				if delErr != nil {
 					//What happens when we cannot delete the PVC ?
-					reqLogger.Info("Could not delete the PVC", delErr)
+					reqLogger.Info("Could not delete the PVC", "Error", delErr)
 				}
 				return reconcile.Result{Requeue: true}, delErr
 			} else if !errors.IsNotFound(err) {

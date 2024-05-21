@@ -1,6 +1,9 @@
 package admissioncontroller
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -8,16 +11,22 @@ import (
 	testing "github.com/datashim-io/datashim/src/dataset-operator/testing"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.uber.org/zap/zapcore"
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
+var cfg *rest.Config
+var k8sClient client.Client
 var testEnv *envtest.Environment
 
 type testPodLabels struct {
@@ -26,7 +35,7 @@ type testPodLabels struct {
 }
 
 var _ = BeforeSuite(func() {
-	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.Level(zapcore.DebugLevel), zap.UseDevMode(true)))
 	By("bootstrapping test environment")
 
 	use_existing_cluster := true
@@ -52,7 +61,7 @@ var _ = BeforeSuite(func() {
 
 	//+kubebuilder:scaffold:scheme
 
-	k8sClient, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
@@ -62,6 +71,7 @@ var _ = DescribeTable("Pod is mutated correctly",
 
 		pod := tc.makeInputPodSpec()
 		datasets, err := DatasetInputFromPod(pod)
+
 		Expect(err).ShouldNot(HaveOccurred())
 
 		Expect(PatchPodWithDatasetLabels(pod, datasets)).
@@ -227,6 +237,27 @@ var _ = DescribeTable("Pod is mutated correctly",
 			return patchArray
 		},
 	}),
+	Entry("Pod with 0 volumes, 1 dataset label, override mount point -> 1 patch with the overridden mountpoint", &testPodLabels{
+		makeInputPodSpec: func() *corev1.Pod {
+			inputPod := testing.MakePod("test-1", "test").
+				AddLabelToPodMetadata("dataset.0.id", "testds").
+				AddLabelToPodMetadata("dataset.0.useas", "mount").
+				AddContainerToPod(testing.MakeContainer("foo").
+					AddVolumeMount("/mount/testds", "testds").Obj()).
+				Obj()
+			return &inputPod
+		},
+		makeOutputPatchOperations: func() []jsonpatch.JsonPatchOperation {
+			patchArray := []jsonpatch.JsonPatchOperation{
+				testing.MakeJSONPatchOperation().
+					SetOperation("add").
+					SetVolumeasPath(0).
+					SetPVCasValue("testds").
+					Obj(),
+			}
+			return patchArray
+		},
+	}),
 	Entry("Pod with 1 volumes, 1 dataset label, useas configmap -> 1 configmap", &testPodLabels{
 		makeInputPodSpec: func() *corev1.Pod {
 			inputPod := testing.MakePod("test-1", "test").
@@ -313,28 +344,66 @@ var _ = DescribeTable("Pod is mutated correctly",
 			return []jsonpatch.JsonPatchOperation{}
 		},
 	}),
+
+	Entry("Pod with 1 volumes, different mountPath, 1 dataset label, useas mount -> 0 patches", &testPodLabels{
+		makeInputPodSpec: func() *corev1.Pod {
+			inputPod := testing.MakePod("test-1", "test").
+				AddLabelToPodMetadata("dataset.0.id", "testds").
+				AddLabelToPodMetadata("dataset.0.useas", "mount").
+				AddVolumeToPod("testds").
+				AddContainerToPod(testing.MakeContainer("foo").
+					AddVolumeMount("/mnt/volumes/", "testds").Obj()).
+				Obj()
+			return &inputPod
+		},
+		makeOutputPatchOperations: func() []jsonpatch.JsonPatchOperation {
+			patchArray := []jsonpatch.JsonPatchOperation{}
+			return patchArray
+		},
+	}),
 )
 
 type testAdmissionRequest struct {
-	inputRequest func() *admissionv1.AdmissionRequest
-	outResponse  func() *admissionv1.AdmissionResponse
+	inputRequest func() admission.Request
+	outResponse  func() admission.Response
 }
 
 var _ = DescribeTable("Mutation operation happens correctly",
 	func(ts *testAdmissionRequest) {
 
+		m := DatasetPodMutator{
+			Client:  k8sClient,
+			Decoder: admission.NewDecoder(runtime.NewScheme()),
+		}
+		ctx := context.Background()
+		out := m.Handle(ctx, ts.inputRequest())
+		Expect(out).Should(Equal(ts.outResponse()))
+
 	},
-	Entry("", &testAdmissionRequest{
-		inputRequest: func() *admissionv1.AdmissionRequest {
-			return nil
+	Entry("Passthrough for delete operations", &testAdmissionRequest{
+		inputRequest: func() admission.Request {
+			req := testing.MakeAdmissionRequest().
+				SetName("test").
+				SetNamespace("test").
+				SetOperation(admissionv1.Delete).Obj()
+			return req
 		},
-		outResponse: func() *admissionv1.AdmissionResponse {
-			return nil
+		outResponse: func() admission.Response {
+			msg := fmt.Sprintf("No Pod mutation required for operation %v.", admissionv1.Delete)
+			return admission.Allowed(msg)
 		},
 	}))
-
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
+
+func serialize(obj any) ([]byte, error) {
+	b, err := json.Marshal(obj)
+	if err != nil {
+		//logf.Errorf("could not serialize bject")
+		return nil, err
+	}
+	return b, nil
+}

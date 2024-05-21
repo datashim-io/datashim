@@ -7,10 +7,12 @@ toolchain go1.22.2
 require (
 	github.com/akolb1/gometastore v0.0.0-20221218020403-aaa7217ecd00
 	github.com/go-logr/logr v1.4.1
+	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.0
 	github.com/kubernetes-csi/csi-test/v5 v5.0.0
 	github.com/onsi/ginkgo/v2 v2.17.1
 	github.com/onsi/gomega v1.32.0
+	go.uber.org/zap v1.26.0
 	gomodules.xyz/jsonpatch/v2 v2.4.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.30.0
@@ -56,7 +58,6 @@ require (
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	go.uber.org/zap v1.26.0 // indirect
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
 	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/oauth2 v0.12.0 // indirect
