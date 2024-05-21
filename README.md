@@ -1,6 +1,10 @@
 [![Go Report Card](https://goreportcard.com/report/github.com/datashim-io/datashim)](https://goreportcard.com/report/github.com/datashim-io/datashim)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4821/badge)](https://bestpractices.coreinfrastructure.org/projects/4821)
 # Datashim
+
+> [!NOTE]  
+> **_Help us shape the future of Datashim - fill in our short anonymous user survey [here](https://forms.gle/wMSkDGfeGzw5XyCM7)_** 
+
 <img src="./docs/pictures/lfaidata-project-badge-incubation-color.png" alt="drawing" width="200"/>
 
 >Our Framework introduces the **Dataset** CRD which is a pointer to existing S3 and NFS data sources. It includes the
