@@ -113,6 +113,7 @@ func (r *DatasetInternalReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			err := r.Client.Get(context.TODO(), req.NamespacedName, foundPVC)
 			if err == nil {
 				reqLogger.Info("COS-related PVC still exists, deleting...")
+				//TODO - check before deletion if the UsedBy field for the PVC is empty
 				delErr := r.Client.Delete(context.TODO(), foundPVC)
 				if delErr != nil {
 					//What happens when we cannot delete the PVC ?

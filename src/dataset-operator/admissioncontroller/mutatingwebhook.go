@@ -407,9 +407,9 @@ func patchContainersWithDatasetVolumes(pod *corev1.Pod, datasets map[int]*Datase
 		mount_idx := len(mounts)
 
 		for o := range order {
-			exists, _ := in_array(datasets[o], mount_names)
+			exists, _ := in_array(datasets[o].name, mount_names)
 			if !exists {
-				log.V(4).Info("Dataset is not already mounted", "dataset", datasets[o], "pod", pod.Name)
+				log.V(1).Info("Dataset is not already mounted", "dataset", datasets[o], "pod", pod.Name)
 				patch := jsonpatch.JsonPatchOperation{
 					Operation: "add",
 					Path:      "/spec/" + container_typ + "/" + fmt.Sprint(container_idx) + "/volumeMounts/" + fmt.Sprint(mount_idx),
@@ -421,7 +421,7 @@ func patchContainersWithDatasetVolumes(pod *corev1.Pod, datasets map[int]*Datase
 				patchOps = append(patchOps, patch)
 				mount_idx += 1
 			} else {
-				log.V(4).Info("Dataset is already mounted", "dataset", datasets[o], "pod", pod.Name)
+				log.V(1).Info("Dataset is already mounted", "dataset", datasets[o], "pod", pod.Name)
 			}
 		}
 	}

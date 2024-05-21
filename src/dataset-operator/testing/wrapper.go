@@ -6,8 +6,11 @@ import (
 
 	datasetsv1alpha1 "github.com/datashim-io/datashim/src/dataset-operator/api/v1alpha1"
 	"gomodules.xyz/jsonpatch/v2"
+	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // basic idea for templating K8s objects to be used in tests comes
@@ -344,4 +347,65 @@ func (j *JSONPatchOperationWrapper) AddSecretRefsToValue(secret_names []string) 
 
 func (j *JSONPatchOperationWrapper) Obj() jsonpatch.JsonPatchOperation {
 	return j.JsonPatchOperation
+}
+
+type AdmissionRequestWrapper struct {
+	admission.Request
+}
+
+func MakeAdmissionRequest() *AdmissionRequestWrapper {
+	return &AdmissionRequestWrapper{
+		Request: admission.Request{},
+	}
+}
+
+func (r *AdmissionRequestWrapper) SetName(name string) *AdmissionRequestWrapper {
+	r.Name = name
+	return r
+}
+
+func (r *AdmissionRequestWrapper) SetNamespace(namespace string) *AdmissionRequestWrapper {
+	r.Namespace = namespace
+	return r
+}
+
+func (r *AdmissionRequestWrapper) SetOperation(op admissionv1.Operation) *AdmissionRequestWrapper {
+	r.Operation = op
+	return r
+}
+
+func (r *AdmissionRequestWrapper) SetObject(obj runtime.RawExtension) *AdmissionRequestWrapper {
+	r.Object = obj
+	return r
+}
+
+func (r *AdmissionRequestWrapper) Obj() admission.Request {
+	return r.Request
+}
+
+type AdmissionResponseWrapper struct {
+	admission.Response
+}
+
+func MakeAdmissionResponse() *AdmissionResponseWrapper {
+	return &AdmissionResponseWrapper{
+		Response: admission.Response{},
+	}
+}
+
+func (rs *AdmissionResponseWrapper) AddPatches(patch jsonpatch.JsonPatchOperation) *AdmissionResponseWrapper {
+	if rs.Patches == nil {
+		rs.Patches = []jsonpatch.JsonPatchOperation{}
+	}
+	rs.Patches = append(rs.Patches, patch)
+	return rs
+}
+
+func (rs *AdmissionResponseWrapper) SetAdmissionResponse(resp admissionv1.AdmissionResponse) *AdmissionResponseWrapper {
+	rs.AdmissionResponse = resp
+	return rs
+}
+
+func (rs *AdmissionResponseWrapper) Obj() admission.Response {
+	return rs.Response
 }
