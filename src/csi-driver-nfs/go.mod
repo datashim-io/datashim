@@ -25,7 +25,8 @@ require (
 	github.com/prometheus/common v0.3.0 // indirect
 	github.com/prometheus/procfs v0.0.0-20190412120340-e22ddced7142 // indirect
 	github.com/spf13/cobra v0.0.3
-	golang.org/x/net v0.17.0
+	github.com/spf13/pflag v1.0.3 // indirect
+	golang.org/x/net v0.23.0
 	google.golang.org/grpc v1.56.3
 	google.golang.org/grpc/examples v0.0.0-20230728181735-20c51a9f425d // indirect
 	gopkg.in/square/go-jose.v2 v2.3.1 // indirect
