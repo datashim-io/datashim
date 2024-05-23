@@ -375,7 +375,7 @@ func checkAndExtractObjectStorageAccess(cr *datasets.DatasetInternal, rc *Datase
 			}
 		}
 	} else {
-		checkObjectStorageLogger.Info("No secret was provided with the spec", cr.Name)
+		checkObjectStorageLogger.Info("No secret was provided with the spec", "Dataset.Name", cr.ObjectMeta.Name)
 		secretOK = false
 	}
 
