@@ -10,6 +10,7 @@ theme:
 markdown_extensions:
   - pymdownx.highlight
   - pymdownx.superfences
+  - admonition
 plugins:
   - search
   - git-revision-date-localized:
