@@ -1,53 +1,122 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/IBM/dataset-lifecycle-framework)](https://goreportcard.com/report/github.com/datashim-io/datashim)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4821/badge)](https://bestpractices.coreinfrastructure.org/projects/4821)
+
 # Datashim
+
 <img src="./pictures/lfaidata-project-badge-incubation-color.png" alt="drawing" width="200"/>
 
->Our Framework introduces the **Dataset** CRD which is a pointer to existing S3 and NFS data sources. It includes the
->necessary logic to map these Datasets into Persistent Volume Claims and ConfigMaps which users can reference in their
->pods, letting them focus on the workload development and not on configuring/mounting/tuning the data access. Thanks to
->[Container Storage Interface](https://kubernetes-csi.github.io/docs/) it is extensible to support additional data sources in the future.
+## Overview
+
+Datashim is a Kubernetes Framework to provide easy access to S3 and NFS
+**Datasets** within pods. It orchestrates the provisioning of **Persistent
+Volume Claims** and **ConfigMaps** needed for each **Dataset**. Find more
+details in our [FAQ](FAQ.md).
+
+Datashim introduces the **Dataset** CRD which is a pointer to existing S3 and
+NFS data sources. It includes the necessary logic to map these Datasets into
+Persistent Volume Claims and ConfigMaps which users can reference in their pods,
+letting them focus on the workload development and not on
+configuring/mounting/tuning the data access. Thanks to
+[Container Storage Interface](https://kubernetes-csi.github.io/docs/) it is
+extensible to support additional data sources in the future.
 
 ![DLF](./pictures/dlf.png)
 
-A Kubernetes Framework to provide easy access to S3 and NFS **Datasets** within pods. Orchestrates the provisioning of
-**Persistent Volume Claims** and **ConfigMaps** needed for each **Dataset**. Find more details in our [FAQ](https://github.com/IBM/dataset-lifecycle-framework/wiki/FAQ)
+## Installing
 
-## Quickstart
+!!! tip
 
-In order to quickly deploy DLF, based on your environment execute **one** of the following commands:
+    Make sure you also read the [post-install steps](#post-install-steps)
+    as they contain important information
+
+### Using Helm
+
+Add the Datashim Helm repository with the following commands:
+
+```bash
+helm repo add datashim https://datashim-io.github.io/datashim/
+helm repo update
+```
+
+Once this has completed, run:
+
+```bash
+helm search repo datashim --versions
+```
+
+To verify that the repository has been added correctly. You can now install
+Datashim with:
+
+```bash
+helm install --namespace=dlf --create-namespace \
+              datashim datashim/datashim-charts
+```
+
+### Using manifests
+
+If you prefer, you can install Datashim using the manifests provided. Start by
+creating the `dlf` namespace with:
+
+```bash
+kubectl create ns dlf
+```
+
+Then, based on your environment, execute **one** of the following commands:
 
 - **Kubernetes/Minikube**
+
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/IBM/dataset-lifecycle-framework/master/release-tools/manifests/dlf.yaml
+kubectl apply -f https://raw.githubusercontent.com/datashim-io/datashim/master/release-tools/manifests/dlf.yaml
 ```
+
 - **Kubernetes on IBM Cloud**
+
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/IBM/dataset-lifecycle-framework/master/release-tools/manifests/dlf-ibm-k8s.yaml
+kubectl apply -f https://raw.githubusercontent.com/datashim-io/datashim/master/release-tools/manifests/dlf-ibm-k8s.yaml
 ```
+
 - **Openshift**
+
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/IBM/dataset-lifecycle-framework/master/release-tools/manifests/dlf-oc.yaml
+kubectl apply -f https://raw.githubusercontent.com/datashim-io/datashim/master/release-tools/manifests/dlf-oc.yaml
 ```
+
 - **Openshift on IBM Cloud**
+
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/IBM/dataset-lifecycle-framework/master/release-tools/manifests/dlf-ibm-oc.yaml
+kubectl apply -f https://raw.githubusercontent.com/datashim-io/datashim/master/release-tools/manifests/dlf-ibm-oc.yaml
 ```
 
-Wait for all the pods to be ready :)
+### Post-install steps
+
+Ensure that Datashim has been deployed correctly and ready by using the
+following command:
+
 ```bash
-kubectl wait --for=condition=ready pods -l app.kubernetes.io/name=dlf -n dlf
+kubectl wait --for=condition=ready pods -l app.kubernetes.io/name=datashim -n dlf
 ```
 
-As an **optional** step, label the namespace you want to have the pods labelling functionality (see below)
+Datashim's label-based functionalities require the
+`monitor-pods-datasets=enabled` annotation. To enable it in the `default`
+namespace, for example, you can run:
+
 ```bash
 kubectl label namespace default monitor-pods-datasets=enabled
 ```
 
-_In case don't have an existing S3 Bucket follow our wiki to [deploy an Object Store](https://github.com/IBM/dataset-lifecycle-framework/wiki/Deployment-and-Usage-of-S3-Object-Stores)
-and populate it with data._
+## Using Datashim
 
-We will create now a Dataset named `example-dataset` pointing to your S3 bucket.
+!!! warning
+
+    This section requires you to have an existing S3 bucket available.
+    If you do not have one, you can deploy a local S3 server using
+    ```bash
+    kubectl apply -f https://github.com/datashim-io/datashim/raw/master/examples/minio/minio.yaml
+    ```
+
+To use Datashim, we need to create a _Dataset_: we can do so by editing and
+running the following:
+
 ```yaml
 cat <<EOF | kubectl apply -f -
 apiVersion: datashim.io/v1alpha1
@@ -61,13 +130,17 @@ spec:
     secretAccessKey: "{AWS_SECRET_ACCESS_KEY}"
     endpoint: "{S3_SERVICE_URL}"
     bucket: "{BUCKET_NAME}"
-    readonly: "true" #OPTIONAL, default is false  
+    readonly: "true" #OPTIONAL, default is false
     region: "" #OPTIONAL
 EOF
 ```
 
-If everything worked okay, you should see a PVC and a ConfigMap named `example-dataset` which you can mount in your pods.
-As an easier way to use the Dataset in your pod, you can instead label the pod as follows:
+If everything worked, you should now see a PVC named `example-dataset` which you
+can mount in your pods. Assuming you have labeled your namespace with
+`monitor-pods-datasets=enabled` as mentioned in the
+[post-install steps](#post-install-steps), you will now be able to mount the PVC
+in a pod as simply as this:
+
 ```yaml
 apiVersion: v1
 kind: Pod
@@ -82,9 +155,11 @@ spec:
       image: nginx
 ```
 
-As a convention the Dataset will be mounted in `/mnt/datasets/example-dataset`. If instead you wish to pass the connection
-details as environment variables, change the `useas` line to `dataset.0.useas: "configmap"`
+As a convention the Dataset will be mounted in `/mnt/datasets/example-dataset`.
+If instead you wish to pass the connection details as environment variables,
+change the `useas` line to `dataset.0.useas: "configmap"`
 
-Feel free to explore our [examples](./examples)
+## Learn more
 
-
+To learn more about Datashim and how it can help you, explore our
+[examples](examples.md)
