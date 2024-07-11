@@ -122,7 +122,7 @@ running the following:
 
     This example is provided only because of its simplicity, but we recommend
     storing your credentials in a Secret and referencing it in a Dataset
-    as shown [here](examples.md#using-datasets-with-secret-references)
+    as shown [here](feature-showcase.md#using-datasets-with-secret-references)
 
     **Make sure you delete this example Dataset after you've tried it**.
 
@@ -171,4 +171,5 @@ change the `useas` line to `dataset.0.useas: "configmap"`
 ## Learn more
 
 To learn more about Datashim and how it can help you, explore our
-[examples](examples.md)
+[Feature Showcase](feature-showcase.md) and the [Use Cases](use-cases.md)
+sections.

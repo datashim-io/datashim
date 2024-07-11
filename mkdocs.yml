@@ -15,9 +15,14 @@ plugins:
   - search
   - git-revision-date-localized:
       fallback_to_build_date: true
+  - include-markdown:
+      preserve_includer_indent: false
+      heading_offset: 1
 nav:
   - Introduction: index.md
-  - Examples: examples.md
+  - Use cases: use-cases.md
+  - Feature Showcase: feature-showcase.md
+  - Advanced Usage: advanced-usage.md
   - FAQ: FAQ.md
   - Kubeflow:
       - Model Storing and Serving: kubeflow/Model-Storing-and-Serving-with-DLF.md

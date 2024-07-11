@@ -1,7 +1,8 @@
 # Simplify Generative AI Model Development on Kubernetes with Datashim
 
 > [!NOTE]  
-> This tutorial is part of a Medium article that you can find at: URL TBA
+> This tutorial is part of a Medium article that you can find
+> [on Medium](https://medium.com/ibm-data-ai/simplify-generative-ai-model-development-on-kubernetes-with-datashim-cd2999682807)
 
 (_Note:_ Credit to
 [YAML file from @zioproto](https://github.com/zioproto/kube-cheshire-cat/blob/1ae8be76e333482a2656431c9e6de59f2132c79c/kubernetes/tgi.yaml)
@@ -10,8 +11,9 @@ shown in this example)
 
 ## Prerequisites
 
-Please read the Medium article we have written at: URL TBA to understand the
-context of this tutorial.
+Please read the Medium article we have written
+[on Medium](https://medium.com/ibm-data-ai/simplify-generative-ai-model-development-on-kubernetes-with-datashim-cd2999682807)
+understand the context of this tutorial.
 
 Other than that, there are no prerequisites needed to follow this tutorial, as
 it will provide instructions to provision a local S3 endpoint and store two
