@@ -1,25 +1,28 @@
-name: document
+name: Update GitHub website
 on:
   push:
     branches:
       - master
     paths:
-      - 'docs/**'
+      - "docs/**"
+      - mkdocs.yml
+      - Pipfile
+
 jobs:
-  deploy:
-    runs-on: ubuntu-20.04
+  build-and-push:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v2
         with:
-          python-version: 3.6
+          python-version: 3.10
       - run: python -m pip install --upgrade pipenv wheel
       - run: pipenv update
       - run: pipenv run mkdocs build
       - uses: actions/checkout@v3
         with:
-           ref: gh-pages
-           path: pages
+          ref: gh-pages
+          path: pages
       - run: |
-           cp -v pages/index.yaml site/
+          cp -v pages/index.yaml site/
       - run: pipenv run ghp-import site -p --force
