@@ -9,8 +9,7 @@
 
 Datashim is a Kubernetes Framework to provide easy access to S3 and NFS
 **Datasets** within pods. It orchestrates the provisioning of **Persistent
-Volume Claims** and **ConfigMaps** needed for each **Dataset**. Find more
-details in our [FAQ](FAQ.md).
+Volume Claims** and **ConfigMaps** needed for each **Dataset**.
 
 Datashim introduces the **Dataset** CRD which is a pointer to existing S3 and
 NFS data sources. It includes the necessary logic to map these Datasets into
@@ -116,6 +115,16 @@ kubectl label namespace default monitor-pods-datasets=enabled
 
 To use Datashim, we need to create a _Dataset_: we can do so by editing and
 running the following:
+
+!!! danger inline end
+
+    Hardcoding your credentials in a Dataset is insecure.
+
+    This example is provided only because of its simplicity, but we recommend
+    storing your credentials in a Secret and referencing it in a Dataset
+    as shown [here](examples.md)
+
+    **Make sure you delete this example Dataset after you've tried it**.
 
 ```yaml
 cat <<EOF | kubectl apply -f -
