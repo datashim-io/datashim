@@ -122,7 +122,7 @@ running the following:
 
     This example is provided only because of its simplicity, but we recommend
     storing your credentials in a Secret and referencing it in a Dataset
-    as shown [here](examples.md)
+    as shown [here](examples.md#using-datasets-with-secret-references)
 
     **Make sure you delete this example Dataset after you've tried it**.
 
