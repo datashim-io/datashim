@@ -12,7 +12,7 @@ CAs (e.g., letsencrypt).
 
 In this document we will not go through how to deploy cert-manager and instead
 let the reader choose their preferred way to do so among the available ones
-listed on https://cert-manager.io/docs/installation/.
+listed on [https://cert-manager.io/docs/installation/](https://cert-manager.io/docs/installation/).
 
 ## Requesting the Certificate
 
