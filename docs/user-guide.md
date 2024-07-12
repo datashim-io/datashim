@@ -156,3 +156,23 @@ spec:
 ```
 
 ## Next steps
+
+<div class="grid cards" markdown>
+
+-   :material-professional-hexagon:{ .lg .middle } __Even more!__
+
+    ---
+
+    You can read up about Datashim's more advanced features in our [Advanced Usage](cert-manager.md) section
+
+    [:octicons-arrow-right-24: Advanced Usage](cert-manager.md)
+
+-   :material-frequently-asked-questions:{ .lg .middle } __Any questions?__
+
+    ---
+
+    Find answers to frequently asked questions in our [FAQ](FAQ.md)
+
+    [:octicons-arrow-right-24: FAQ](FAQ.md)
+
+</div>

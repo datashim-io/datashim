@@ -105,7 +105,7 @@ kubectl label namespace default monitor-pods-datasets=enabled
 
 ## Using Datashim
 
-!!! warning
+???+ warning
 
     This section requires you to have an existing S3 bucket available.
     If you do not have one, you can deploy a local S3 server using
@@ -123,7 +123,7 @@ running the following:
 
     This example is provided only because of its simplicity, but we recommend
     storing your credentials in a Secret and referencing it in a Dataset
-    as shown [here](feature-showcase.md#using-datasets-with-secret-references)
+    as shown [here](user-guide.md#using-datasets-with-secret-references)
 
     **Make sure you delete this example Dataset after you've tried it**.
 
@@ -169,8 +169,29 @@ As a convention the Dataset will be mounted in `/mnt/datasets/example-dataset`.
 If instead you wish to pass the connection details as environment variables,
 change the `useas` line to `dataset.0.useas: "configmap"`
 
-## Learn more
+## Next Steps
 
 To learn more about Datashim and how it can help you, explore our
-[Feature Showcase](feature-showcase.md) and the [Use Cases](use-cases.md)
-sections.
+[Use Cases](use-cases.md) and get started with the [User Guide](user-guide.md).
+
+
+<div class="grid cards" markdown>
+
+-   :material-kubernetes:{ .lg .middle } __Datashim in action__
+
+    ---
+
+    Learn more about Datashim and how it can help you in our [Use Cases](use-cases.md) section
+
+    [:octicons-arrow-right-24: Use Cases](use-cases.md)
+
+-   :material-file-document:{ .lg .middle } __Get started with Datashim__
+
+    ---
+
+    Check out our [User Guide](user-guide.md) and get up
+    and running in minutes
+
+    [:octicons-arrow-right-24: User Guide](user-guide.md)
+
+</div>

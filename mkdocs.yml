@@ -3,14 +3,21 @@ repo_url: https://github.com/datashim-io/datashim
 repo_name: datashim-io/datashim
 theme:
   name: material
-  features:
-    - navigation.instant
+  # features:
+  #   - navigation.instant
   icon:
     repo: fontawesome/brands/github
 markdown_extensions:
-  - pymdownx.highlight
-  - pymdownx.superfences
   - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.highlight
+  - pymdownx.details
+  - pymdownx.superfences
+  -  pymdownx.emoji:
+      emoji_generator: !!python/name:pymdownx.emoji.to_png
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 plugins:
   - search
   - git-revision-date-localized:
@@ -21,7 +28,7 @@ plugins:
 nav:
   - Introduction: index.md
   - Use cases: use-cases.md
-  - Feature Showcase: feature-showcase.md
+  - User guide: user-guide.md
   - Advanced Usage:
     - Using cert-manager to rotate TLS certificates in Datashim: cert-manager.md
     - Using Ceph for caching: Ceph-Caching.md
