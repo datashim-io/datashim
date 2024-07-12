@@ -3,3 +3,7 @@
 {%
    include-markdown "cert-manager.md"
 %}
+
+{%
+   include-markdown "Ceph-Caching.md"
+%}

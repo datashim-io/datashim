@@ -1,5 +1,6 @@
-# Rook/Ceph Installation
-## Method 1 (Recommended)
+# Using Ceph for caching
+## Installation
+### Method 1 (Recommended)
 
 Inside `plugins/ceph-cache-plugin/deploy/rook` directory execute:
 ``` bash
@@ -35,12 +36,12 @@ You need also to delete the paths in defined in `dataDirHostPath` and directorie
 
 Now we can proceed with installing DLF.
 
-## Method 2 (Testing)
+### Method 2 (Testing)
 
 If you are after maximum performance we strongly advice to set up your ceph cluster according to the method above. However, for testing purposes and/or lacking of disk devices we describe a method to test this inside minikube and provide a script `plugins/ceph-cache-plugin/deploy/rook/setup_ceph_cluster.sh` that installs rook with csi-lvm storage class. 
 
 
-### Minikube installation
+#### Minikube installation
 
 First we need to have a working cluster.
 
@@ -51,7 +52,7 @@ First we need to have a working cluster.
 **NOTE2:** if you change the disk-size of the minikube command make sure to tune accordingly the following parameters
 
 
-### CSI-LVM setup
+#### CSI-LVM setup
 
 Before invoking the script you should tune according to your needs the following attributes
 
@@ -70,7 +71,7 @@ cd plugins/ceph-cache-plugin/deploy/rook && \
 ```
 
 Keep in mind that the script will uninstall any previous installations of csi-lvm and rook-ceph which made through the script. If no command line arguments are passed to the script this will result in uninstalling everything.
-# DLF Installation
+## DLF Installation
 
 Go into the root of this directory and execute:
 `make deployment`
@@ -110,7 +111,7 @@ If you execute `kubectl describe datasetinternal/example-dataset` you would see 
 
 Let's try to add the caching plugin.
 
-# Ceph Caching Plugin Installation
+## Ceph Caching Plugin Installation
 
 Change into the directory and invoke:
 `make deployment`
