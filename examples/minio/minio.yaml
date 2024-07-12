@@ -47,3 +47,7 @@ metadata:
 stringData:
   accessKeyID: "ACCESS_KEY"
   secretAccessKey: "SECRET_KEY"
+  # For archive datasets
+  AWS_ACCESS_KEY_ID: "ACCESS_KEY"
+  AWS_SECRET_ACCESS_KEY: "SECRET_KEY"
+  ENDPOINT: http://minio:9000
