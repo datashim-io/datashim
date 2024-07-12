@@ -23,9 +23,9 @@ nav:
   - Use cases: use-cases.md
   - Feature Showcase: feature-showcase.md
   - Advanced Usage: advanced-usage.md
-  - FAQ: FAQ.md
   - Kubeflow:
       - Model Storing and Serving: kubeflow/Model-Storing-and-Serving-with-DLF.md
       - Data Volumes for Notebook Servers: kubeflow/Data-Volumes-for-Notebook-Servers.md
       - PVCs for Pipelines SDK: kubeflow/PVCs-for-Pipelines-SDK.md
   - Roadmap: Roadmap.md
+  - FAQ: FAQ.md
