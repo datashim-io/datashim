@@ -110,8 +110,9 @@ kubectl label namespace default monitor-pods-datasets=enabled
     This section requires you to have an existing S3 bucket available.
     If you do not have one, you can deploy a local S3 server using
     ```bash
-    kubectl apply -f https://github.com/datashim-io/datashim/raw/master/examples/minio/minio.yaml
+    kubectl apply -n dlf -f https://github.com/datashim-io/datashim/raw/master/examples/minio/minio.yaml
     ```
+    **NOTE: use this only as a reference point. For production, make sure sure appropriate and secure credentials are used**
 
 To use Datashim, we need to create a _Dataset_: we can do so by editing and
 running the following:

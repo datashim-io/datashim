@@ -295,7 +295,6 @@
                 "sha256:f015cb0f3894a39b33447b18e270ae391c4e25275cac5a626e80b243784e2692"
             ],
             "index": "pypi",
-            "markers": "python_version >= '3.8'",
             "version": "==1.2.6"
         },
         "mkdocs-include-markdown-plugin": {
@@ -304,7 +303,6 @@
                 "sha256:8dfc3aee9435679b094cbdff023239e91d86cf357c40b0e99c28036449661830"
             ],
             "index": "pypi",
-            "markers": "python_version >= '3.8'",
             "version": "==6.2.1"
         },
         "mkdocs-material": {
@@ -313,7 +311,6 @@
                 "sha256:ff48b11b2a9f705dd210409ec3b418ab443dd36d96915bcba45a41f10ea27bfd"
             ],
             "index": "pypi",
-            "markers": "python_version >= '3.8'",
             "version": "==9.5.28"
         },
         "mkdocs-material-extensions": {
