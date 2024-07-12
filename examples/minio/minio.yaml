@@ -34,7 +34,6 @@ metadata:
   name: minio
   labels:
     name: minio
-  namespace: minio
 spec:
   selector:
     app: minio
