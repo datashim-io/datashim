@@ -118,5 +118,41 @@ spec:
     type: COS
 ```
 
-## Next steps
+## Creating Datasets from archives
 
+!!! warning
+    
+    For using archive Datasets, a secret called `minio-conf` must be
+    present in the namespace where Datashim is installed, typically `dlf`.
+
+    To deploy a MinIO instance in the `dlf` namespace (and automatically create the `minio`
+    secret) you can use the following oneliner:
+    ```bash
+      kubectl apply -n dlf -f https://github.com/datashim-io/datashim/raw/master/examples/minio/minio.yaml
+    ```
+
+    **NOTE: use this only as a reference point. For production, make sure sure 
+    appropriate and secure credentials are used**
+
+Datashim allows creating Datasets from archive files with the `ARCHIVE` dataset
+type. The archive will be downloaded and uploaded to the S3 backing
+store described by the `minio-conf` Secret. An additional option for extracting
+the 
+
+An example Dataset of the archive type is provided:
+
+```yaml
+apiVersion: datashim.io/v1alpha1
+kind: Dataset
+metadata:
+  name: archive-dataset
+spec:
+  type: "ARCHIVE"
+  url: "https://dax-cdn.cdn.appdomain.cloud/dax-noaa-weather-data-jfk-airport/1.1.4/noaa-weather-data-jfk-airport.tar.gz"
+  format: "application/x-tar"
+  extract: "true" # <---- OPTIONAL, to extract the content of the archive
+  local:
+    provision: "true" # <---- Required to create a bucket in the backing store
+```
+
+## Next steps
