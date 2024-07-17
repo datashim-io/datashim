@@ -10,6 +10,7 @@ on:
         options:
           - dataset-operator
           - csi-s3
+          - generate-keys
 
 env:
   REGISTRY: ghcr.io
@@ -63,5 +64,14 @@ jobs:
           context: 'src/csi-s3'
           push: true
           file: 'src/csi-s3/cmd/s3driver/Dockerfile.full'
+          tags: ${{ steps.meta-data.outputs.tags }}
+          labels: ${{ steps.meta-data.outputs.labels }}
+
+      - name: Build and push generate-keys
+        if: inputs.image == 'generate-keys'
+        uses: docker/build-push-action@v3
+        with:
+          context: 'src/generate-keys'
+          push: true
           tags: ${{ steps.meta-data.outputs.tags }}
           labels: ${{ steps.meta-data.outputs.labels }}
