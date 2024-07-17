@@ -104,3 +104,79 @@ func createLoopDevice(device string) error {
 	}
 	return nil
 }
+
+func CreateTextFile(filePath string, content string) error {
+	pwFile, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0600)
+	if err != nil {
+		return err
+	}
+	defer pwFile.Close()
+
+	_, err = pwFile.WriteString(content)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteFile(filePath string) error {
+	err := os.Remove(filePath)
+	if err != nil {
+		fmt.Println("Error deleting file:", err)
+		return err
+	}
+
+	return nil
+}
+
+func FileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
+
+func FolderExists(path string) bool {
+	info, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return info.IsDir()
+}
+
+func DeleteEmptyFolder(folderPath string) error {
+	dir, err := os.Open(folderPath)
+	if err != nil {
+		return fmt.Errorf("error opening folder: %w", err)
+	}
+	defer dir.Close()
+
+	files, err := dir.Readdirnames(0)
+	if err != nil {
+		return fmt.Errorf("error reading folder contents: %w", err)
+	}
+
+	if len(files) > 0 {
+		return fmt.Errorf("folder is not empty")
+	}
+
+	err = os.Remove(folderPath)
+	if err != nil {
+		return fmt.Errorf("error removing folder: %w", err)
+	}
+
+	return nil
+}
+
+func CreateFolderIfNotExists(folderPath string) error {
+	if _, err := os.Stat(folderPath); os.IsNotExist(err) {
+		err := os.MkdirAll(folderPath, os.ModePerm)
+		if err != nil {
+			fmt.Println("Error creating directory:", err)
+			return err
+		}
+	}
+
+	return nil
+}

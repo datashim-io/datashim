@@ -3,6 +3,8 @@ package s3
 import (
 	"fmt"
 	"os"
+
+	"github.com/golang/glog"
 )
 
 // Implements Mounter
@@ -36,22 +38,29 @@ func (s3fs *s3fsMounter) Unstage(stageTarget string) error {
 	return nil
 }
 
-func (s3fs *s3fsMounter) Mount(source string, target string) error {
+func (s3fs *s3fsMounter) Mount(target string) error {
 	if err := writes3fsPass(s3fs.pwFileContent); err != nil {
 		return err
 	}
+
+	var bucket string
+
+	if s3fs.bucket.Folder == "" {
+		glog.V(4).Infof("This bucket %s contains no folder prefixes", s3fs.bucket.Name)
+		bucket = s3fs.bucket.Name
+	} else {
+		glog.V(4).Infof("This bucket %s contains folder prefix %s", s3fs.bucket.Name, s3fs.bucket.Folder)
+		bucket = s3fs.bucket.Name + ":/" + s3fs.bucket.Folder
+	}
+
 	args := []string{
-		fmt.Sprintf("%s", s3fs.bucket.Name),
-		fmt.Sprintf("%s", target),
+		bucket,
+		target,
 		"-o", "use_path_request_style",
 		"-o", fmt.Sprintf("url=%s", s3fs.url),
-		"-o", fmt.Sprintf("endpoint=%s", s3fs.region),
 		"-o", "allow_other",
-		"-o", "umask=0000",
 	}
-	if s3fs.readonly {
-		args = append(args, "-o", "ro")
-	}
+
 	return fuseMount(target, s3fsCmd, args)
 }
 

@@ -448,9 +448,8 @@ func processLocalDatasetCOS(cr *datasets.DatasetInternal, rc *DatasetInternalRec
 		processLocalDatasetLogger.Info("No region information was provided for Dataset", "Dataset.Name", cr.Name, "bucket", bucket)
 	}
 
-	readonly := getBooleanStringForKeyInMap(processLocalDatasetLogger, "false", "readonly", cr.Spec.Local)
+	readonly := "false"
 	provision := getBooleanStringForKeyInMap(processLocalDatasetLogger, "false", "provision", cr.Spec.Local)
-	removeOnDelete := getBooleanStringForKeyInMap(processLocalDatasetLogger, "false", "remove-on-delete", cr.ObjectMeta.Labels)
 
 	if provisionValueString, ok := cr.Spec.Local["provision"]; ok {
 		provisionBool, err := strconv.ParseBool(provisionValueString)
@@ -464,17 +463,20 @@ func processLocalDatasetCOS(cr *datasets.DatasetInternal, rc *DatasetInternalRec
 		extract = cr.Spec.Extract
 	}
 
+	encrypter := cr.Spec.Local["encrypter"]
+	encryptionKey := cr.Spec.Local["encryptionKey"]
+
 	stringData := map[string]string{
-		"accessKeyID":      accessKeyID,
-		"secretAccessKey":  secretAccessKey,
-		"endpoint":         endpoint,
-		"bucket":           bucket,
-		"folder":           prefix,
-		"region":           region,
-		"readonly":         readonly,
-		"extract":          extract,
-		"provision":        provision,
-		"remove-on-delete": removeOnDelete,
+		"accessKeyID":     accessKeyID,
+		"secretAccessKey": secretAccessKey,
+		"endpoint":        endpoint,
+		"bucket":          bucket,
+		"folder":          prefix,
+		"region":          region,
+		"extract":         extract,
+		"provision":       provision,
+		"encrypter":       encrypter,
+		"encryptionKey":   encryptionKey,
 	}
 
 	labels := map[string]string{

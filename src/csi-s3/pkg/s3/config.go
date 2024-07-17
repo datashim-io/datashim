@@ -9,7 +9,8 @@ type Config struct {
 	Mounter         string
 	Bucket          string
 	Folder          string
-	RemoveOnDelete  bool
 	Readonly        bool
 	Provision       bool
+	Encrypter       string
+	EncryptionKey   string
 }

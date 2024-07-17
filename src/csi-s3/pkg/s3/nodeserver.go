@@ -19,6 +19,7 @@ package s3
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
@@ -29,6 +30,10 @@ import (
 	mount "k8s.io/mount-utils"
 
 	csicommon "github.com/kubernetes-csi/drivers/pkg/csi-common"
+)
+
+const (
+	s3MountFolder = "s3-mount"
 )
 
 type nodeServer struct {
@@ -75,43 +80,10 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	glog.V(4).Infof("target %v\ndevice %v\nreadonly %v\nvolumeId %v\nattributes %v\nmountflags %v\n",
 		targetPath, deviceID, readOnly, volumeID, volContext, mountFlags)
 
-	//Check if it's an ephemeral storage request - disable ephemeral volume creation for 0.3.0
-	//ephemeralVolume := volContext["csi.storage.k8s.io/ephemeral"] == "true" || volContext["csi.storage.k8s.io/ephemeral"] == ""
-	ephemeralVolume := false
-	var s3args map[string]string
-	if ephemeralVolume {
-
-		glog.V(4).Infof("Creating an ephemeral volume %s", volumeID)
-
-		s3args = volContext
-		s3Vol, err := createVolume(volumeID, s3args)
-
-		if err != nil || s3Vol == nil {
-			glog.V(1).Infof("Could not create Volume for vol. ID %s ", volumeID)
-			return nil, fmt.Errorf("Ephemeral volume creation for vol. ID failed - %v", err)
-		} else {
-			glog.V(4).Infof("Successfully created ephemeral Volume for vol ID %s", volumeID)
-		}
-
-		//Copy back the bucketname in case we used the volumeID as the name of a bucket that was
-		//provisioned on-demand
-		s3args["bucket"] = s3Vol.Bucket
-
-		// srikumarv - except for the s3backer, none of the mounters actually use stagingTargetPath
-		// but we'll set a value for stagingTargetPath so it does not foul up on the definition of
-		// the mount method (stagingTargetPath is probably already nil string, this just ensures
-		// that this value is present)
-		stagingTargetPath = ""
-
-	} else {
-
-		if len(stagingTargetPath) == 0 {
-			return nil, status.Error(codes.InvalidArgument, "Staging Target path missing in request")
-		}
-		s3args = req.GetSecrets()
+	if len(stagingTargetPath) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "Staging Target path missing in request")
 	}
-
-	s3, err := newS3ClientFromSecrets(s3args)
+	s3, err := newS3ClientFromSecrets(req.GetSecrets())
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize S3 client: %s", err)
 	}
@@ -122,8 +94,6 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return nil, status.Error(codes.InvalidArgument, "Bucket name not provided for mounting")
 	}
 
-	// srikumarv - this is a hack to support folders for the current csi-s3 implementation used in
-	// Datashim
 	folder := ""
 	if len(s3.cfg.Folder) != 0 {
 		folder = s3.cfg.Folder
@@ -131,24 +101,43 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		glog.V(2).Infof("s3: no fspath found for bucket %s", bucketName)
 	}
 
-	//b, err := s3.getBucket(bucketName)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//volContext := req.GetVolumeContext()
-
 	b := &bucket{
 		Name:    bucketName,
 		Folder:  folder,
-		Mounter: volContext[mounterTypeKey],
+		Mounter: s3.cfg.Mounter,
 	}
 
 	mounter, err := newMounter(b, s3.cfg, volumeID)
 	if err != nil {
 		return nil, err
 	}
-	if err := mounter.Mount(stagingTargetPath, targetPath); err != nil {
-		return nil, err
+
+	if s3.cfg.Encrypter == "" {
+		glog.V(3).Infof("mount bucket %s without encryption with mounter %s", bucketName, b.Mounter)
+		err = mounter.Mount(targetPath)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		glog.V(3).Infof("mount bucket %s  with mounter %s and encrypter %s", bucketName, b.Mounter, s3.cfg.Encrypter)
+		targetDir := filepath.Dir(targetPath)
+		s3MountPath := filepath.Join(targetDir, s3MountFolder)
+		CreateFolderIfNotExists(s3MountPath)
+
+		err = mounter.Mount(s3MountPath)
+		if err != nil {
+			return nil, err
+		}
+
+		encrypter, err := NewEncrypter(s3.cfg.Encrypter)
+		if err != nil {
+			return nil, err
+		}
+
+		err = encrypter.MountEncrypt(s3MountPath, targetPath, s3.cfg.EncryptionKey)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	glog.V(4).Infof("s3: bucket %s successfuly mounted to %s", b.Name, targetPath)
@@ -171,6 +160,21 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	if err := fuseUnmount(targetPath); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
+	targetDir := filepath.Dir(targetPath)
+	s3MountPath := filepath.Join(targetDir, s3MountFolder)
+
+	if FolderExists(s3MountPath) {
+		err := fuseUnmount(s3MountPath)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		err = DeleteEmptyFolder(s3MountPath)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	}
+
 	glog.V(4).Infof("s3: bucket %s has been unmounted.", volumeID)
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil

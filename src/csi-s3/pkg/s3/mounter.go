@@ -14,15 +14,11 @@ import (
 type Mounter interface {
 	Stage(stagePath string) error
 	Unstage(stagePath string) error
-	Mount(source string, target string) error
+	Mount(target string) error
 }
 
 const (
-	s3fsMounterType     = "s3fs"
-	goofysMounterType   = "goofys"
-	s3backerMounterType = "s3backer"
-	rcloneMounterType   = "rclone"
-	mounterTypeKey      = "mounter"
+	s3fsMounterType = "s3fs"
 )
 
 // newMounter returns a new mounter depending on the mounterType parameter
@@ -35,15 +31,6 @@ func newMounter(bucket *bucket, cfg *Config, volumeId string) (Mounter, error) {
 	switch mounter {
 	case s3fsMounterType:
 		return newS3fsMounter(bucket, cfg)
-
-	case goofysMounterType:
-		return newGoofysMounter(bucket, cfg, volumeId)
-
-	case s3backerMounterType:
-		return newS3backerMounter(bucket, cfg)
-
-	case rcloneMounterType:
-		return newRcloneMounter(bucket, cfg)
 
 	default:
 		// default to s3fsMounter

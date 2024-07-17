@@ -117,7 +117,6 @@ func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 
 func (cs *controllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
 	volumeID := req.GetVolumeId()
-	bucketName := volumeID
 
 	// Check arguments
 	if len(volumeID) == 0 {
@@ -129,28 +128,6 @@ func (cs *controllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVol
 		return nil, err
 	}
 	glog.V(4).Infof("Deleting volume %s", volumeID)
-
-	s3, err := newS3ClientFromSecrets(req.GetSecrets())
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize S3 client: %s", err)
-	}
-	if len(s3.cfg.Bucket) != 0 {
-		bucketName = s3.cfg.Bucket
-	}
-	exists, err := s3.bucketExists(bucketName)
-	if err != nil {
-		return nil, err
-	}
-	removeOnDelete := s3.cfg.RemoveOnDelete
-	glog.V(5).Info("Remove on delete value %s", fmt.Sprint(removeOnDelete))
-	if exists && removeOnDelete {
-		if err := s3.removeBucket(bucketName); err != nil {
-			glog.V(3).Infof("Failed to remove volume %s and bucket %s: %v", volumeID, bucketName, err)
-			return nil, err
-		}
-	} else {
-		glog.V(5).Infof("Bucket %s does not exist or not remove-on-delete flag, ignoring request", bucketName)
-	}
 
 	return &csi.DeleteVolumeResponse{}, nil
 }
