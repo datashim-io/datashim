@@ -1,0 +1,13 @@
+name: Build and push images
+on:
+  workflow_dispatch:
+
+jobs:
+  example-job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+    # Add more steps here as needed
