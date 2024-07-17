@@ -48,7 +48,7 @@ jobs:
             type=raw,value=build-${{ github.run_id }}
 
       - name: Build and push Dataset Operator
-        if: inputs.images == 'dataset-operator'
+        if: inputs.image == 'dataset-operator'
         uses: docker/build-push-action@v3
         with:
           context: 'src/dataset-operator'
@@ -57,7 +57,7 @@ jobs:
           labels: ${{ steps.meta-data.outputs.labels }}
 
       - name: Build and push csi-s3
-        if: inputs.images == 'csi-s3'
+        if: inputs.image == 'csi-s3'
         uses: docker/build-push-action@v3
         with:
           context: 'src/csi-s3'
