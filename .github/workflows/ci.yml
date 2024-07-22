@@ -1,8 +1,8 @@
 name: Update GitHub website
 on:
   push:
-    # branches:
-    #   - master
+    branches:
+      - master
     paths:
       - "docs/**"
       - mkdocs.yml
