@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: minio
+  name: minio
+spec:
+  containers:
+    - name: minio
+      image: quay.io/minio/minio:latest
+      command:
+        - /bin/bash
+        - -c
+      args:
+        - minio server /data
+      env:
+        - name: "MINIO_ROOT_USER"
+          value: "ACCESS_KEY"
+        - name: "MINIO_ROOT_PASSWORD"
+          value: "SECRET_KEY"
+      volumeMounts:
+        - mountPath: /data
+          name: data
+      ports:
+        - containerPort: 9000
+          name: api
+  volumes:
+    - name: data
+      emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  labels:
+    name: minio
+spec:
+  selector:
+    app: minio
+  ports:
+    - port: 9000
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-conf
+stringData:
+  accessKeyID: "ACCESS_KEY"
+  secretAccessKey: "SECRET_KEY"
+  # For archive datasets
+  AWS_ACCESS_KEY_ID: "ACCESS_KEY"
+  AWS_SECRET_ACCESS_KEY: "SECRET_KEY"
+  ENDPOINT: http://minio:9000

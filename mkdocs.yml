@@ -3,24 +3,38 @@ repo_url: https://github.com/datashim-io/datashim
 repo_name: datashim-io/datashim
 theme:
   name: material
-  features:
-    - navigation.instant
+  # features:
+  #   - navigation.instant
   icon:
     repo: fontawesome/brands/github
 markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
   - pymdownx.highlight
+  - pymdownx.details
   - pymdownx.superfences
+  -  pymdownx.emoji:
+      emoji_generator: !!python/name:pymdownx.emoji.to_png
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 plugins:
   - search
   - git-revision-date-localized:
       fallback_to_build_date: true
+  - include-markdown:
+      preserve_includer_indent: false
+      heading_offset: 1
 nav:
   - Introduction: index.md
-  - FAQ: FAQ.md
-  - Kubeflow:
-      - Model Storing and Serving: kubeflow/Model-Storing-and-Serving-with-DLF.md
-      - Data Volumes for Notebook Servers: kubeflow/Data-Volumes-for-Notebook-Servers.md
-      - PVCs for Pipelines SDK: kubeflow/PVCs-for-Pipelines-SDK.md
-  - Ceph Caching: Ceph-Caching.md
-  - Archive-based Datasets: Archive-based-Datasets.md
+  - Use cases: use-cases.md
+  - User guide: user-guide.md
+  - Advanced Usage:
+    - Using cert-manager to rotate TLS certificates in Datashim: cert-manager.md
+    - Using Ceph for caching: Ceph-Caching.md
+    - Kubeflow:
+        - Model Storing and Serving: kubeflow/Model-Storing-and-Serving-with-DLF.md
+        - Data Volumes for Notebook Servers: kubeflow/Data-Volumes-for-Notebook-Servers.md
+        - PVCs for Pipelines SDK: kubeflow/PVCs-for-Pipelines-SDK.md
   - Roadmap: Roadmap.md
+  - FAQ: FAQ.md

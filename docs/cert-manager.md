@@ -5,14 +5,14 @@ Kubernetes and OpenShift workloads, capable of provisioning self-issued
 certificates, setting up an in-house CA, and integrating with publicly available
 CAs (e.g., letsencrypt).
 
-> [!IMPORTANT]  
-> All the code samples below assume Datashim is installed in the `dlf` namespace.
+!!! info 
+    All the code samples below assume Datashim is installed in the `dlf` namespace.
 
 ## Installation
 
 In this document we will not go through how to deploy cert-manager and instead
 let the reader choose their preferred way to do so among the available ones
-listed on https://cert-manager.io/docs/installation/.
+listed on [https://cert-manager.io/docs/installation/](https://cert-manager.io/docs/installation/).
 
 ## Requesting the Certificate
 
