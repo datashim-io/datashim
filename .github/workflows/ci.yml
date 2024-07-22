@@ -15,6 +15,11 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
+      # Ensure we have the gh-pages branch locally
+      - uses: actions/checkout@v3
+        with:
+          ref: gh-pages
+      # This will check us out back to main
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v2
         with:
