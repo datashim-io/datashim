@@ -7,7 +7,7 @@ on:
       - "docs/**"
       - mkdocs.yml
       - Pipfile
-      - .github/workflows/ci.yaml
+      - .github/workflows/ci.yml
 
 jobs:
   build-and-push:
