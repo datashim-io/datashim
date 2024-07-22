@@ -11,6 +11,8 @@ on:
 
 jobs:
   build-and-push:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
