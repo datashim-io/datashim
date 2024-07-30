@@ -39,7 +39,7 @@ func getPodDataDownload(dataset *datasets.Dataset, operatorNamespace string) (*b
 	}
 	podSpec := corev1.PodSpec{
 		Containers: []corev1.Container{{
-			Image:           "yiannisgkoufas/cos-uploader:latest",
+			Image:           "quay.io/datashim-io/cos-uploader:latest",
 			ImagePullPolicy: corev1.PullAlways,
 			Name:            "cos-uploader",
 			Command:         command,
