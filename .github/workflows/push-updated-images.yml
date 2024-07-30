@@ -4,7 +4,8 @@ on:
     branches:
       - master
     paths:
-      - 'src/dataset-operator/**'
+      - "src/dataset-operator/**"
+      - "src/cos-uploader/**"
 
 jobs:
   dataset-operator:
@@ -45,3 +46,22 @@ jobs:
         run: |
           cd src/generate-keys
           ./build_multiarch_generate_keys.sh -p ${{ vars.REGISTRY_URL }}
+  cos-uploader:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone Datashim
+        uses: actions/checkout@v2
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ vars.REGISTRY_URL }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Build and push COS Uploader
+        run: |
+          cd src/cos-uploader
+          ./build_multiarch_cos_uploader.sh -p ${{ vars.REGISTRY_URL }}
