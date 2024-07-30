@@ -71,6 +71,11 @@ jobs:
           ./build_and_push_multiarch_csinfs.sh ${{ vars.REGISTRY_URL }} ${{ steps.vars.outputs.sha_short }}
           docker buildx prune
  
+      - name: Build and push COS uploader image
+        run: |
+          cd src/cos-uploader
+          ./build_multiarch_cos_uploader.sh -p ${{ vars.REGISTRY_URL }} ${{ github.ref_name }}
+
       - name: Install Helm
         uses: azure/setup-helm@v3
       
