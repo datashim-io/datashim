@@ -151,8 +151,6 @@ spec:
   url: "https://dax-cdn.cdn.appdomain.cloud/dax-noaa-weather-data-jfk-airport/1.1.4/noaa-weather-data-jfk-airport.tar.gz"
   format: "application/x-tar"
   extract: "true" # <---- OPTIONAL, to extract the content of the archive
-  local:
-    provision: "true" # <---- Required to create a bucket in the backing store
 ```
 
 ## Next steps
