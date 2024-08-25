@@ -33,6 +33,10 @@ RUN git clone https://github.com/kahing/goofys.git && \
     go mod tidy && \
     go build -o /go/bin/goofys
 
+# Add geesefs mounter
+ADD https://github.com/yandex-cloud/geesefs/releases/latest/download/geesefs-linux-amd64 /usr/bin/geesefs
+RUN chmod 755 /usr/bin/geesefs
+
 # Compile & install s3backer
 # WORKDIR /
 # RUN git clone https://github.com/archiecobbs/s3backer.git /s3backer && \
@@ -57,13 +61,53 @@ RUN git clone https://github.com/kahing/goofys.git && \
 #   && mv /tmp/rclone-*-linux-amd64/rclone /usr/bin \
 #   && rm -r /tmp/rclone*
 
-FROM alpine:3.15
+# FROM alpine AS build-s3fs
+FROM alpine:3.18.3 AS build-s3fs
 
-RUN apk add --update --no-cache fuse fuse-dev
+ARG S3FS_VERSION=v1.91
+
+RUN apk --no-cache add \
+    ca-certificates \
+    build-base \
+    git \
+    alpine-sdk \
+    libcurl \
+    automake \
+    autoconf \
+    libxml2-dev \
+    mailcap \
+    fuse-dev \
+    curl-dev && \
+  git clone https://github.com/s3fs-fuse/s3fs-fuse.git && \
+  cd s3fs-fuse && \
+  git checkout tags/${S3FS_VERSION} && \
+  ./autogen.sh && \
+  ./configure --prefix=/usr && \
+  make -j && \
+  make install
+
+FROM alpine:3.18.3
+
 COPY --from=base /go/bin/s3driver /s3driver
 COPY --from=base /go/bin/goofys /bin/goofys
+COPY --from=base /usr/bin/geesefs /bin/geesefs
 # COPY --from=base /usr/bin/s3backer /usr/bin/s3backer
-# COPY --from=base /usr/bin/s3fs-fuse /usr/bin/s3fs-fuse
-# COPY --from=base /usr/bin/rclone /usr/bin/rclone
+COPY --from=build-s3fs /usr/bin/s3fs /usr/bin/s3fs-fuse
+COPY --from=build-s3fs /usr/bin/s3fs /usr/bin/s3fs
+#COPY --from=base /usr/bin/rclone /usr/bin/rclone
+
+RUN mkdir /opt/s3fs && \
+    apk --no-cache add \
+      ca-certificates \
+      mailcap \
+      fuse \
+      libxml2 \
+      libcurl \
+      libgcc \
+      libstdc++ \
+      tini && \
+    deluser xfs && \
+    s3fs --version && \
+    echo user_allow_other >> /etc/fuse.conf
 
 ENTRYPOINT ["/s3driver"]

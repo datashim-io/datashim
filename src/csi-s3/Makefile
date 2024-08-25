@@ -14,12 +14,14 @@
 .PHONY: test build container push clean
 
 PROJECT_DIR=/app
+IMAGE_NAME=korolkov-public-evolution-serverless.cr.cloud.ru/datashim-csi-s3-goofys-s3fs-geesefs
+VERSION ?= v0.0.2
 REGISTRY_NAME=ctrox
 IMAGE_NAME=csi-s3
 VERSION ?= dev
 IMAGE_TAG=$(IMAGE_NAME):$(VERSION)
 FULL_IMAGE_TAG=$(IMAGE_TAG)
-TEST_IMAGE_TAG=$(REGISTRY_NAME)/$(IMAGE_NAME):test
+TEST_IMAGE_TAG=$(IMAGE_NAME):test
 ARCH ?= $(shell arch)
 
 # because of this: https://github.com/jacobsa/fuse/issues/44
