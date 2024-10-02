@@ -5,8 +5,7 @@ metadata:
 spec:
   local:
     type: "COS"
-    secret-name: "{SECRET_NAME}" #see s3-secrets.yaml for an example
-    secret-namespace: "{SECRET_NAMESPACE}" #optional if the secret is in the same ns as dataset
+    secret-name: "{SECRET_NAME}" #see s3-secrets.yaml for an example. Must be in the same namespace.
     endpoint: "{S3_SERVICE_URL}"
     bucket: "{BUCKET_NAME}"
     readonly: "true" # default is false
