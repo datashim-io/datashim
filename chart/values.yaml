@@ -17,17 +17,17 @@ global:
   affinity: {}
   sidecars:
     kubeletPath: "/var/lib/kubelet"
-    baseRepo: "k8s.gcr.io/sig-storage"
+    baseRepo: "registry.k8s.io/sig-storage"
     images:
       externalAttacher:
         image: "csi-attacher"
-        tag: "v3.3.0"
+        tag: "v4.7.0"
       nodeDriverRegistrar:
         image: "csi-node-driver-registrar"
-        tag: "v2.3.0"
+        tag: "v5.1.0"
       externalProvisioner:
         image: "csi-provisioner"
-        tag: "v2.2.2"
+        tag: "v2.12.0"
 
 csi-nfs-chart:
   # baseRepo: "anotherrepo"
