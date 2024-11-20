@@ -153,7 +153,7 @@ parameters:
   csi.storage.k8s.io/node-publish-secret-name: ${pvc.name}
   csi.storage.k8s.io/node-publish-secret-namespace: ${pvc.namespace}
 ---
-# Source: datashim-charts/charts/dataset-operator-chart/templates/crds/com.ie.ibm.hpsys_datasetinternals_crd.yaml
+# Source: datashim-charts/charts/dataset-operator-chart/templates/crds/io.datashim_datasetinternals_crd.yaml
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -250,7 +250,7 @@ status:
   conditions: []
   storedVersions: []
 ---
-# Source: datashim-charts/charts/dataset-operator-chart/templates/crds/com.ie.ibm.hpsys_datasets_crd.yaml
+# Source: datashim-charts/charts/dataset-operator-chart/templates/crds/io.datashim_datasets_crd.yaml
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
