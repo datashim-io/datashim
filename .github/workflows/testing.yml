@@ -17,6 +17,11 @@ jobs:
         run: |
           cd build-tools
           ./build_components.sh
+      - name: Build CSI plugins
+        shell: bash
+        run: |
+          cd build-tools
+          ./build_csi_plugins.sh
       - name: Make Datashim manifests
         run: make manifests
       - name: Update manifests to use local images
@@ -38,6 +43,8 @@ jobs:
         run: |
           kind load docker-image -n chart-testing quay.io/datashim-io/dataset-operator:latest
           kind load docker-image -n chart-testing quay.io/datashim-io/generate-keys:latest
+          kind load docker-image -n chart-testing quay.io/datashim-io/csi-s3:latest
+          kind load docker-image -n chart-testing quay.io/datashim-io/csi-nfs:latest
       - name: Install Datashim
         run: make deployment
       - name: Wait for Datashim

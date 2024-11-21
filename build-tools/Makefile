@@ -4,9 +4,9 @@ ARCH ?= $(shell go env GOARCH)
 
 #used only when building the plugins
 
-EXTERNAL_ATTACHER_TAG ?= v3.3.0
-EXTERNAL_PROVISIONER_TAG ?= v2.2.2
-NODE_DRIVER_REGISTRAR_TAG ?= v2.3.0
+EXTERNAL_ATTACHER_TAG ?= v4.7.0
+EXTERNAL_PROVISIONER_TAG ?= v5.1.0
+NODE_DRIVER_REGISTRAR_TAG ?= v2.12.0
 
 include helpers.mk
 
