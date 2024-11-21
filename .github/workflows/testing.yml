@@ -21,6 +21,7 @@ jobs:
         shell: bash
         run: |
           cd build-tools
+          export DOCKER_REGISTRY="quay.io/datashim-io""
           ./build_csi_plugins.sh
       - name: Make Datashim manifests
         run: make manifests
