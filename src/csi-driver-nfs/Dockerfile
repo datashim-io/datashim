@@ -1,7 +1,7 @@
 FROM golang:1.22-bookworm as base
 RUN apt-get update && \
   apt-get install -y \
-  git wget gcc make mercurial && \
+  git wget gcc make && \
   rm -rf /var/lib/apt/lists/*
 
 ENV GO111MODULE=on

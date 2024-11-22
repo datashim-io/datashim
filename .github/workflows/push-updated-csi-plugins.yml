@@ -6,7 +6,6 @@ on:
     paths:
       - "src/csi-s3/**"
       - "src/csi-driver-nfs/**"
-
 jobs:
   csi-s3:
     runs-on: ubuntu-latest
