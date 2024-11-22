@@ -25,17 +25,16 @@ REGISTRY_URL="${1:-quay.io/datashim-io}"
 VERSION="${2:-latest}"
 
 docker_build () {
-    docker buildx build --platform linux/amd64 -t ${REGISTRY_URL}/csi-s3:${VERSION} .
-    docker buildx build --load -t ${REGISTRY_URL}/csi-s3:${VERSION} .
+    docker buildx build --platform linux/amd64 -t ${REGISTRY_URL}/csi-s3:${VERSION} --load -f cmd/s3driver/Dockerfile .
 }
 
 docker_build_and_push () {
-    docker buildx build --platform linux/amd64,linux/arm64,linux/ppc64le --push -t ${REGISTRY_URL}/csi-s3:${VERSION} .
+    docker buildx build --platform linux/amd64,linux/arm64,linux/ppc64le --push -t ${REGISTRY_URL}/csi-s3:${VERSION} -f cmd/s3driver/Dockerfile .
 }
 
 podman_build () {
     podman manifest create ${REGISTRY_URL}/csi-s3:${VERSION}
-    podman buildx build --platform linux/amd64,linux/arm64  --manifest ${REGISTRY_URL}/csi-s3:${VERSION} .
+    podman buildx build --platform linux/amd64,linux/arm64  --manifest ${REGISTRY_URL}/csi-s3:${VERSION} cmd/s3driver/Dockerfile .
 }
 
 podman_push () {
