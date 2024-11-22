@@ -72,5 +72,5 @@ if [ $BUILD_AND_PUSH = "yes" ]; then
       (cd ../src/csi-driver-nfs && ./build_and_push_multiarch_csinfs.sh -p $REGISTRY_URL $VERSION)
 else
       (cd ../src/csi-s3 && ./build_and_push_multiarch_csis3.sh $REGISTRY_URL $VERSION)
-      (cd ../src/csi-driver-nfs && ./build_and_push_multiarch_csinfs.shh $REGISTRY_URL $VERSION)
+      (cd ../src/csi-driver-nfs && ./build_and_push_multiarch_csinfs.sh $REGISTRY_URL $VERSION)
 fi
