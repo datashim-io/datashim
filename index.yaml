@@ -1,0 +1,124 @@
+apiVersion: v1
+entries:
+  datashim-charts:
+  - apiVersion: v2
+    appVersion: 0.4.1
+    created: "2024-11-22T11:55:26.050211487Z"
+    dependencies:
+    - condition: csi-sidecars-rbac.enabled
+      name: csi-sidecars-rbac
+      repository: ""
+      version: 0.1.0
+    - condition: csi-nfs-chart.enabled
+      name: csi-nfs-chart
+      repository: ""
+      version: 0.1.0
+    - condition: csi-s3-chart.enabled
+      name: csi-s3-chart
+      repository: ""
+      version: 0.1.0
+    - condition: dataset-operator-chart.enabled
+      name: dataset-operator-chart
+      repository: ""
+      version: 0.1.0
+    description: Datashim chart
+    digest: 815d913625bfeca08193ce28e511ec330a5ec8f1471f71c0ec369479de1a2457
+    icon: https://raw.githubusercontent.com/datashim-io/artwork/main/SVG/datashim-horizontal-color.svg
+    maintainers:
+    - name: Srikumar Venugopal
+    name: datashim-charts
+    type: application
+    urls:
+    - https://github.com/datashim-io/datashim/releases/download/datashim-charts-0.4.1/datashim-charts-0.4.1.tgz
+    version: 0.4.1
+  - apiVersion: v2
+    appVersion: 0.4.0
+    created: "2024-01-23T23:45:03.905743689Z"
+    dependencies:
+    - condition: csi-sidecars-rbac.enabled
+      name: csi-sidecars-rbac
+      repository: ""
+      version: 0.1.0
+    - condition: csi-nfs-chart.enabled
+      name: csi-nfs-chart
+      repository: ""
+      version: 0.1.0
+    - condition: csi-s3-chart.enabled
+      name: csi-s3-chart
+      repository: ""
+      version: 0.1.0
+    - condition: dataset-operator-chart.enabled
+      name: dataset-operator-chart
+      repository: ""
+      version: 0.1.0
+    description: Datashim chart
+    digest: c0f647487f110640615ca7e47fc49ab750c51aac599c93c75f5ff85aa84b5f39
+    icon: https://raw.githubusercontent.com/datashim-io/artwork/main/SVG/datashim-horizontal-color.svg
+    maintainers:
+    - name: Srikumar Venugopal
+    name: datashim-charts
+    type: application
+    urls:
+    - https://github.com/datashim-io/datashim/releases/download/datashim-charts-0.4.0/datashim-charts-0.4.0.tgz
+    version: 0.4.0
+  - apiVersion: v2
+    appVersion: 0.4.0-alpha.1
+    created: "2023-08-24T17:26:10.055466684Z"
+    dependencies:
+    - condition: csi-sidecars-rbac.enabled
+      name: csi-sidecars-rbac
+      repository: ""
+      version: 0.1.0
+    - condition: csi-nfs-chart.enabled
+      name: csi-nfs-chart
+      repository: ""
+      version: 0.1.0
+    - condition: csi-s3-chart.enabled
+      name: csi-s3-chart
+      repository: ""
+      version: 0.1.0
+    - condition: dataset-operator-chart.enabled
+      name: dataset-operator-chart
+      repository: ""
+      version: 0.1.0
+    description: Datashim chart
+    digest: 8584f690f36cea7b00e8c60a203f3cb8e841c7575e77a66f7fec996d5190071f
+    icon: https://raw.githubusercontent.com/datashim-io/artwork/main/SVG/datashim-horizontal-color.svg
+    maintainers:
+    - name: Srikumar Venugopal
+    name: datashim-charts
+    type: application
+    urls:
+    - https://github.com/datashim-io/datashim/releases/download/datashim-charts-0.4.0-alpha.1/datashim-charts-0.4.0-alpha.1.tgz
+    version: 0.4.0-alpha.1
+  - apiVersion: v2
+    appVersion: 0.3.2
+    created: "2024-01-22T12:56:23.186399118Z"
+    dependencies:
+    - condition: csi-sidecars-rbac.enabled
+      name: csi-sidecars-rbac
+      repository: ""
+      version: 0.1.0
+    - condition: csi-nfs-chart.enabled
+      name: csi-nfs-chart
+      repository: ""
+      version: 0.1.0
+    - condition: csi-s3-chart.enabled
+      name: csi-s3-chart
+      repository: ""
+      version: 0.1.0
+    - condition: dataset-operator-chart.enabled
+      name: dataset-operator-chart
+      repository: ""
+      version: 0.1.0
+    description: Datashim chart
+    digest: f0fb71cb40918fa48917fe3f80daaba3c364b1687d440c0a960e9820e83f5e0d
+    icon: https://raw.githubusercontent.com/datashim-io/artwork/main/SVG/datashim-horizontal-color.svg
+    maintainers:
+    - name: Srikumar Venugopal
+    name: datashim-charts
+    type: application
+    urls:
+    - https://github.com/datashim-io/datashim/releases/download/datashim-charts-0.3.2/datashim-charts-0.3.2.tgz
+    version: 0.3.2
+generated: "2024-11-22T11:55:26.050233769Z"
