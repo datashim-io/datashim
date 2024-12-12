@@ -89,8 +89,7 @@ metadata:
   name: my-dataset
 spec:
   local:
-    folder: "/my-user/data" # <----
-    bucket: my-bucket
+    bucket: my-bucket/my-user/data # <----
     endpoint: http://my-s3-endpoint
     secret-name: my-dataset-secret
     type: COS
