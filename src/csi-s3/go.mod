@@ -2,7 +2,7 @@ module github.com/ctrox/csi-s3
 
 require (
 	github.com/container-storage-interface/spec v1.6.0
-	github.com/golang/glog v1.1.0
+	github.com/golang/glog v1.2.4
 	github.com/kubernetes-csi/csi-lib-utils v0.11.0 // indirect
 	github.com/kubernetes-csi/csi-test v2.0.0+incompatible
 	github.com/kubernetes-csi/drivers v1.0.2
