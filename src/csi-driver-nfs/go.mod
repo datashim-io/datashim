@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/container-storage-interface/spec v1.1.0
-	github.com/golang/glog v1.1.0
+	github.com/golang/glog v1.2.4
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/kubernetes-csi/csi-lib-utils v0.2.0
 	github.com/spf13/cobra v0.0.3
