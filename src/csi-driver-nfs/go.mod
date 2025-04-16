@@ -8,7 +8,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/kubernetes-csi/csi-lib-utils v0.2.0
 	github.com/spf13/cobra v0.0.3
-	golang.org/x/net v0.23.0
+	golang.org/x/net v0.38.0
 	google.golang.org/genproto v0.0.0-20230711160842-782d3b101e98 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230711160842-782d3b101e98 // indirect
 	google.golang.org/grpc v1.56.3
