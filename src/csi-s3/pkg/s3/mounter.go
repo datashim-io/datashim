@@ -64,19 +64,31 @@ func fuseMount(path string, command string, args []string) error {
 }
 
 func fuseUnmount(path string) error {
-	if err := mount.New("").Unmount(path); err != nil {
-		return err
+	// Try to unmount, but don't fail early - we need to cleanup the fuse process regardless
+	unmountErr := mount.New("").Unmount(path)
+	if unmountErr != nil {
+		glog.Warningf("Unmount failed for path %s: %s, will still attempt to cleanup fuse process", path, unmountErr)
 	}
+
 	// as fuse quits immediately, we will try to wait until the process is done
+	// This cleanup is critical even if unmount failed, to prevent orphaned processes
 	process, err := findFuseMountProcess(path)
 	if err != nil {
 		glog.Errorf("Error getting PID of fuse mount: %s", err)
-		return nil
+		return unmountErr // Return the original unmount error if we had one
 	}
 	if process == nil {
 		glog.Warningf("Unable to find PID of fuse mount %s, it must have finished already", path)
-		return nil
+		return unmountErr // Return the original unmount error if we had one
 	}
 	glog.Infof("Found fuse pid %v of mount %s, checking if it still runs", process.Pid, path)
-	return waitForProcess(process, 1)
+	processErr := waitForProcess(process, 1)
+
+	// Return combined error information
+	if unmountErr != nil && processErr != nil {
+		return fmt.Errorf("unmount failed: %v, process cleanup failed: %v", unmountErr, processErr)
+	} else if unmountErr != nil {
+		return unmountErr
+	}
+	return processErr
 }
