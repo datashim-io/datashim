@@ -168,6 +168,21 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		return nil, status.Error(codes.InvalidArgument, "Target path missing in request")
 	}
 
+	// Check if the target path is already unmounted to make this operation idempotent
+	// This prevents errors when kubelet retries unmounting an already-unmounted volume
+	notMnt, err := checkMount(targetPath)
+	if err != nil {
+		// If we get an error checking the mount (e.g., path doesn't exist),
+		// it's likely already cleaned up, so we can return success
+		glog.V(4).Infof("s3: error checking mount status for %s: %v, assuming already unmounted", targetPath, err)
+		return &csi.NodeUnpublishVolumeResponse{}, nil
+	}
+	if notMnt {
+		// Already unmounted, this is a successful no-op
+		glog.V(4).Infof("s3: volume %s at %s is already unmounted", volumeID, targetPath)
+		return &csi.NodeUnpublishVolumeResponse{}, nil
+	}
+
 	if err := fuseUnmount(targetPath); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
