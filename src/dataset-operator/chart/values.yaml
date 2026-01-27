@@ -6,3 +6,4 @@ generatekeys: {}
 nodeSelector: {}
 tolerations: []
 affinity: {}
+resources: {}
