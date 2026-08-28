@@ -1,0 +1,54 @@
+global:
+  dockerRegistrySecret: "" # leave empty if public repo
+  baseRepo: "quay.io/datashim-io"
+  arch: "amd64"
+  type: "k8s"
+  namespaceYaml: false
+
+  sidecars:
+    kubeletPath: "/var/lib/kubelet"
+    baseRepo: "k8s.gcr.io/sig-storage"
+    images:
+      externalAttacher:
+        image: "csi-attacher"
+        tag: "v3.3.0"
+      nodeDriverRegistrar:
+        image: "csi-node-driver-registrar"
+        tag: "v2.3.0"
+      externalProvisioner:
+        image: "csi-provisioner"
+        tag: "v2.2.2"
+
+csi-nfs-chart:
+# baseRepo: "anotherrepo"
+# dockerRegistrySecret: "anothersecret"
+  csinfs:
+    image: "csi-nfs"
+    tag: "latest"
+  sidecars: {} # in case you want to force override regardless of the csi-nfs-chart/values.yaml
+
+csi-s3-chart:
+# baseRepo: "anotherrepo"
+# dockerRegistrySecret: "anothersecret"
+# mounter: "goofys"
+  csis3:
+    image: "csi-s3"
+    tag: "latest"
+  sidecars: {} # in case you want to force override regardless of the csi-s3-chart/values.yaml
+
+csi-h3-chart:
+  baseRepo: "carvicsforth"
+# dockerRegistrySecret: "anothersecret"
+  csih3:
+    image: "csi-h3"
+    tag: "v1.2.0"
+  sidecars: {} 
+dataset-operator-chart:
+#  baseRepo: "quay.io/datashim"
+# dockerRegistrySecret: "anothersecret"
+  generatekeys:
+    image: "generate-keys"
+    tag: "0.3.0"
+  datasetoperator:
+    image: "dataset-operator"
+    tag: "0.3.0"
